@@ -1,13 +1,16 @@
 use crate::sortable::{Sortable};
 
-// Insertion sorts using *Insertion sort* algorithm.
+// Sorts using *Insertion sort* algorithm.
 // https://algs4.cs.princeton.edu/21elementary/
-pub fn insertion(target: &mut impl Sortable) {
-    insertion_core(target, 0, target.len() - 1);
+pub fn sort(target: &mut impl Sortable) {
+    let len = target.len();
+    if len > 0 {
+        sort_core(target, 0, len - 1);
+    }
 }
 
-fn insertion_core(target: &mut impl Sortable, lo: usize, hi: usize) {
-    let mut i = lo;
+fn sort_core(target: &mut impl Sortable, lo: usize, hi: usize) {
+    let mut i = lo + 1;
     while i <= hi {
         let mut j = i;
         while j > 0 && target.is_ord(j, j - 1) {
@@ -20,15 +23,24 @@ fn insertion_core(target: &mut impl Sortable, lo: usize, hi: usize) {
 
 #[cfg(test)]
 mod tests {
-    use crate::sortable::from_slice;
-    use super::*;
+    use crate::sortable::{wrap};
 
     #[test]
-    fn sorting() {
+    fn sort() {
         {
-            let mut a = vec![2, 3, 1, 4];
-            insertion(&mut from_slice(a.as_mut_slice()));
-            assert_eq!(a, [1, 2, 3, 4]);    
+            let mut v: Vec<i32> = vec![];
+            super::sort(&mut wrap(v.as_mut_slice(), |_: &i32, _: &i32| { false }));
+            assert_eq!(v, []);
+        }
+        {
+            let mut v = vec![2, 3, 1, 4];
+            super::sort(&mut wrap(v.as_mut_slice(), |i, j| { i < j }));
+            assert_eq!(v, [1, 2, 3, 4]);
+        }
+        {
+            let mut v = vec![2, 3, 1, 4];
+            super::sort(&mut wrap(v.as_mut_slice(), |i, j| { i > j }));
+            assert_eq!(v, [4, 3, 2, 1]);
         }
     }
 }
