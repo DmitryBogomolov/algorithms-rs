@@ -13,7 +13,7 @@ pub fn sort<T, F: Fn(&T, &T) -> bool>(target: &mut [T], is_ord: F) {
 #[cfg(test)]
 mod tests {
     use super::sort as do_sort;
-    use super::super::test_data::test_data;
+    use super::super::test_data;
 
     #[test]
     fn sort() {
