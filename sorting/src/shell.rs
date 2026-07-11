@@ -24,21 +24,23 @@ mod tests {
     use super::super::test_data;
 
     #[test]
-    fn sort() {
-        {
-            let mut v: Vec<i32> = vec![];
-            do_sort(v.as_mut_slice(), test_data::asc);
-            assert_eq!(v, []);
-        }
-        {
-            let mut v = test_data::array();
-            do_sort(v.as_mut_slice(), test_data::asc);
-            assert_eq!(v, test_data::array_asc());
-        }
-        {
-            let mut v = test_data::array();
-            do_sort(v.as_mut_slice(), test_data::dsc);
-            assert_eq!(v, test_data::array_dsc());
-        }
+    fn sort_empty() {
+        let mut v: Vec<i32> = vec![];
+        do_sort(v.as_mut_slice(), test_data::asc);
+        assert_eq!(v, []);
+    }
+
+    #[test]
+    fn sort_asc() {
+        let mut v = test_data::array();
+        do_sort(v.as_mut_slice(), test_data::asc);
+        assert_eq!(v, test_data::array_asc());
+    }
+
+    #[test]
+    fn sort_dsc() {
+        let mut v = test_data::array();
+        do_sort(v.as_mut_slice(), test_data::dsc);
+        assert_eq!(v, test_data::array_dsc());
     }
 }
