@@ -1,5 +1,11 @@
 pub fn array() -> Vec<i32> {
-    vec![3, 2, 1, 4, 1, 6, 8, 2, 5, 6, 3]
+    let v = vec![3, 2, 1, 4, 1, 6, 8, 2, 5, 6, 3, 2, 8, 1, 7, 9];
+    let mut r: Vec<i32> = Vec::new();
+    r.extend(v.iter().map(|t| { t + 10 }));
+    r.extend(v.iter().map(|t| { t + 20 }));
+    r.extend(v.iter().map(|t| { t + 50 }));
+    r.extend(v.iter().map(|t| { t + 60 }));
+    r
 }
 
 pub fn asc<T: PartialOrd>(lhs: &T, rhs: &T) -> bool {
