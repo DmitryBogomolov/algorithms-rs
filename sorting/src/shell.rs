@@ -1,6 +1,6 @@
 // Sorts using *Shell sort* algorithm.
 // https://algs4.cs.princeton.edu/21elementary/
-pub fn sort<T, F: Fn(&T, &T) -> bool>(target: &mut [T], is_ord: F) {
+pub fn sort<T, F: FnMut(&T, &T) -> bool>(target: &mut [T], mut is_ord: F) {
     let len = target.len();
     let mut h: usize = 1;
     while h < len / 3 {
