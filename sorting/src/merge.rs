@@ -6,6 +6,8 @@ pub fn sort<T: Clone, F: FnMut(&T, &T) -> bool>(target: &mut [T], mut is_ord: F)
     sort_core(aux.as_mut_slice(), &mut is_ord, target, 0, target.len());
 }
 
+const INSERTION_CUTOFF: usize = 7;
+
 fn sort_core<T: Clone, F: FnMut(&T, &T) -> bool>(
     src: &mut [T],
     is_ord: &mut F,
@@ -13,7 +15,8 @@ fn sort_core<T: Clone, F: FnMut(&T, &T) -> bool>(
     lo: usize,
     hi: usize,
 ) {
-    if lo + 1 >= hi {
+    if lo + INSERTION_CUTOFF >= hi {
+        crate::insertion::sort(&mut dst[lo..hi], is_ord);
         return;
     }
     let mid = (lo + hi) / 2;
