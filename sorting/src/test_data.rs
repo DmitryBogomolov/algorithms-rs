@@ -1,5 +1,3 @@
-// TODO: Remove Clone
-#[derive(Clone)]
 pub struct Tester {
     pub tag: char,
     pub value: i32,
@@ -30,9 +28,9 @@ pub fn array() -> Vec<Tester> {
         Tester{tag: 'b', value: 3},
         Tester{tag: 'c', value: 2},
         Tester{tag: 'b', value: 8},
-        Tester{tag: 'c', value: 1},
-        Tester{tag: 'a', value: 7},
         Tester{tag: 'a', value: 9},
+        Tester{tag: 'a', value: 7},
+        Tester{tag: 'c', value: 1},
     ]
 }
 
