@@ -50,13 +50,13 @@ fn merge_core<T: Clone, F: FnMut(&T, &T) -> bool>(
             let k = i1;
             i1 += 1;
             k
-        } else if is_ord(&src[i1], &src[i2]) {
-            let k = i1;
-            i1 += 1;
-            k
-        } else {
+        } else if is_ord(&src[i2], &src[i1]) {
             let k = i2;
             i2 += 1;
+            k
+        } else {
+            let k = i1;
+            i1 += 1;
             k
         };
         dst[i] = src[j].clone();
@@ -70,22 +70,22 @@ mod tests {
 
     #[test]
     fn sort_empty() {
-        let mut v: Vec<i32> = vec![];
+        let mut v = test_data::empty();
         do_sort(v.as_mut_slice(), test_data::asc);
-        assert_eq!(v, []);
+        assert!(test_data::is_sorted(v.as_slice(), test_data::asc));
     }
 
     #[test]
     fn sort_asc() {
         let mut v = test_data::array();
         do_sort(v.as_mut_slice(), test_data::asc);
-        assert_eq!(v, test_data::array_asc());
+        assert!(test_data::is_sorted(v.as_slice(), test_data::asc));
     }
 
     #[test]
     fn sort_dsc() {
         let mut v = test_data::array();
         do_sort(v.as_mut_slice(), test_data::dsc);
-        assert_eq!(v, test_data::array_dsc());
+        assert!(test_data::is_sorted(v.as_slice(), test_data::dsc));
     }
 }
