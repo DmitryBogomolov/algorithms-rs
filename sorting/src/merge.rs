@@ -3,13 +3,13 @@
 pub fn sort<T: Clone, F: FnMut(&T, &T) -> bool>(target: &mut [T], mut is_ord: F) {
     // TODO: Remove Clone.
     let mut aux: Vec<T> = target.iter().map(|t| { t.clone() }).collect();
-    sort_core(target, &mut is_ord, aux.as_mut_slice(), 0, target.len());
+    sort_core(aux.as_mut_slice(), &mut is_ord, target, 0, target.len());
 }
 
 fn sort_core<T: Clone, F: FnMut(&T, &T) -> bool>(
-    target: &mut [T],
+    src: &mut [T],
     is_ord: &mut F,
-    aux: &mut [T],
+    dst: &mut [T],
     lo: usize,
     hi: usize,
 ) {
@@ -17,22 +17,25 @@ fn sort_core<T: Clone, F: FnMut(&T, &T) -> bool>(
         return;
     }
     let mid = (lo + hi) / 2;
-    sort_core(target, is_ord, aux, lo, mid);
-    sort_core(target, is_ord, aux, mid, hi);
-    merge_core(target, is_ord, aux, lo, mid, hi);
+    sort_core(dst, is_ord, src, lo, mid);
+    sort_core(dst, is_ord, src, mid, hi);
+    if is_ord(&src[mid - 1], &src[mid]) {
+        for i in lo..hi {
+            dst[i] = src[i].clone();
+        }
+    } else {
+        merge_core(src, is_ord, dst, lo, mid, hi);
+    }
 }
 
 fn merge_core<T: Clone, F: FnMut(&T, &T) -> bool>(
-    target: &mut [T],
+    src: &mut [T],
     is_ord: &mut F,
-    aux: &mut [T],
+    dst: &mut [T],
     lo: usize,
     mid: usize,
     hi: usize,
 ) {
-    for i in lo..hi {
-        aux[i] = target[i].clone();
-    }
     let mut i1 = lo;
     let mut i2 = mid;
     for i in lo..hi {
@@ -44,7 +47,7 @@ fn merge_core<T: Clone, F: FnMut(&T, &T) -> bool>(
             let k = i1;
             i1 += 1;
             k
-        } else if is_ord(&aux[i1], &aux[i2]) {
+        } else if is_ord(&src[i1], &src[i2]) {
             let k = i1;
             i1 += 1;
             k
@@ -53,7 +56,7 @@ fn merge_core<T: Clone, F: FnMut(&T, &T) -> bool>(
             i2 += 1;
             k
         };
-        target[i] = aux[j].clone();
+        dst[i] = src[j].clone();
     }
 }
 
