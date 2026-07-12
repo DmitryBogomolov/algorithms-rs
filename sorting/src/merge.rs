@@ -1,4 +1,4 @@
-// Sorts using *Shell sort* algorithm.
+// Sorts using *Merge sort* algorithm.
 // https://algs4.cs.princeton.edu/22mergesort/
 pub fn sort<T: Clone, F: FnMut(&T, &T) -> bool>(target: &mut [T], mut is_ord: F) {
     // TODO: Remove Clone.
@@ -43,24 +43,22 @@ fn merge_core<T: Clone, F: FnMut(&T, &T) -> bool>(
     let mut i2 = mid;
     for i in lo..hi {
         let j = if i1 >= mid {
-            let k = i2;
-            i2 += 1;
-            k
+            upd(&mut i2)
         } else if i2 >= hi {
-            let k = i1;
-            i1 += 1;
-            k
+            upd(&mut i1)
         } else if is_ord(&src[i2], &src[i1]) {
-            let k = i2;
-            i2 += 1;
-            k
+            upd(&mut i2)
         } else {
-            let k = i1;
-            i1 += 1;
-            k
+            upd(&mut i1)
         };
         dst[i] = src[j].clone();
     }
+}
+
+fn upd(k: &mut usize) -> usize {
+    let t = *k;
+    *k += 1;
+    t
 }
 
 #[cfg(test)]
