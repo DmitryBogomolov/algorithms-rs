@@ -43,7 +43,7 @@ pub fn dsc(lhs: &Tester, rhs: &Tester) -> bool {
 }
 
 pub fn is_sorted(target: &[Tester], mut is_ord: impl FnMut(&Tester, &Tester) -> bool) -> bool {
-    for i in 1..target.len() {
+    for i in 1..target.len(){
         if is_ord(&target[i], &target[i - 1]) {
             return false;
         }
@@ -52,4 +52,8 @@ pub fn is_sorted(target: &[Tester], mut is_ord: impl FnMut(&Tester, &Tester) -> 
         }
     }
     true
+}
+
+pub fn check_sorted(target: &[Tester], is_ord: impl FnMut(&Tester, &Tester) -> bool) {
+    assert!(is_sorted(target, is_ord), "slice is not sorted: {:?}", target);
 }
