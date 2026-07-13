@@ -9,8 +9,8 @@ pub fn sort<T, F: FnMut(&T, &T) -> bool>(target: &mut [T], mut is_ord: F) {
     let mut is_ord_idx = |lhs: &Index, rhs: &Index| {
         is_ord(&target[lhs.0], &target[rhs.0])
     };
-    sort_core(aux.as_mut_slice(), &mut is_ord_idx, indexes.as_mut_slice(), 0, target.len());
-    rearrange(target, indexes.as_mut_slice());
+    sort_core(&mut aux, &mut is_ord_idx, &mut indexes, 0, target.len());
+    rearrange(target, &mut indexes);
 }
 
 #[derive(Copy, Clone)]
