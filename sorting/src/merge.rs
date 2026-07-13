@@ -1,7 +1,8 @@
 // Sorts using *Merge sort* algorithm.
 // https://algs4.cs.princeton.edu/22mergesort/
 pub fn sort<T, F: FnMut(&T, &T) -> bool>(target: &mut [T], mut is_ord: F) {
-    if target.len() < 2 {
+    if INSERTION_CUTOFF >= target.len() {
+        crate::insertion::sort(target, is_ord);
         return;
     }
     let mut indexes: Vec<Index> = (0..target.len()).map(|i| { Index(i) }).collect();

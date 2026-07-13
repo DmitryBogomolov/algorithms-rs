@@ -9,10 +9,6 @@ impl std::fmt::Debug for Tester {
     }
 }
 
-pub fn empty() -> Vec<Tester> {
-    vec![]
-}
-
 pub fn array() -> Vec<Tester> {
     vec![
         Tester{tag: 'a', value: 3},
