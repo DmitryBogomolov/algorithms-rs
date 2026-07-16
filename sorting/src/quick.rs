@@ -5,10 +5,8 @@ pub fn sort<T: std::fmt::Debug, F: FnMut(&T, &T) -> bool>(target: &mut [T], mut 
     if target.is_empty() {
         return;
     }
-    println!("0: {:?}", target);
     shuffle(target);
-    println!("1: {:?}", target);
-
+    sort_core(target, &mut is_ord, 0, target.len());
 }
 
 fn shuffle<T>(target: &mut [T]) {
@@ -20,6 +18,39 @@ fn shuffle<T>(target: &mut [T]) {
         let j = (rng % (i as u64 + 1)) as usize;
         target.swap(i, j);
     }
+}
+
+fn sort_core<T: std::fmt::Debug, F: FnMut(&T, &T) -> bool>(target: &mut [T], is_ord: &mut F, lo: usize, hi: usize) {
+    // TODO: Insertion cutoff.
+    if lo + 1 >= hi {
+        return;
+    }
+    let p = partition(target, is_ord, lo, hi);
+    sort_core(target, is_ord, lo, p);
+    sort_core(target, is_ord, p + 1, hi);
+}
+
+fn partition<T: std::fmt::Debug, F: FnMut(&T, &T) -> bool>(target: &mut [T], is_ord: &mut F, lo: usize, hi: usize) -> usize {
+    let mut i1 = lo + 1;
+    let mut i2 = hi - 1;
+    loop {
+        while i1 < hi && is_ord(&target[i1], &target[lo]) {
+            i1 += 1;
+        }
+        while i2 > lo && is_ord(&target[lo], &target[i2]) {
+            i2 -= 1;
+        }
+        if i1 >= i2 {
+            break;
+        }
+        target.swap(i1, i2);
+        i1 += 1;
+        i2 -= 1;
+    }
+    if i2 != lo {
+        target.swap(lo, i2);
+    }
+    i2
 }
 
 #[cfg(test)]
@@ -47,13 +78,13 @@ mod tests {
     fn sort_asc() {
         let mut v = test_data::array();
         do_sort(&mut v, test_data::asc);
-        test_data::check_sorted(&v, test_data::asc);
+        test_data::check_sorted_unstable(&v, test_data::asc);
     }
 
     #[test]
     fn sort_dsc() {
         let mut v = test_data::array();
         do_sort(&mut v, test_data::dsc);
-        test_data::check_sorted(&v, test_data::dsc);
+        test_data::check_sorted_unstable(&v, test_data::dsc);
     }
 }
