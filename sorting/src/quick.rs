@@ -20,37 +20,43 @@ fn shuffle<T>(target: &mut [T]) {
     }
 }
 
-fn sort_core<T: std::fmt::Debug, F: FnMut(&T, &T) -> bool>(target: &mut [T], is_ord: &mut F, lo: usize, hi: usize) {
+fn sort_core<T: std::fmt::Debug, F: FnMut(&T, &T) -> bool>(
+    target: &mut [T],
+    is_ord: &mut F,
+    lo: usize,
+    hi: usize,
+) {
     // TODO: Insertion cutoff.
     if lo + 1 >= hi {
         return;
     }
-    let p = partition(target, is_ord, lo, hi);
-    sort_core(target, is_ord, lo, p);
-    sort_core(target, is_ord, p + 1, hi);
+    let (lt, gt) = partition(target, is_ord, lo, hi);
+    sort_core(target, is_ord, lo, lt);
+    sort_core(target, is_ord, gt + 1, hi);
 }
 
-fn partition<T: std::fmt::Debug, F: FnMut(&T, &T) -> bool>(target: &mut [T], is_ord: &mut F, lo: usize, hi: usize) -> usize {
-    let mut i1 = lo + 1;
-    let mut i2 = hi - 1;
-    loop {
-        while i1 < hi && is_ord(&target[i1], &target[lo]) {
-            i1 += 1;
+fn partition<T: std::fmt::Debug, F: FnMut(&T, &T) -> bool>(
+    target: &mut [T],
+    is_ord: &mut F,
+    lo: usize,
+    hi: usize,
+) -> (usize, usize) {
+    let mut lt = lo;
+    let mut gt = hi - 1;
+    let mut i = lo + 1;
+    while i <= gt {
+        if is_ord(&target[i], &target[lt]) {
+            target.swap(lt, i);
+            lt += 1;
+            i += 1;
+        } else if is_ord(&target[lt], &target[i]) {
+            target.swap(gt, i);
+            gt -= 1;
+        } else {
+            i += 1;
         }
-        while i2 > lo && is_ord(&target[lo], &target[i2]) {
-            i2 -= 1;
-        }
-        if i1 >= i2 {
-            break;
-        }
-        target.swap(i1, i2);
-        i1 += 1;
-        i2 -= 1;
     }
-    if i2 != lo {
-        target.swap(lo, i2);
-    }
-    i2
+    (lt, gt)
 }
 
 #[cfg(test)]
