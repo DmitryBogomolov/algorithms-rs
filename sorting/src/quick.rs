@@ -1,13 +1,15 @@
 // Sorts using *Quick sort* algorithm.
 // https://algs4.cs.princeton.edu/23quicksort/
 pub fn sort<T, F: FnMut(&T, &T) -> bool>(target: &mut [T], mut is_ord: F) {
-    // TODO: Insertion cutoff.
-    if target.is_empty() {
+    if target.len() <= INSERTION_CUTOFF {
+        crate::insertion::sort(target, is_ord);
         return;
     }
     shuffle(target);
     sort_core(target, &mut is_ord, 0, target.len());
 }
+
+const INSERTION_CUTOFF: usize = 7;
 
 fn shuffle<T>(target: &mut [T]) {
     let mut rng: u64 = 0x9E37_79B9_7F4A_7C15;
@@ -26,8 +28,8 @@ fn sort_core<T, F: FnMut(&T, &T) -> bool>(
     lo: usize,
     hi: usize,
 ) {
-    // TODO: Insertion cutoff.
-    if lo + 1 >= hi {
+    if lo + INSERTION_CUTOFF >= hi {
+        crate::insertion::sort(&mut target[lo..hi], is_ord);
         return;
     }
     let (lt, gt) = partition(target, is_ord, lo, hi);
