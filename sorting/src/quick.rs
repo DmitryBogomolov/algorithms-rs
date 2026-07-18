@@ -1,6 +1,6 @@
 // Sorts using *Quick sort* algorithm.
 // https://algs4.cs.princeton.edu/23quicksort/
-pub fn sort<T: std::fmt::Debug, F: FnMut(&T, &T) -> bool>(target: &mut [T], mut is_ord: F) {
+pub fn sort<T, F: FnMut(&T, &T) -> bool>(target: &mut [T], mut is_ord: F) {
     // TODO: Insertion cutoff.
     if target.is_empty() {
         return;
@@ -20,7 +20,7 @@ fn shuffle<T>(target: &mut [T]) {
     }
 }
 
-fn sort_core<T: std::fmt::Debug, F: FnMut(&T, &T) -> bool>(
+fn sort_core<T, F: FnMut(&T, &T) -> bool>(
     target: &mut [T],
     is_ord: &mut F,
     lo: usize,
@@ -35,7 +35,7 @@ fn sort_core<T: std::fmt::Debug, F: FnMut(&T, &T) -> bool>(
     sort_core(target, is_ord, gt + 1, hi);
 }
 
-fn partition<T: std::fmt::Debug, F: FnMut(&T, &T) -> bool>(
+fn partition<T, F: FnMut(&T, &T) -> bool>(
     target: &mut [T],
     is_ord: &mut F,
     lo: usize,
