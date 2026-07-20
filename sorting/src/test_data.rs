@@ -71,9 +71,9 @@ fn is_sorted_core(
 }
 
 pub fn check_sorted(target: &[Tester], is_ord: impl FnMut(&Tester, &Tester) -> bool) {
-    assert!(is_sorted(target, is_ord), "slice is not sorted: {:?}", target);
+    assert!(is_sorted(target, is_ord), "not sorted: {:?}", target);
 }
 
 pub fn check_sorted_unstable(target: &[Tester], is_ord: impl FnMut(&Tester, &Tester) -> bool) {
-    assert!(is_sorted_unstable(target, is_ord), "slice is not sorted: {:?}", target);
+    assert!(is_sorted_unstable(target, is_ord), "not sorted: {:?}", target);
 }
