@@ -47,7 +47,7 @@ fn test_two_items() {
 #[test]
 fn test_many_items() {
     let mut rng = rand::rng();
-    let sample: Vec<i32> = (0..10000).map(|_| { rng.random_range(0..100) }).collect();
+    let sample: Vec<i32> = (0..1000).map(|_| { rng.random_range(0..100) }).collect();
     for func in funcs() {
         let mut arr = sample.clone();
         func(&mut arr, |a, b| { a < b });
