@@ -1,4 +1,3 @@
-
 // Sorts using *Insertion sort* algorithm.
 // https://algs4.cs.princeton.edu/21elementary/
 pub fn sort<T, F: FnMut(&T, &T) -> bool>(target: &mut [T], mut is_ord: F) {
@@ -13,8 +12,8 @@ pub fn sort<T, F: FnMut(&T, &T) -> bool>(target: &mut [T], mut is_ord: F) {
 
 #[cfg(test)]
 mod tests {
-    use super::sort as do_sort;
     use super::super::test_data;
+    use super::sort as do_sort;
 
     #[test]
     fn sort_empty() {
