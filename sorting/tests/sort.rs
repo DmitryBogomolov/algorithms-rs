@@ -1,5 +1,4 @@
 use rand::{self, RngExt};
-use sorting;
 
 type SortFn<T> = fn(&mut [T], fn(&T, &T) -> bool);
 
@@ -25,9 +24,9 @@ fn test_empty_list() {
 #[test]
 fn test_one_item() {
     for func in funcs() {
-        let mut arr = [3.14];
+        let mut arr = [3.2];
         func(&mut arr, |_, _| false);
-        assert_eq!(arr, [3.14]);
+        assert_eq!(arr, [3.2]);
     }
 }
 
