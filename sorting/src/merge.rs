@@ -5,11 +5,9 @@ pub fn sort<T, F: FnMut(&T, &T) -> bool>(target: &mut [T], mut is_ord: F) {
         crate::insertion::sort(target, is_ord);
         return;
     }
-    let mut indexes: Vec<Index> = (0..target.len()).map(|i| { Index(i) }).collect();
+    let mut indexes: Vec<Index> = (0..target.len()).map(|i| Index(i)).collect();
     let mut aux: Vec<Index> = indexes.clone();
-    let mut is_ord_idx = |lhs: &Index, rhs: &Index| {
-        is_ord(&target[lhs.0], &target[rhs.0])
-    };
+    let mut is_ord_idx = |lhs: &Index, rhs: &Index| is_ord(&target[lhs.0], &target[rhs.0]);
     sort_core(&mut aux, &mut is_ord_idx, &mut indexes, 0, target.len());
     rearrange(target, &mut indexes);
 }
@@ -91,8 +89,8 @@ fn rearrange<T>(target: &mut [T], indexes: &mut [Index]) {
 
 #[cfg(test)]
 mod tests {
-    use super::sort as do_sort;
     use super::super::test_data;
+    use super::sort as do_sort;
 
     #[test]
     fn sort_empty() {

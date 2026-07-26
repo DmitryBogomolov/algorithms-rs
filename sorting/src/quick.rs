@@ -22,12 +22,7 @@ fn shuffle<T>(target: &mut [T]) {
     }
 }
 
-fn sort_core<T, F: FnMut(&T, &T) -> bool>(
-    target: &mut [T],
-    is_ord: &mut F,
-    lo: usize,
-    hi: usize,
-) {
+fn sort_core<T, F: FnMut(&T, &T) -> bool>(target: &mut [T], is_ord: &mut F, lo: usize, hi: usize) {
     if lo + INSERTION_CUTOFF >= hi {
         crate::insertion::sort(&mut target[lo..hi], is_ord);
         return;
@@ -63,8 +58,8 @@ fn partition<T, F: FnMut(&T, &T) -> bool>(
 
 #[cfg(test)]
 mod tests {
-    use super::sort as do_sort;
     use super::super::test_data;
+    use super::sort as do_sort;
 
     #[test]
     fn sort_empty() {

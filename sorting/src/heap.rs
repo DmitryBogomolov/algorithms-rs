@@ -34,8 +34,8 @@ fn sink<T, F: FnMut(&T, &T) -> bool>(target: &mut [T], is_ord: &mut F, k: usize,
 
 #[cfg(test)]
 mod tests {
-    use super::sort as do_sort;
     use super::super::test_data;
+    use super::sort as do_sort;
 
     #[test]
     fn sort_empty() {
