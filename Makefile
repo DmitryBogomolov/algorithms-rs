@@ -16,4 +16,4 @@ clippy:
 
 .PHONY: test
 test:
-	@cargo test --all --verbose $(FILTER)
+	@cargo test --all $(FILTER)
