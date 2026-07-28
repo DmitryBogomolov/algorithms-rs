@@ -32,7 +32,7 @@ impl UnionFind {
     pub fn find(&self, i: usize) -> usize {
         self.validate(i);
         let mut k = i;
-        while self.roots[k] != k {
+        while k != self.roots[k] {
             k = self.roots[k]   
         }
         k
@@ -52,6 +52,18 @@ impl UnionFind {
         self.roots[child] = parent;
         self.sizes[parent] += self.sizes[child];
         self.count -= 1;
+    }
+
+    fn is_root(i: usize, roots: &[usize]) -> bool {
+        i == roots[i]
+    }
+
+    pub fn collapse(&mut self) {
+        for i in 0..self.roots.len() {
+            if !Self::is_root(i, &self.roots) && !Self::is_root(self.roots[i], &self.roots) {
+                self.roots[i] = self.find(i);
+            }
+        }
     }
 }
 
@@ -107,5 +119,20 @@ mod tests {
         assert_eq!(uf.size(), 5);
         assert_eq!(uf.count(), 1);
         assert_eq!(groups(&uf), vec![1, 1, 1, 1, 1]);
+    }
+
+    #[test]
+    fn collapse() {
+        let mut uf = UnionFind::new(5);
+
+        uf.union(0, 1);
+        uf.union(2, 3);
+        uf.union(1, 4);
+        uf.union(3, 0);
+        
+        uf.collapse();
+
+        assert_eq!(uf.count(), 1);
+        assert_eq!(groups(&uf), vec![0, 0, 0, 0, 0]);
     }
 }
