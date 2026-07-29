@@ -75,3 +75,7 @@ version = "0.1.0"
 dependencies = [
  "rand",
 ]
+
+[[package]]
+name = "unionfind"
+version = "0.1.0"
