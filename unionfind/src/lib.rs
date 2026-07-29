@@ -5,18 +5,6 @@ pub struct UnionFind {
     sizes: Vec<usize>,
 }
 
-fn is_root(i: usize, roots: &[usize]) -> bool {
-    i == roots[i]
-}
-
-fn get_root(i: usize, roots: &[usize]) -> usize {
-    let mut k = i;
-    while !is_root(k, roots) {
-        k = roots[k]
-    }
-    k
-}
-
 impl UnionFind {
     pub fn new(size: usize) -> UnionFind {
         UnionFind {
@@ -41,16 +29,28 @@ impl UnionFind {
         }
     }
 
+    fn is_root(&self, i: usize) -> bool {
+        i == self.roots[i]
+    }
+
+    fn get_root(&self, i: usize) -> usize {
+        let mut k = i;
+        while !self.is_root(k) {
+            k = self.roots[k]
+        }
+        k
+    }
+
     pub fn find(&self, i: usize) -> usize {
         self.validate(i);
-        get_root(i, &self.roots)
+        self.get_root(i)
     }
 
     pub fn union(&mut self, i: usize, j: usize) {
         self.validate(i);
         self.validate(j);
-        let i_root = get_root(i, &self.roots);
-        let j_root = get_root(j, &self.roots);
+        let i_root = self.get_root(i);
+        let j_root = self.get_root(j);
 
         let (child, parent) = if self.sizes[i_root] < self.sizes[j_root] {
             (i_root, j_root)
@@ -64,8 +64,8 @@ impl UnionFind {
 
     pub fn collapse(&mut self) {
         for i in 0..self.roots.len() {
-            if !is_root(i, &self.roots) && !is_root(self.roots[i], &self.roots) {
-                self.roots[i] = get_root(i, &self.roots);
+            if !self.is_root(i) && !self.is_root(self.roots[i]) {
+                self.roots[i] = self.get_root(i);
             }
         }
     }
