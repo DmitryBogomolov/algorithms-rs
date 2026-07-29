@@ -1,3 +1,5 @@
+// Union-Find implementation.
+// https://algs4.cs.princeton.edu/15uf/
 pub struct UnionFind {
     size: usize,
     count: usize,
