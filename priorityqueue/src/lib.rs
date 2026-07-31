@@ -82,6 +82,27 @@ impl<T, F: FnMut(&T, &T) -> bool> PriorityQueue<T, F> {
     }
 }
 
+impl<T, F: FnMut(&T, &T) -> bool> IntoIterator for PriorityQueue<T, F> {
+    type Item = T;
+    type IntoIter = IntoIter<T, F>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        IntoIter { pq: self }
+    }
+}
+
+pub struct IntoIter<T, F: FnMut(&T, &T) -> bool> {
+    pq: PriorityQueue<T, F>,
+}
+
+impl<T, F: FnMut(&T, &T) -> bool> Iterator for IntoIter<T, F> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.pq.remove()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::PriorityQueue;
@@ -149,5 +170,16 @@ mod tests {
 
         assert_eq!(pq.is_empty(), true);
         assert_eq!(pq.remove(), None);
+    }
+
+    #[test]
+    fn into_iter_drains_in_priority_order() {
+        let mut pq = PriorityQueue::new(|a, b| a > b);
+        for i in [4, 6, 4, 3, 8] {
+            pq.insert(i);
+        }
+
+        let collected: Vec<i32> = pq.into_iter().collect();
+        assert_eq!(collected, vec![3, 4, 4, 6, 8]);
     }
 }
