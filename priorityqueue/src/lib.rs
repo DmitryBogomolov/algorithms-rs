@@ -14,10 +14,9 @@ impl<T, F: FnMut(&T, &T) -> bool> PriorityQueue<T, F> {
     }
 
     pub fn with_capacity(is_ord: F, capacity: usize) -> PriorityQueue<T, F> {
-        PriorityQueue { 
-            items: Vec::with_capacity(capacity),
-            is_ord,
-        }
+        let mut pq = Self::new(is_ord);
+        pq.items.reserve(capacity);
+        pq
     }
 
     pub fn size(&self) -> usize {
@@ -83,21 +82,31 @@ impl<T, F: FnMut(&T, &T) -> bool> PriorityQueue<T, F> {
     }
 }
 
-impl<T: std::cmp::Ord> PriorityQueue<T, fn(&T, &T) -> bool> {
-    pub fn new_max() -> PriorityQueue<T, fn(&T, &T) -> bool> {
-        PriorityQueue::new(|a, b| a < b)
+type OrdPriorityQueue<T> = PriorityQueue<T, fn(&T, &T) -> bool>;
+
+impl<T: std::cmp::Ord> OrdPriorityQueue<T> {
+    fn lt(a: &T, b: &T) -> bool {
+        a < b
     }
 
-    pub fn new_min() -> PriorityQueue<T, fn(&T, &T) -> bool> {
-        PriorityQueue::new(|a, b| a > b)
+    fn gt(a: &T, b: &T) -> bool {
+        a > b
     }
 
-    pub fn max_with_capacity(capacity: usize) -> PriorityQueue<T, fn(&T, &T) -> bool> {
-        PriorityQueue::with_capacity(|a, b| a < b, capacity)
+    pub fn new_max() -> OrdPriorityQueue<T> {
+        PriorityQueue::new(Self::lt)
     }
 
-    pub fn min_with_capacity(capacity: usize) -> PriorityQueue<T, fn(&T, &T) -> bool> {
-        PriorityQueue::with_capacity(|a, b| a > b, capacity)
+    pub fn new_min() -> OrdPriorityQueue<T> {
+        PriorityQueue::new(Self::gt)
+    }
+
+    pub fn max_with_capacity(capacity: usize) -> OrdPriorityQueue<T> {
+        PriorityQueue::with_capacity(Self::lt, capacity)
+    }
+
+    pub fn min_with_capacity(capacity: usize) -> OrdPriorityQueue<T> {
+        PriorityQueue::with_capacity(Self::gt, capacity)
     }
 }
 
