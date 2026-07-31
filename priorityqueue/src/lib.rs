@@ -61,8 +61,9 @@ impl<T, F: FnMut(&T, &T) -> bool> PriorityQueue<T, F> {
     }
 
     pub fn insert(&mut self, element: T) {
+        let last = self.items.len();
         self.items.push(element);
-        self.swim(self.items.len() - 1);
+        self.swim(last);
     }
 
     pub fn peek(&self) -> Option<&T> {
@@ -79,6 +80,24 @@ impl<T, F: FnMut(&T, &T) -> bool> PriorityQueue<T, F> {
         let element = self.items.swap_remove(0);
         self.sink(0);
         Some(element)
+    }
+}
+
+impl<T: std::cmp::Ord> PriorityQueue<T, fn(&T, &T) -> bool> {
+    pub fn new_max() -> PriorityQueue<T, fn(&T, &T) -> bool> {
+        PriorityQueue::new(|a, b| a < b)
+    }
+
+    pub fn new_min() -> PriorityQueue<T, fn(&T, &T) -> bool> {
+        PriorityQueue::new(|a, b| a > b)
+    }
+
+    pub fn max_with_capacity(capacity: usize) -> PriorityQueue<T, fn(&T, &T) -> bool> {
+        PriorityQueue::with_capacity(|a, b| a < b, capacity)
+    }
+
+    pub fn min_with_capacity(capacity: usize) -> PriorityQueue<T, fn(&T, &T) -> bool> {
+        PriorityQueue::with_capacity(|a, b| a > b, capacity)
     }
 }
 
@@ -175,6 +194,28 @@ mod tests {
     #[test]
     fn into_iter_drains_in_priority_order() {
         let mut pq = PriorityQueue::new(|a, b| a > b);
+        for i in [4, 6, 4, 3, 8] {
+            pq.insert(i);
+        }
+
+        let collected: Vec<i32> = pq.into_iter().collect();
+        assert_eq!(collected, vec![3, 4, 4, 6, 8]);
+    }
+
+    #[test]
+    fn max_queue() {
+        let mut pq = PriorityQueue::new_max();
+        for i in [4, 6, 4, 3, 8] {
+            pq.insert(i);
+        }
+
+        let collected: Vec<i32> = pq.into_iter().collect();
+        assert_eq!(collected, vec![8, 6, 4, 4, 3]);
+    }
+
+    #[test]
+    fn min_queue() {
+        let mut pq = PriorityQueue::new_min();
         for i in [4, 6, 4, 3, 8] {
             pq.insert(i);
         }
