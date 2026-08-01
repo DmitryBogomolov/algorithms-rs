@@ -126,7 +126,7 @@ mod tests {
     #[test]
     fn empty() {
         let pq = PriorityQueue::<(), _>::new(|_, _| false);
-        assert_eq!(pq.is_empty(), true);
+        assert!(pq.is_empty());
         assert_eq!(pq.size(), 0);
         assert_eq!(pq.peek(), None);
     }
@@ -136,7 +136,7 @@ mod tests {
         let mut pq = PriorityQueue::new(|a, b| a < b);
 
         pq.insert(4);
-        assert_eq!(pq.is_empty(), false);
+        assert!(!pq.is_empty());
         assert_eq!(pq.size(), 1);
         assert_eq!(pq.peek(), Some(&4));
 
@@ -184,7 +184,7 @@ mod tests {
         assert_eq!(pq.remove(), Some(8));
         assert_eq!(pq.size(), 0);
 
-        assert_eq!(pq.is_empty(), true);
+        assert!(pq.is_empty());
         assert_eq!(pq.remove(), None);
     }
 
