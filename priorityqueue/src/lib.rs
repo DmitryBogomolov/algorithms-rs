@@ -78,6 +78,10 @@ impl<T, F: FnMut(&T, &T) -> bool> PriorityQueue<T, F> {
         self.sink(0);
         Some(element)
     }
+
+    pub fn clear(&mut self) {
+        self.items.clear();
+    }
 }
 
 impl<T: Ord> PriorityQueue<T, fn(&T, &T) -> bool> {
@@ -160,11 +164,9 @@ mod tests {
     #[test]
     fn remove() {
         let mut pq = PriorityQueue::new(|a, b| a > b);
-        pq.insert(4);
-        pq.insert(6);
-        pq.insert(4);
-        pq.insert(3);
-        pq.insert(8);
+        for i in [4, 6, 4, 3, 8] {
+            pq.insert(i);
+        }
 
         assert_eq!(pq.size(), 5);
         assert_eq!(pq.peek(), Some(&3));
@@ -186,6 +188,20 @@ mod tests {
 
         assert!(pq.is_empty());
         assert_eq!(pq.remove(), None);
+    }
+
+    #[test]
+    fn clear() {
+        let mut pq = PriorityQueue::new(|a, b| a > b);
+        for i in [4, 6, 4, 3, 8] {
+            pq.insert(i);
+        }
+
+        pq.clear();
+
+        assert!(pq.is_empty());
+        assert_eq!(pq.size(), 0);
+        assert_eq!(pq.peek(), None);
     }
 
     #[test]
