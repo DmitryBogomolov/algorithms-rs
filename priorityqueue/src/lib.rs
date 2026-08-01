@@ -6,14 +6,14 @@ pub struct PriorityQueue<T, F: FnMut(&T, &T) -> bool> {
 }
 
 impl<T, F: FnMut(&T, &T) -> bool> PriorityQueue<T, F> {
-    pub fn new(is_ord: F) -> PriorityQueue<T, F> {
-        PriorityQueue {
+    pub fn new(is_ord: F) -> Self {
+        Self {
             items: Vec::new(),
             is_ord,
         }
     }
 
-    pub fn with_capacity(is_ord: F, capacity: usize) -> PriorityQueue<T, F> {
+    pub fn with_capacity(is_ord: F, capacity: usize) -> Self {
         let mut pq = Self::new(is_ord);
         pq.items.reserve(capacity);
         pq
@@ -56,7 +56,7 @@ impl<T, F: FnMut(&T, &T) -> bool> PriorityQueue<T, F> {
             }
             items.swap(parent, child);
             child = parent;
-        }        
+        }
     }
 
     pub fn insert(&mut self, element: T) {
@@ -146,7 +146,7 @@ mod tests {
     #[test]
     fn add() {
         let mut pq = PriorityQueue::new(|a, b| a < b);
-        
+
         pq.insert(4);
         assert_eq!(pq.is_empty(), false);
         assert_eq!(pq.size(), 1);
