@@ -1,3 +1,6 @@
+use std::ops::{Deref, DerefMut};
+use std::cmp::Ord;
+
 // Implements *Priority Queue* container.
 // https://algs4.cs.princeton.edu/24pq/
 pub struct PriorityQueue<T, F: FnMut(&T, &T) -> bool> {
@@ -13,10 +16,8 @@ impl<T, F: FnMut(&T, &T) -> bool> PriorityQueue<T, F> {
         }
     }
 
-    pub fn with_capacity(is_ord: F, capacity: usize) -> Self {
-        let mut pq = Self::new(is_ord);
-        pq.items.reserve(capacity);
-        pq
+    pub fn reserve(&mut self, capacity: usize) {
+        self.items.reserve(capacity);
     }
 
     pub fn size(&self) -> usize {
@@ -82,31 +83,54 @@ impl<T, F: FnMut(&T, &T) -> bool> PriorityQueue<T, F> {
     }
 }
 
-type OrdPriorityQueue<T> = PriorityQueue<T, fn(&T, &T) -> bool>;
+pub struct MaxPriorityQueue<T: Ord>(PriorityQueue<T, fn(&T, &T) -> bool>);
+pub struct MinPriorityQueue<T: Ord>(PriorityQueue<T, fn(&T, &T) -> bool>);
 
-impl<T: std::cmp::Ord> OrdPriorityQueue<T> {
+impl<T: Ord> MaxPriorityQueue<T> {
     fn lt(a: &T, b: &T) -> bool {
         a < b
     }
 
+    pub fn new() -> Self {
+        Self(PriorityQueue::new(Self::lt))
+    }
+}
+
+impl<T: Ord> MinPriorityQueue<T> {
     fn gt(a: &T, b: &T) -> bool {
         a > b
     }
 
-    pub fn new_max() -> OrdPriorityQueue<T> {
-        PriorityQueue::new(Self::lt)
+    pub fn new() -> Self {
+        Self(PriorityQueue::new(Self::gt))
     }
+}
 
-    pub fn new_min() -> OrdPriorityQueue<T> {
-        PriorityQueue::new(Self::gt)
+impl<T: Ord> Deref for MaxPriorityQueue<T> {
+    type Target = PriorityQueue<T, fn(&T, &T) -> bool>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
+}
 
-    pub fn max_with_capacity(capacity: usize) -> OrdPriorityQueue<T> {
-        PriorityQueue::with_capacity(Self::lt, capacity)
+impl<T: Ord> Deref for MinPriorityQueue<T> {
+    type Target = PriorityQueue<T, fn(&T, &T) -> bool>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
+}
 
-    pub fn min_with_capacity(capacity: usize) -> OrdPriorityQueue<T> {
-        PriorityQueue::with_capacity(Self::gt, capacity)
+impl<T: Ord> DerefMut for MaxPriorityQueue<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
+impl<T: Ord> DerefMut for MinPriorityQueue<T> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
     }
 }
 
@@ -116,6 +140,24 @@ impl<T, F: FnMut(&T, &T) -> bool> IntoIterator for PriorityQueue<T, F> {
 
     fn into_iter(self) -> Self::IntoIter {
         IntoIter { pq: self }
+    }
+}
+
+impl<T: Ord> IntoIterator for MaxPriorityQueue<T> {
+    type Item = T;
+    type IntoIter = IntoIter<T, fn(&T, &T) -> bool>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        IntoIter { pq: self.0 }
+    }
+}
+
+impl<T: Ord> IntoIterator for MinPriorityQueue<T> {
+    type Item = T;
+    type IntoIter = IntoIter<T, fn(&T, &T) -> bool>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        IntoIter { pq: self.0 }
     }
 }
 
@@ -133,7 +175,7 @@ impl<T, F: FnMut(&T, &T) -> bool> Iterator for IntoIter<T, F> {
 
 #[cfg(test)]
 mod tests {
-    use super::PriorityQueue;
+    use super::{PriorityQueue, MaxPriorityQueue, MinPriorityQueue};
 
     #[test]
     fn empty() {
@@ -213,7 +255,7 @@ mod tests {
 
     #[test]
     fn max_queue() {
-        let mut pq = PriorityQueue::new_max();
+        let mut pq = MaxPriorityQueue::new();
         for i in [4, 6, 4, 3, 8] {
             pq.insert(i);
         }
@@ -224,7 +266,7 @@ mod tests {
 
     #[test]
     fn min_queue() {
-        let mut pq = PriorityQueue::new_min();
+        let mut pq = MinPriorityQueue::new();
         for i in [4, 6, 4, 3, 8] {
             pq.insert(i);
         }
