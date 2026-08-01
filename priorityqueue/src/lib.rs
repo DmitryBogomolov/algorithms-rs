@@ -1,6 +1,3 @@
-use std::ops::{Deref, DerefMut};
-use std::cmp::Ord;
-
 // Implements *Priority Queue* container.
 // https://algs4.cs.princeton.edu/24pq/
 pub struct PriorityQueue<T, F: FnMut(&T, &T) -> bool> {
@@ -83,54 +80,21 @@ impl<T, F: FnMut(&T, &T) -> bool> PriorityQueue<T, F> {
     }
 }
 
-pub struct MaxPriorityQueue<T: Ord>(PriorityQueue<T, fn(&T, &T) -> bool>);
-pub struct MinPriorityQueue<T: Ord>(PriorityQueue<T, fn(&T, &T) -> bool>);
-
-impl<T: Ord> MaxPriorityQueue<T> {
+impl<T: Ord> PriorityQueue<T, fn(&T, &T) -> bool> {
     fn lt(a: &T, b: &T) -> bool {
         a < b
     }
 
-    pub fn new() -> Self {
-        Self(PriorityQueue::new(Self::lt))
-    }
-}
-
-impl<T: Ord> MinPriorityQueue<T> {
     fn gt(a: &T, b: &T) -> bool {
         a > b
     }
 
-    pub fn new() -> Self {
-        Self(PriorityQueue::new(Self::gt))
+    pub fn new_max() -> Self {
+        Self::new(Self::lt)
     }
-}
 
-impl<T: Ord> Deref for MaxPriorityQueue<T> {
-    type Target = PriorityQueue<T, fn(&T, &T) -> bool>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<T: Ord> Deref for MinPriorityQueue<T> {
-    type Target = PriorityQueue<T, fn(&T, &T) -> bool>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.0
-    }
-}
-
-impl<T: Ord> DerefMut for MaxPriorityQueue<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
-    }
-}
-
-impl<T: Ord> DerefMut for MinPriorityQueue<T> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.0
+    pub fn new_min() -> Self {
+        Self::new(Self::gt)
     }
 }
 
@@ -140,24 +104,6 @@ impl<T, F: FnMut(&T, &T) -> bool> IntoIterator for PriorityQueue<T, F> {
 
     fn into_iter(self) -> Self::IntoIter {
         IntoIter { pq: self }
-    }
-}
-
-impl<T: Ord> IntoIterator for MaxPriorityQueue<T> {
-    type Item = T;
-    type IntoIter = IntoIter<T, fn(&T, &T) -> bool>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        IntoIter { pq: self.0 }
-    }
-}
-
-impl<T: Ord> IntoIterator for MinPriorityQueue<T> {
-    type Item = T;
-    type IntoIter = IntoIter<T, fn(&T, &T) -> bool>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        IntoIter { pq: self.0 }
     }
 }
 
@@ -175,7 +121,7 @@ impl<T, F: FnMut(&T, &T) -> bool> Iterator for IntoIter<T, F> {
 
 #[cfg(test)]
 mod tests {
-    use super::{PriorityQueue, MaxPriorityQueue, MinPriorityQueue};
+    use super::PriorityQueue;
 
     #[test]
     fn empty() {
@@ -255,7 +201,7 @@ mod tests {
 
     #[test]
     fn max_queue() {
-        let mut pq = MaxPriorityQueue::new();
+        let mut pq = PriorityQueue::new_max();
         for i in [4, 6, 4, 3, 8] {
             pq.insert(i);
         }
@@ -266,7 +212,7 @@ mod tests {
 
     #[test]
     fn min_queue() {
-        let mut pq = MinPriorityQueue::new();
+        let mut pq = PriorityQueue::new_min();
         for i in [4, 6, 4, 3, 8] {
             pq.insert(i);
         }
