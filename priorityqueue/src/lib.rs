@@ -132,7 +132,7 @@ mod tests {
     }
 
     #[test]
-    fn add() {
+    fn insert() {
         let mut pq = PriorityQueue::new(|a, b| a < b);
 
         pq.insert(4);
@@ -219,5 +219,23 @@ mod tests {
 
         let collected: Vec<i32> = pq.into_iter().collect();
         assert_eq!(collected, vec![3, 4, 4, 6, 8]);
+    }
+
+    #[test]
+    fn custom_struct() {
+        #[derive(Eq, PartialEq, Debug)]
+        struct Tester {
+            val: i32,
+        }
+        let mut pq = PriorityQueue::new(|a: &Tester, b: &Tester| a.val > b.val);
+        for i in [4, 6, 4, 3, 8] {
+            pq.insert(Tester { val: i });
+        }
+
+        assert_eq!(pq.remove().unwrap(), Tester { val: 3 });
+        assert_eq!(pq.remove().unwrap(), Tester { val: 4 });
+        assert_eq!(pq.remove().unwrap(), Tester { val: 4 });
+        assert_eq!(pq.remove().unwrap(), Tester { val: 6 });
+        assert_eq!(pq.remove().unwrap(), Tester { val: 8 });
     }
 }
