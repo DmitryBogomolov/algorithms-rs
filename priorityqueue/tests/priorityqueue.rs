@@ -34,12 +34,18 @@ fn insert() {
     assert_eq!(pq.peek(), Some(&9));
 }
 
+fn seed<T, F, I>(mut pq: PriorityQueue<T, F>, items: I) -> PriorityQueue<T, F>
+where
+    F: FnMut(&T, &T) -> bool,
+    I: IntoIterator<Item = T>,
+{
+    items.into_iter().for_each(|i| pq.insert(i));
+    pq
+}
+
 #[test]
 fn remove() {
-    let mut pq = PriorityQueue::new(|a, b| a > b);
-    for i in [4, 6, 4, 3, 8] {
-        pq.insert(i);
-    }
+    let mut pq = seed(PriorityQueue::new(|a, b| a > b), [4, 6, 4, 3, 8]);
 
     assert_eq!(pq.size(), 5);
     assert_eq!(pq.peek(), Some(&3));
@@ -65,10 +71,7 @@ fn remove() {
 
 #[test]
 fn clear() {
-    let mut pq = PriorityQueue::new(|a, b| a > b);
-    for i in [4, 6, 4, 3, 8] {
-        pq.insert(i);
-    }
+    let mut pq = seed(PriorityQueue::new(|a, b| a > b), [4, 6, 4, 3, 8]);
 
     pq.clear();
 
@@ -79,10 +82,7 @@ fn clear() {
 
 #[test]
 fn into_iter() {
-    let mut pq = PriorityQueue::new(|a, b| a > b);
-    for i in [4, 6, 4, 3, 8] {
-        pq.insert(i);
-    }
+    let pq = seed(PriorityQueue::new(|a, b| a > b), [4, 6, 4, 3, 8]);
 
     let collected: Vec<i32> = pq.into_iter().collect();
     assert_eq!(collected, vec![3, 4, 4, 6, 8]);
@@ -90,10 +90,7 @@ fn into_iter() {
 
 #[test]
 fn max_queue() {
-    let mut pq = PriorityQueue::new_max();
-    for i in [4, 6, 4, 3, 8] {
-        pq.insert(i);
-    }
+    let pq = seed(PriorityQueue::new_max(), [4, 6, 4, 3, 8]);
 
     let collected: Vec<i32> = pq.into();
     assert_eq!(collected, vec![8, 6, 4, 4, 3]);
@@ -101,10 +98,7 @@ fn max_queue() {
 
 #[test]
 fn min_queue() {
-    let mut pq = PriorityQueue::new_min();
-    for i in [4, 6, 4, 3, 8] {
-        pq.insert(i);
-    }
+    let pq = seed(PriorityQueue::new_min(), [4, 6, 4, 3, 8]);
 
     let collected: Vec<i32> = pq.into();
     assert_eq!(collected, vec![3, 4, 4, 6, 8]);
@@ -117,9 +111,9 @@ fn custom_struct() {
         val: i32,
     }
     let mut pq = PriorityQueue::new(|a: &Tester, b: &Tester| a.val > b.val);
-    for i in [4, 6, 4, 3, 8] {
-        pq.insert(Tester { val: i });
-    }
+    [4, 6, 4, 3, 8]
+        .into_iter()
+        .for_each(|i| pq.insert(Tester { val: i }));
 
     assert_eq!(pq.remove().unwrap(), Tester { val: 3 });
     assert_eq!(pq.remove().unwrap(), Tester { val: 4 });
