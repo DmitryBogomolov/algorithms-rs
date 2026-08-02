@@ -95,7 +95,7 @@ fn max_queue() {
         pq.insert(i);
     }
 
-    let collected: Vec<i32> = pq.into_iter().collect();
+    let collected: Vec<i32> = pq.into();
     assert_eq!(collected, vec![8, 6, 4, 4, 3]);
 }
 
@@ -106,7 +106,7 @@ fn min_queue() {
         pq.insert(i);
     }
 
-    let collected: Vec<i32> = pq.into_iter().collect();
+    let collected: Vec<i32> = pq.into();
     assert_eq!(collected, vec![3, 4, 4, 6, 8]);
 }
 
