@@ -107,6 +107,7 @@ impl<T, F: FnMut(&T, &T) -> bool> IndexPriorityQueue<T, F> {
 
     pub fn clear(&mut self) {
         self.heap.clear();
+        self.idx.clear();
     }
 
     pub fn peek_idx(&self, idx: usize) -> Option<&(usize, T)> {
