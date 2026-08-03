@@ -17,22 +17,54 @@ fn insert() {
     assert!(!pq.is_empty());
     assert_eq!(pq.size(), 1);
     assert_eq!(pq.peek(), Some(&(100, 4)));
+    assert_eq!(pq.peek_idx(100), Some(&(100, 4)));
 
     pq.insert((200, 7));
     assert_eq!(pq.size(), 2);
     assert_eq!(pq.peek(), Some(&(200, 7)));
+    assert_eq!(pq.peek_idx(200), Some(&(200, 7)));
+    assert_eq!(pq.peek_idx(100), Some(&(100, 4)));
 
     pq.insert((300, 2));
     assert_eq!(pq.size(), 3);
     assert_eq!(pq.peek(), Some(&(200, 7)));
+    assert_eq!(pq.peek_idx(300), Some(&(300, 2)));
+    assert_eq!(pq.peek_idx(200), Some(&(200, 7)));
+
 
     pq.insert((400, 7));
     assert_eq!(pq.size(), 4);
     assert_eq!(pq.peek(), Some(&(200, 7)));
+    assert_eq!(pq.peek_idx(200), Some(&(200, 7)));
+    assert_eq!(pq.peek_idx(300), Some(&(300, 2)));
 
     pq.insert((500, 9));
     assert_eq!(pq.size(), 5);
     assert_eq!(pq.peek(), Some(&(500, 9)));
+    assert_eq!(pq.peek_idx(500), Some(&(500, 9)));
+    assert_eq!(pq.peek_idx(100), Some(&(100, 4)));
+}
+
+#[test]
+fn insert_update() {
+    let mut pq = IndexPriorityQueue::new(|a, b| a < b);
+
+    pq.insert((100, 4));
+    pq.insert((200, 7));
+    pq.insert((300, 2));
+    assert_eq!(pq.size(), 3);
+
+    pq.insert((300, 1));
+    assert_eq!(pq.size(), 3);
+    assert_eq!(pq.peek(), Some(&(200, 7)));
+
+    pq.insert((200, 8));
+    assert_eq!(pq.size(), 3);
+    assert_eq!(pq.peek(), Some(&(200, 8)));
+
+    pq.insert((100, 9));
+    assert_eq!(pq.size(), 3);
+    assert_eq!(pq.peek(), Some(&(100, 9)));
 }
 
 fn seed<T, F, I>(mut pq: IndexPriorityQueue<T, F>, items: I) -> IndexPriorityQueue<T, F>
@@ -53,18 +85,23 @@ fn remove() {
 
     assert_eq!(pq.remove(), Some((400, 3)));
     assert_eq!(pq.size(), 4);
+    assert_eq!(pq.peek_idx(400), None);
 
     assert_eq!(pq.remove(), Some((100, 4)));
     assert_eq!(pq.size(), 3);
+    assert_eq!(pq.peek_idx(!00), None);
 
     assert_eq!(pq.remove(), Some((300, 4)));
     assert_eq!(pq.size(), 2);
+    assert_eq!(pq.peek_idx(300), None);
 
     assert_eq!(pq.remove(), Some((200, 6)));
     assert_eq!(pq.size(), 1);
+    assert_eq!(pq.peek_idx(200), None);
 
     assert_eq!(pq.remove(), Some((500, 8)));
     assert_eq!(pq.size(), 0);
+    assert_eq!(pq.peek_idx(500), None);
 
     assert!(pq.is_empty());
     assert_eq!(pq.remove(), None);
@@ -121,4 +158,17 @@ fn custom_struct() {
     assert_eq!(pq.remove().unwrap(), (300, Tester { val: 4 }));
     assert_eq!(pq.remove().unwrap(), (200, Tester { val: 6 }));
     assert_eq!(pq.remove().unwrap(), (500, Tester { val: 8 }));
+}
+
+#[test]
+fn remove_idx() {
+    let mut pq = seed(IndexPriorityQueue::new(|a, b| a > b), [(100, 4), (200, 6), (300, 4), (400, 3), (500, 8)]);   
+
+    assert_eq!(pq.remove_idx(500), Some((500, 8)));
+    assert_eq!(pq.remove_idx(100), Some((100, 4)));
+    assert_eq!(pq.remove_idx(600), None);
+    assert_eq!(pq.remove_idx(400), Some((400, 3)));
+    assert_eq!(pq.remove_idx(200), Some((200, 6)));
+    assert_eq!(pq.remove_idx(300), Some((300, 4)));
+    assert_eq!(pq.remove_idx(200), None);
 }
