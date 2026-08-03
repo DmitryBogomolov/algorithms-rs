@@ -1,19 +1,27 @@
+use std::borrow::Borrow;
 use std::collections::HashMap;
+use std::hash::Hash;
 
 // Implements *Index Priority Queue* container.
 // https://algs4.cs.princeton.edu/24pq/
-pub struct IndexPriorityQueue<T, F: FnMut(&T, &T) -> bool> {
-    heap: Vec<(usize, T)>,
-    idx: HashMap<usize, usize>,
+pub struct IndexPriorityQueue<K, T, F>
+where
+    K: Hash + Eq + Clone,
+    F: FnMut(&T, &T) -> bool,
+{
+    heap: Vec<(K, T)>,
+    idx: HashMap<K, usize>,
     is_ord: F,
 }
 
-// TODO: generic key
-// TODO: Borrow for _idx methods
-// TODO: ref in idx.key
+// TODO: ref in idx.key (no Clone)
 // TODO: copypaste?
 
-impl<T, F: FnMut(&T, &T) -> bool> IndexPriorityQueue<T, F> {
+impl<K, T, F> IndexPriorityQueue<K, T, F>
+where
+    K: Hash + Eq + Clone,
+    F: FnMut(&T, &T) -> bool,
+{
     pub fn new(is_ord: F) -> Self {
         Self {
             heap: Vec::new(),
@@ -69,37 +77,34 @@ impl<T, F: FnMut(&T, &T) -> bool> IndexPriorityQueue<T, F> {
         }
     }
 
-    pub fn insert(&mut self, element: (usize, T)) {
-        let k = self.idx.get(&element.0);
-        if k.is_none() {
-            let k = self.heap.len();
-            self.heap.push(element);
-            self.idx.insert(self.heap[k].0, k);
+    pub fn insert(&mut self, element: (K, T)) {
+        if let Some(&k) = self.idx.get(&element.0) {
+            self.heap[k] = element;
+            self.sink(k);
             self.swim(k);
         } else {
-            let k = *k.unwrap();
-            self.heap[k] = element;
-            self.idx.insert(self.heap[k].0, k);
-            self.sink(k);
+            let k = self.heap.len();
+            self.heap.push(element);
+            self.idx.insert(self.heap[k].0.clone(), k);
             self.swim(k);
         }
     }
 
-    pub fn peek(&self) -> Option<&(usize, T)> {
+    pub fn peek(&self) -> Option<&(K, T)> {
         if self.heap.is_empty() {
             return None;
         }
         Some(&self.heap[0])
     }
 
-    pub fn remove(&mut self) -> Option<(usize, T)> {
+    pub fn remove(&mut self) -> Option<(K, T)> {
         if self.heap.is_empty() {
             return None;
         }
         self.idx.remove(&self.heap[0].0);
         let element = self.heap.swap_remove(0);
-        if self.heap.len() > 0 {
-            self.idx.insert(self.heap[0].0, 0);
+        if !self.heap.is_empty() {
+            self.idx.insert(self.heap[0].0.clone(), 0);
             self.sink(0);
         }
         Some(element)
@@ -110,22 +115,25 @@ impl<T, F: FnMut(&T, &T) -> bool> IndexPriorityQueue<T, F> {
         self.idx.clear();
     }
 
-    pub fn peek_idx(&self, idx: usize) -> Option<&(usize, T)> {
-        let Some(k) = self.idx.get(&idx) else {
-            return None;
-        };
+    pub fn peek_idx<Q>(&self, idx: &Q) -> Option<&(K, T)>
+    where
+        K: Borrow<Q>,
+        Q: ?Sized + Hash + Eq,
+    {
+        let k = self.idx.get(idx)?;
         Some(&self.heap[*k])
     }
 
-    pub fn remove_idx(&mut self, idx: usize) -> Option<(usize, T)> {
-        let Some(k) = self.idx.get(&idx) else {
-            return None;
-        };
-        let k = *k;
-        self.idx.remove(&self.heap[k].0);
+    pub fn remove_idx<Q>(&mut self, idx: &Q) -> Option<(K, T)>
+    where
+        K: Borrow<Q>,
+        Q: ?Sized + Hash + Eq,
+    {
+        let k = *self.idx.get(idx)?;
+        self.idx.remove(self.heap[k].0.borrow());
         let element = self.heap.swap_remove(k);
         if k < self.heap.len() {
-            self.idx.insert(self.heap[k].0, k);
+            self.idx.insert(self.heap[k].0.clone(), k);
             self.sink(k);
             self.swim(k);
         }
@@ -133,20 +141,18 @@ impl<T, F: FnMut(&T, &T) -> bool> IndexPriorityQueue<T, F> {
     }
 }
 
-fn swap<T>(list: &mut Vec<(usize, T)>, idx: &mut HashMap<usize, usize>, i: usize, j: usize) {
+fn swap<K: Hash + Eq, T>(list: &mut Vec<(K, T)>, idx: &mut HashMap<K, usize>, i: usize, j: usize) {
     if i == j {
         return;
     }
-    let key_i = list[i].0;
-    let key_j = list[j].0;
+    let (key_i, pos_i) = idx.remove_entry(&list[i].0).unwrap();
+    let (key_j, pos_j) = idx.remove_entry(&list[j].0).unwrap();
     list.swap(i, j);
-    let idx_i = idx.remove(&key_i).unwrap();
-    let idx_j = idx.remove(&key_j).unwrap();
-    idx.insert(key_i, idx_j);
-    idx.insert(key_j, idx_i);
+    idx.insert(key_j, pos_i);
+    idx.insert(key_i, pos_j);
 }
 
-impl<T: Ord> IndexPriorityQueue<T, fn(&T, &T) -> bool> {
+impl<K: Hash + Eq + Clone, T: Ord> IndexPriorityQueue<K, T, fn(&T, &T) -> bool> {
     fn lt(a: &T, b: &T) -> bool {
         a < b
     }
@@ -164,29 +170,45 @@ impl<T: Ord> IndexPriorityQueue<T, fn(&T, &T) -> bool> {
     }
 }
 
-impl<T, F: FnMut(&T, &T) -> bool> IntoIterator for IndexPriorityQueue<T, F> {
-    type Item = (usize, T);
-    type IntoIter = IntoIter<T, F>;
+impl<K, T, F> IntoIterator for IndexPriorityQueue<K, T, F>
+where
+    K: Hash + Eq + Clone,
+    F: FnMut(&T, &T) -> bool,
+{
+    type Item = (K, T);
+    type IntoIter = IntoIter<K, T, F>;
 
     fn into_iter(self) -> Self::IntoIter {
         IntoIter { pq: self }
     }
 }
 
-pub struct IntoIter<T, F: FnMut(&T, &T) -> bool> {
-    pq: IndexPriorityQueue<T, F>,
+pub struct IntoIter<K, T, F>
+where
+    K: Hash + Eq + Clone,
+    F: FnMut(&T, &T) -> bool,
+{
+    pq: IndexPriorityQueue<K, T, F>,
 }
 
-impl<T, F: FnMut(&T, &T) -> bool> Iterator for IntoIter<T, F> {
-    type Item = (usize, T);
+impl<K, T, F> Iterator for IntoIter<K, T, F>
+where
+    K: Hash + Eq + Clone,
+    F: FnMut(&T, &T) -> bool,
+{
+    type Item = (K, T);
 
     fn next(&mut self) -> Option<Self::Item> {
         self.pq.remove()
     }
 }
 
-impl<T, F: FnMut(&T, &T) -> bool> From<IndexPriorityQueue<T, F>> for Vec<(usize, T)> {
-    fn from(pq: IndexPriorityQueue<T, F>) -> Self {
+impl<K, T, F> From<IndexPriorityQueue<K, T, F>> for Vec<(K, T)>
+where
+    K: Hash + Eq + Clone,
+    F: FnMut(&T, &T) -> bool,
+{
+    fn from(pq: IndexPriorityQueue<K, T, F>) -> Self {
         pq.into_iter().collect()
     }
 }
