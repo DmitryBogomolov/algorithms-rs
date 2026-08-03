@@ -26,33 +26,33 @@ impl<T, F: FnMut(&T, &T) -> bool> PriorityQueue<T, F> {
     }
 
     fn sink(&mut self, i: usize) {
-        let items = &mut self.heap;
-        let len = items.len();
+        let heap = &mut self.heap;
+        let len = heap.len();
         let is_ord = &mut self.is_ord;
         let mut parent = i;
         loop {
             let mut child = 2 * parent + 1;
-            if child + 1 < len && is_ord(&items[child], &items[child + 1]) {
+            if child + 1 < len && is_ord(&heap[child], &heap[child + 1]) {
                 child += 1;
             }
-            if child >= len || !is_ord(&items[parent], &items[child]) {
+            if child >= len || !is_ord(&heap[parent], &heap[child]) {
                 break;
             }
-            items.swap(parent, child);
+            heap.swap(parent, child);
             parent = child;
         }
     }
 
     fn swim(&mut self, i: usize) {
-        let items = &mut self.heap;
+        let heap = &mut self.heap;
         let is_ord = &mut self.is_ord;
         let mut child = i;
         while child > 0 {
             let parent = (child - 1) / 2;
-            if !is_ord(&items[parent], &items[child]) {
+            if !is_ord(&heap[parent], &heap[child]) {
                 break;
             }
-            items.swap(parent, child);
+            heap.swap(parent, child);
             child = parent;
         }
     }
