@@ -31,7 +31,6 @@ fn insert() {
     assert_eq!(pq.peek_idx(&'c'), Some(&('c', 2)));
     assert_eq!(pq.peek_idx(&'b'), Some(&('b', 7)));
 
-
     pq.insert(('d', 7));
     assert_eq!(pq.size(), 4);
     assert_eq!(pq.peek(), Some(&('b', 7)));
@@ -79,7 +78,10 @@ where
 
 #[test]
 fn remove() {
-    let mut pq = seed(IndexPriorityQueue::new(|a, b| a > b), [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)]);
+    let mut pq = seed(
+        IndexPriorityQueue::new(|a, b| a > b),
+        [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
+    );
 
     assert_eq!(pq.size(), 5);
     assert_eq!(pq.peek(), Some(&('d', 3)));
@@ -110,7 +112,10 @@ fn remove() {
 
 #[test]
 fn clear() {
-    let mut pq = seed(IndexPriorityQueue::new(|a, b| a > b), [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)]);
+    let mut pq = seed(
+        IndexPriorityQueue::new(|a, b| a > b),
+        [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
+    );
 
     pq.clear();
 
@@ -121,26 +126,44 @@ fn clear() {
 
 #[test]
 fn into_iter() {
-    let pq = seed(IndexPriorityQueue::new(|a, b| a > b), [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)]);
+    let pq = seed(
+        IndexPriorityQueue::new(|a, b| a > b),
+        [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
+    );
 
     let collected: Vec<(char, i32)> = pq.into_iter().collect();
-    assert_eq!(collected, vec![('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]);
+    assert_eq!(
+        collected,
+        vec![('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]
+    );
 }
 
 #[test]
 fn max_queue() {
-    let pq = seed(IndexPriorityQueue::new_max(), [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)]);
+    let pq = seed(
+        IndexPriorityQueue::new_max(),
+        [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
+    );
 
     let collected: Vec<(char, i32)> = pq.into();
-    assert_eq!(collected, vec![('e', 8), ('b', 6), ('a', 4), ('c', 4), ('d', 3)]);
+    assert_eq!(
+        collected,
+        vec![('e', 8), ('b', 6), ('a', 4), ('c', 4), ('d', 3)]
+    );
 }
 
 #[test]
 fn min_queue() {
-    let pq = seed(IndexPriorityQueue::new_min(), [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)]);
+    let pq = seed(
+        IndexPriorityQueue::new_min(),
+        [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
+    );
 
     let collected: Vec<(char, i32)> = pq.into();
-    assert_eq!(collected, vec![('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]);
+    assert_eq!(
+        collected,
+        vec![('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]
+    );
 }
 
 #[test]
@@ -163,7 +186,10 @@ fn custom_struct() {
 
 #[test]
 fn remove_idx() {
-    let mut pq = seed(IndexPriorityQueue::new(|a, b| a > b), [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)]);
+    let mut pq = seed(
+        IndexPriorityQueue::new(|a, b| a > b),
+        [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
+    );
 
     assert_eq!(pq.remove_idx(&'e'), Some(('e', 8)));
     assert_eq!(pq.remove_idx(&'a'), Some(('a', 4)));

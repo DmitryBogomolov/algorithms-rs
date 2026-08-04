@@ -132,7 +132,7 @@ where
     }
 }
 
-fn swap<K: Hash + Eq, T>(list: &mut Vec<(K, T)>, idx: &mut HashMap<K, usize>, i: usize, j: usize) {
+fn swap<K: Hash + Eq, T>(list: &mut [(K, T)], idx: &mut HashMap<K, usize>, i: usize, j: usize) {
     if i == j {
         return;
     }
@@ -196,8 +196,8 @@ where
 
 impl<K, T, F> ExactSizeIterator for IntoIter<K, T, F>
 where
-      K: Hash + Eq + Clone,
-      F: FnMut(&T, &T) -> bool,
+    K: Hash + Eq + Clone,
+    F: FnMut(&T, &T) -> bool,
 {
 }
 
@@ -210,4 +210,3 @@ where
         pq.into_iter().collect()
     }
 }
-

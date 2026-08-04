@@ -122,7 +122,6 @@ impl<T, F: FnMut(&T, &T) -> bool> Iterator for IntoIter<T, F> {
 
 impl<T, F: FnMut(&T, &T) -> bool> ExactSizeIterator for IntoIter<T, F> {}
 
-
 impl<T, F: FnMut(&T, &T) -> bool> From<PriorityQueue<T, F>> for Vec<T> {
     fn from(pq: PriorityQueue<T, F>) -> Self {
         pq.into_iter().collect()
