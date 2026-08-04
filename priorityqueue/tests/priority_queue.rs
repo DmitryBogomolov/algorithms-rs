@@ -89,11 +89,40 @@ fn into_iter() {
 }
 
 #[test]
+fn drain_full() {
+    let mut pq = seed(PriorityQueue::new(|a, b| a > b), [4, 6, 4, 3, 8]);
+
+    let collected: Vec<i32> = pq.drain().collect();
+    assert_eq!(collected, [3, 4, 4, 6, 8]);
+    assert!(pq.is_empty());
+}
+
+#[test]
+fn drain_partial() {
+    let mut pq = seed(PriorityQueue::new(|a, b| a > b), [4, 6, 4, 3, 8]);
+
+    let collected: Vec<i32> = pq.drain().take(2).collect();
+    assert_eq!(collected, vec![3, 4]);
+    assert_eq!(pq.len(), 3);
+    assert_eq!(pq.remove(), Some(4));
+    assert_eq!(pq.remove(), Some(6));
+    assert_eq!(pq.remove(), Some(8));
+}
+
+#[test]
+fn drain_empty() {
+    let mut pq: PriorityQueue<i32, _> = PriorityQueue::new(|a, b| a < b);
+
+    let collected: Vec<i32> = pq.drain().collect();
+    assert_eq!(collected, []);
+}
+
+#[test]
 fn max_queue() {
     let pq = seed(PriorityQueue::new_max(), [4, 6, 4, 3, 8]);
 
     let collected: Vec<i32> = pq.into();
-    assert_eq!(collected, vec![8, 6, 4, 4, 3]);
+    assert_eq!(collected, [8, 6, 4, 4, 3]);
 }
 
 #[test]
@@ -101,7 +130,7 @@ fn min_queue() {
     let pq = seed(PriorityQueue::new_min(), [4, 6, 4, 3, 8]);
 
     let collected: Vec<i32> = pq.into();
-    assert_eq!(collected, vec![3, 4, 4, 6, 8]);
+    assert_eq!(collected, [3, 4, 4, 6, 8]);
 }
 
 #[test]

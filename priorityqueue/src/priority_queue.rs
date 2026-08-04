@@ -85,6 +85,10 @@ where
     pub fn clear(&mut self) {
         self.heap.clear();
     }
+
+    pub fn drain(&mut self) -> Drain<'_, T, F> {
+        Drain { pq: self }
+    }
 }
 
 impl<T: Ord> PriorityQueue<T, fn(&T, &T) -> bool> {
@@ -150,3 +154,28 @@ where
         pq.into_iter().collect()
     }
 }
+
+pub struct Drain<'a, T, F>
+where
+    F: FnMut(&T, &T) -> bool + 'a,
+{
+    pq: &'a mut PriorityQueue<T, F>,
+}
+
+impl<T, F> Iterator for Drain<'_, T, F>
+where
+    F: FnMut(&T, &T) -> bool,
+{
+    type Item = T;
+
+    fn next(&mut self) -> Option<T> {
+        self.pq.remove()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let n = self.pq.len();
+        (n, Some(n))
+    }
+}
+
+impl<T, F: FnMut(&T, &T) -> bool> ExactSizeIterator for Drain<'_, T, F> {}

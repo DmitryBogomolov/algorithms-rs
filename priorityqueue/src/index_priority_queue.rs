@@ -130,6 +130,10 @@ where
         }
         Some(element)
     }
+
+    pub fn drain(&mut self) -> Drain<'_, K, T, F> {
+        Drain { pq: self }
+    }
 }
 
 fn swap<K: Hash + Eq, T>(list: &mut [(K, T)], idx: &mut HashMap<K, usize>, i: usize, j: usize) {
@@ -214,4 +218,36 @@ where
     fn from(pq: IndexPriorityQueue<K, T, F>) -> Self {
         pq.into_iter().collect()
     }
+}
+
+pub struct Drain<'a, K, T, F>
+where
+    K: Hash + Eq + Clone,
+    F: FnMut(&T, &T) -> bool + 'a,
+{
+    pq: &'a mut IndexPriorityQueue<K, T, F>,
+}
+
+impl<K, T, F> Iterator for Drain<'_, K, T, F>
+where
+    K: Hash + Eq + Clone,
+    F: FnMut(&T, &T) -> bool,
+{
+    type Item = (K, T);
+
+    fn next(&mut self) -> Option<(K, T)> {
+        self.pq.remove()
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let n = self.pq.len();
+        (n, Some(n))
+    }
+}
+
+impl<K, T, F> ExactSizeIterator for Drain<'_, K, T, F>
+where
+    K: Hash + Eq + Clone,
+    F: FnMut(&T, &T) -> bool,
+{
 }

@@ -134,8 +134,46 @@ fn into_iter() {
     let collected: Vec<(char, i32)> = pq.into_iter().collect();
     assert_eq!(
         collected,
-        vec![('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]
+        [('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]
     );
+}
+
+#[test]
+fn drain_full() {
+    let mut pq = seed(
+        IndexPriorityQueue::new(|a, b| a > b),
+        [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
+    );
+
+    let collected: Vec<(char, i32)> = pq.drain().collect();
+    assert_eq!(
+        collected,
+        [('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]
+    );
+    assert!(pq.is_empty());
+}
+
+#[test]
+fn drain_partial() {
+    let mut pq = seed(
+        IndexPriorityQueue::new(|a, b| a > b),
+        [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
+    );
+
+    let collected: Vec<(char, i32)> = pq.drain().take(2).collect();
+    assert_eq!(collected, [('d', 3), ('a', 4)]);
+    assert_eq!(pq.len(), 3);
+    assert_eq!(pq.remove(), Some(('c', 4)));
+    assert_eq!(pq.remove(), Some(('b', 6)));
+    assert_eq!(pq.remove(), Some(('e', 8)));
+}
+
+#[test]
+fn drain_empty() {
+    let mut pq: IndexPriorityQueue<char, i32, _> = IndexPriorityQueue::new(|a, b| a < b);
+
+    let collected: Vec<(char, i32)> = pq.drain().collect();
+    assert_eq!(collected, []);
 }
 
 #[test]
@@ -148,7 +186,7 @@ fn max_queue() {
     let collected: Vec<(char, i32)> = pq.into();
     assert_eq!(
         collected,
-        vec![('e', 8), ('b', 6), ('a', 4), ('c', 4), ('d', 3)]
+        [('e', 8), ('b', 6), ('a', 4), ('c', 4), ('d', 3)]
     );
 }
 
@@ -162,7 +200,7 @@ fn min_queue() {
     let collected: Vec<(char, i32)> = pq.into();
     assert_eq!(
         collected,
-        vec![('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]
+        [('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]
     );
 }
 
