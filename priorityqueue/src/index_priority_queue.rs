@@ -1,3 +1,4 @@
+use super::common::{Drainable, DrainableIter};
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::hash::Hash;
@@ -131,8 +132,8 @@ where
         Some(element)
     }
 
-    pub fn drain(&mut self) -> Drain<'_, K, T, F> {
-        Drain { pq: self }
+    pub fn drain(&mut self) -> DrainableIter<&mut Self> {
+        DrainableIter::new(self)
     }
 }
 
@@ -165,49 +166,33 @@ impl<K: Hash + Eq + Clone, T: Ord> IndexPriorityQueue<K, T, fn(&T, &T) -> bool> 
     }
 }
 
+impl<K, T, F> Drainable for IndexPriorityQueue<K, T, F>
+where
+    K: Hash + Eq + Clone,
+    F: FnMut(&T, &T) -> bool,
+{
+    type Item = (K, T);
+
+    fn len(&self) -> usize {
+        IndexPriorityQueue::len(self)
+    }
+
+    fn remove(&mut self) -> Option<Self::Item> {
+        IndexPriorityQueue::remove(self)
+    }
+}
+
 impl<K, T, F> IntoIterator for IndexPriorityQueue<K, T, F>
 where
     K: Hash + Eq + Clone,
     F: FnMut(&T, &T) -> bool,
 {
     type Item = (K, T);
-    type IntoIter = IntoIter<K, T, F>;
+    type IntoIter = DrainableIter<Self>;
 
     fn into_iter(self) -> Self::IntoIter {
-        IntoIter { pq: self }
+        DrainableIter::new(self)
     }
-}
-
-pub struct IntoIter<K, T, F>
-where
-    K: Hash + Eq + Clone,
-    F: FnMut(&T, &T) -> bool,
-{
-    pq: IndexPriorityQueue<K, T, F>,
-}
-
-impl<K, T, F> Iterator for IntoIter<K, T, F>
-where
-    K: Hash + Eq + Clone,
-    F: FnMut(&T, &T) -> bool,
-{
-    type Item = (K, T);
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.pq.remove()
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        let n = self.pq.len();
-        (n, Some(n))
-    }
-}
-
-impl<K, T, F> ExactSizeIterator for IntoIter<K, T, F>
-where
-    K: Hash + Eq + Clone,
-    F: FnMut(&T, &T) -> bool,
-{
 }
 
 impl<K, T, F> From<IndexPriorityQueue<K, T, F>> for Vec<(K, T)>
@@ -218,36 +203,4 @@ where
     fn from(pq: IndexPriorityQueue<K, T, F>) -> Self {
         pq.into_iter().collect()
     }
-}
-
-pub struct Drain<'a, K, T, F>
-where
-    K: Hash + Eq + Clone,
-    F: FnMut(&T, &T) -> bool + 'a,
-{
-    pq: &'a mut IndexPriorityQueue<K, T, F>,
-}
-
-impl<K, T, F> Iterator for Drain<'_, K, T, F>
-where
-    K: Hash + Eq + Clone,
-    F: FnMut(&T, &T) -> bool,
-{
-    type Item = (K, T);
-
-    fn next(&mut self) -> Option<(K, T)> {
-        self.pq.remove()
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        let n = self.pq.len();
-        (n, Some(n))
-    }
-}
-
-impl<K, T, F> ExactSizeIterator for Drain<'_, K, T, F>
-where
-    K: Hash + Eq + Clone,
-    F: FnMut(&T, &T) -> bool,
-{
 }

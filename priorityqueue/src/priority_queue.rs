@@ -1,3 +1,5 @@
+use super::common::{Drainable, DrainableIter};
+
 // Implements *Priority Queue* container.
 // https://algs4.cs.princeton.edu/24pq/
 pub struct PriorityQueue<T, F>
@@ -86,8 +88,8 @@ where
         self.heap.clear();
     }
 
-    pub fn drain(&mut self) -> Drain<'_, T, F> {
-        Drain { pq: self }
+    pub fn drain(&mut self) -> DrainableIter<&mut Self> {
+        DrainableIter::new(self)
     }
 }
 
@@ -109,42 +111,32 @@ impl<T: Ord> PriorityQueue<T, fn(&T, &T) -> bool> {
     }
 }
 
+impl<T, F> Drainable for PriorityQueue<T, F>
+where
+    F: FnMut(&T, &T) -> bool,
+{
+    type Item = T;
+
+    fn len(&self) -> usize {
+        PriorityQueue::len(self)
+    }
+
+    fn remove(&mut self) -> Option<Self::Item> {
+        PriorityQueue::remove(self)
+    }
+}
+
 impl<T, F> IntoIterator for PriorityQueue<T, F>
 where
     F: FnMut(&T, &T) -> bool,
 {
     type Item = T;
-    type IntoIter = IntoIter<T, F>;
+    type IntoIter = DrainableIter<Self>;
 
     fn into_iter(self) -> Self::IntoIter {
-        IntoIter { pq: self }
+        DrainableIter::new(self)
     }
 }
-
-pub struct IntoIter<T, F>
-where
-    F: FnMut(&T, &T) -> bool,
-{
-    pq: PriorityQueue<T, F>,
-}
-
-impl<T, F> Iterator for IntoIter<T, F>
-where
-    F: FnMut(&T, &T) -> bool,
-{
-    type Item = T;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        self.pq.remove()
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        let n = self.pq.len();
-        (n, Some(n))
-    }
-}
-
-impl<T, F> ExactSizeIterator for IntoIter<T, F> where F: FnMut(&T, &T) -> bool {}
 
 impl<T, F> From<PriorityQueue<T, F>> for Vec<T>
 where
@@ -154,28 +146,3 @@ where
         pq.into_iter().collect()
     }
 }
-
-pub struct Drain<'a, T, F>
-where
-    F: FnMut(&T, &T) -> bool + 'a,
-{
-    pq: &'a mut PriorityQueue<T, F>,
-}
-
-impl<T, F> Iterator for Drain<'_, T, F>
-where
-    F: FnMut(&T, &T) -> bool,
-{
-    type Item = T;
-
-    fn next(&mut self) -> Option<T> {
-        self.pq.remove()
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        let n = self.pq.len();
-        (n, Some(n))
-    }
-}
-
-impl<T, F: FnMut(&T, &T) -> bool> ExactSizeIterator for Drain<'_, T, F> {}
