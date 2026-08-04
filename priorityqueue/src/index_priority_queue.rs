@@ -14,7 +14,6 @@ where
     is_ord: F,
 }
 
-// TODO: ref in idx.key (no Clone)
 // TODO: copypaste?
 
 impl<K, T, F> IndexPriorityQueue<K, T, F>
@@ -101,13 +100,7 @@ where
         if self.heap.is_empty() {
             return None;
         }
-        self.idx.remove(&self.heap[0].0);
-        let element = self.heap.swap_remove(0);
-        if !self.heap.is_empty() {
-            self.idx.insert(self.heap[0].0.clone(), 0);
-            self.sink(0);
-        }
-        Some(element)
+        self.remove_idx(&self.heap[0].0.clone())
     }
 
     pub fn clear(&mut self) {
@@ -120,8 +113,8 @@ where
         K: Borrow<Q>,
         Q: ?Sized + Hash + Eq,
     {
-        let k = self.idx.get(idx)?;
-        Some(&self.heap[*k])
+        let k = *self.idx.get(idx)?;
+        Some(&self.heap[k])
     }
 
     pub fn remove_idx<Q>(&mut self, idx: &Q) -> Option<(K, T)>
@@ -129,8 +122,7 @@ where
         K: Borrow<Q>,
         Q: ?Sized + Hash + Eq,
     {
-        let k = *self.idx.get(idx)?;
-        self.idx.remove(self.heap[k].0.borrow());
+        let k = self.idx.remove(idx)?;
         let element = self.heap.swap_remove(k);
         if k < self.heap.len() {
             self.idx.insert(self.heap[k].0.clone(), k);
@@ -148,8 +140,8 @@ fn swap<K: Hash + Eq, T>(list: &mut Vec<(K, T)>, idx: &mut HashMap<K, usize>, i:
     let (key_i, pos_i) = idx.remove_entry(&list[i].0).unwrap();
     let (key_j, pos_j) = idx.remove_entry(&list[j].0).unwrap();
     list.swap(i, j);
-    idx.insert(key_j, pos_i);
     idx.insert(key_i, pos_j);
+    idx.insert(key_j, pos_i);
 }
 
 impl<K: Hash + Eq + Clone, T: Ord> IndexPriorityQueue<K, T, fn(&T, &T) -> bool> {
