@@ -2,10 +2,7 @@ use super::common::{Drainable, DrainableIter};
 
 // Implements *Priority Queue* container.
 // https://algs4.cs.princeton.edu/24pq/
-pub struct PriorityQueue<T, F>
-where
-    F: FnMut(&T, &T) -> bool,
-{
+pub struct PriorityQueue<T, F> {
     heap: Vec<T>,
     is_ord: F,
 }
@@ -94,20 +91,12 @@ where
 }
 
 impl<T: Ord> PriorityQueue<T, fn(&T, &T) -> bool> {
-    fn lt(a: &T, b: &T) -> bool {
-        a < b
-    }
-
-    fn gt(a: &T, b: &T) -> bool {
-        a > b
-    }
-
     pub fn new_max() -> Self {
-        Self::new(Self::lt)
+        Self::new(|lhs, rhs| lhs < rhs)
     }
 
     pub fn new_min() -> Self {
-        Self::new(Self::gt)
+        Self::new(|lhs, rhs| lhs > rhs)
     }
 }
 

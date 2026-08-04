@@ -5,11 +5,7 @@ use std::hash::Hash;
 
 // Implements *Index Priority Queue* container.
 // https://algs4.cs.princeton.edu/24pq/
-pub struct IndexPriorityQueue<K, T, F>
-where
-    K: Hash + Eq + Clone,
-    F: FnMut(&T, &T) -> bool,
-{
+pub struct IndexPriorityQueue<K, T, F> {
     heap: Vec<(K, T)>,
     idx: HashMap<K, usize>,
     is_ord: F,
@@ -149,20 +145,12 @@ fn swap<K: Hash + Eq, T>(list: &mut [(K, T)], idx: &mut HashMap<K, usize>, i: us
 }
 
 impl<K: Hash + Eq + Clone, T: Ord> IndexPriorityQueue<K, T, fn(&T, &T) -> bool> {
-    fn lt(a: &T, b: &T) -> bool {
-        a < b
-    }
-
-    fn gt(a: &T, b: &T) -> bool {
-        a > b
-    }
-
     pub fn new_max() -> Self {
-        Self::new(Self::lt)
+        Self::new(|lhs, rhs| lhs < rhs)
     }
 
     pub fn new_min() -> Self {
-        Self::new(Self::gt)
+        Self::new(|lhs, rhs| lhs > rhs)
     }
 }
 
