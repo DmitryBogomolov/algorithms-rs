@@ -32,7 +32,7 @@ where
         self.idx.reserve(capacity);
     }
 
-    pub fn size(&self) -> usize {
+    pub fn len(&self) -> usize {
         self.heap.len()
     }
 

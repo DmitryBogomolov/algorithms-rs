@@ -4,7 +4,7 @@ use priorityqueue::PriorityQueue;
 fn empty() {
     let pq = PriorityQueue::<(), _>::new(|_, _| false);
     assert!(pq.is_empty());
-    assert_eq!(pq.size(), 0);
+    assert_eq!(pq.len(), 0);
     assert_eq!(pq.peek(), None);
 }
 
@@ -14,23 +14,23 @@ fn insert() {
 
     pq.insert(4);
     assert!(!pq.is_empty());
-    assert_eq!(pq.size(), 1);
+    assert_eq!(pq.len(), 1);
     assert_eq!(pq.peek(), Some(&4));
 
     pq.insert(7);
-    assert_eq!(pq.size(), 2);
+    assert_eq!(pq.len(), 2);
     assert_eq!(pq.peek(), Some(&7));
 
     pq.insert(2);
-    assert_eq!(pq.size(), 3);
+    assert_eq!(pq.len(), 3);
     assert_eq!(pq.peek(), Some(&7));
 
     pq.insert(7);
-    assert_eq!(pq.size(), 4);
+    assert_eq!(pq.len(), 4);
     assert_eq!(pq.peek(), Some(&7));
 
     pq.insert(9);
-    assert_eq!(pq.size(), 5);
+    assert_eq!(pq.len(), 5);
     assert_eq!(pq.peek(), Some(&9));
 }
 
@@ -47,23 +47,23 @@ where
 fn remove() {
     let mut pq = seed(PriorityQueue::new(|a, b| a > b), [4, 6, 4, 3, 8]);
 
-    assert_eq!(pq.size(), 5);
+    assert_eq!(pq.len(), 5);
     assert_eq!(pq.peek(), Some(&3));
 
     assert_eq!(pq.remove(), Some(3));
-    assert_eq!(pq.size(), 4);
+    assert_eq!(pq.len(), 4);
 
     assert_eq!(pq.remove(), Some(4));
-    assert_eq!(pq.size(), 3);
+    assert_eq!(pq.len(), 3);
 
     assert_eq!(pq.remove(), Some(4));
-    assert_eq!(pq.size(), 2);
+    assert_eq!(pq.len(), 2);
 
     assert_eq!(pq.remove(), Some(6));
-    assert_eq!(pq.size(), 1);
+    assert_eq!(pq.len(), 1);
 
     assert_eq!(pq.remove(), Some(8));
-    assert_eq!(pq.size(), 0);
+    assert_eq!(pq.len(), 0);
 
     assert!(pq.is_empty());
     assert_eq!(pq.remove(), None);
@@ -76,7 +76,7 @@ fn clear() {
     pq.clear();
 
     assert!(pq.is_empty());
-    assert_eq!(pq.size(), 0);
+    assert_eq!(pq.len(), 0);
     assert_eq!(pq.peek(), None);
 }
 
