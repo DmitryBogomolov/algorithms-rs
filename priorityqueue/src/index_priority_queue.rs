@@ -14,8 +14,6 @@ where
     is_ord: F,
 }
 
-// TODO: copypaste?
-
 impl<K, T, F> IndexPriorityQueue<K, T, F>
 where
     K: Hash + Eq + Clone,
@@ -39,7 +37,7 @@ where
     }
 
     pub fn is_empty(&self) -> bool {
-        self.size() == 0
+        self.heap.is_empty()
     }
 
     fn sink(&mut self, i: usize) {
@@ -90,22 +88,7 @@ where
     }
 
     pub fn peek(&self) -> Option<&(K, T)> {
-        if self.heap.is_empty() {
-            return None;
-        }
-        Some(&self.heap[0])
-    }
-
-    pub fn remove(&mut self) -> Option<(K, T)> {
-        if self.heap.is_empty() {
-            return None;
-        }
-        self.remove_idx(&self.heap[0].0.clone())
-    }
-
-    pub fn clear(&mut self) {
-        self.heap.clear();
-        self.idx.clear();
+        self.heap.first()
     }
 
     pub fn peek_idx<Q>(&self, idx: &Q) -> Option<&(K, T)>
@@ -113,8 +96,11 @@ where
         K: Borrow<Q>,
         Q: ?Sized + Hash + Eq,
     {
-        let k = *self.idx.get(idx)?;
-        Some(&self.heap[k])
+        self.idx.get(idx).and_then(|k| self.heap.get(*k))
+    }
+
+    pub fn remove(&mut self) -> Option<(K, T)> {
+        self.remove_at(0)
     }
 
     pub fn remove_idx<Q>(&mut self, idx: &Q) -> Option<(K, T)>
@@ -122,12 +108,25 @@ where
         K: Borrow<Q>,
         Q: ?Sized + Hash + Eq,
     {
-        let k = self.idx.remove(idx)?;
-        let element = self.heap.swap_remove(k);
-        if k < self.heap.len() {
-            self.idx.insert(self.heap[k].0.clone(), k);
-            self.sink(k);
-            self.swim(k);
+        let k = *self.idx.get(idx)?;
+        self.remove_at(k)
+    }
+
+    pub fn clear(&mut self) {
+        self.heap.clear();
+        self.idx.clear();
+    }
+
+    fn remove_at(&mut self, i: usize) -> Option<(K, T)> {
+        if self.heap.is_empty() {
+            return None;
+        }
+        self.idx.remove(&self.heap[i].0)?;
+        let element = self.heap.swap_remove(i);
+        if i < self.heap.len() {
+            self.idx.insert(self.heap[i].0.clone(), i);
+            self.sink(i);
+            self.swim(i);
         }
         Some(element)
     }
@@ -195,6 +194,13 @@ where
     }
 }
 
+impl<K, T, F> ExactSizeIterator for IntoIter<K, T, F>
+where
+      K: Hash + Eq + Clone,
+      F: FnMut(&T, &T) -> bool,
+{
+}
+
 impl<K, T, F> From<IndexPriorityQueue<K, T, F>> for Vec<(K, T)>
 where
     K: Hash + Eq + Clone,
@@ -204,3 +210,4 @@ where
         pq.into_iter().collect()
     }
 }
+
