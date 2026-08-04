@@ -192,6 +192,11 @@ where
     fn next(&mut self) -> Option<Self::Item> {
         self.pq.remove()
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        let n = self.pq.len();
+        (n, Some(n))
+    }
 }
 
 impl<K, T, F> ExactSizeIterator for IntoIter<K, T, F>
