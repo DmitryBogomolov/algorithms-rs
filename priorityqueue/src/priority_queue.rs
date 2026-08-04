@@ -1,11 +1,17 @@
 // Implements *Priority Queue* container.
 // https://algs4.cs.princeton.edu/24pq/
-pub struct PriorityQueue<T, F: FnMut(&T, &T) -> bool> {
+pub struct PriorityQueue<T, F>
+where
+    F: FnMut(&T, &T) -> bool,
+{
     heap: Vec<T>,
     is_ord: F,
 }
 
-impl<T, F: FnMut(&T, &T) -> bool> PriorityQueue<T, F> {
+impl<T, F> PriorityQueue<T, F>
+where
+    F: FnMut(&T, &T) -> bool,
+{
     pub fn new(is_ord: F) -> Self {
         Self {
             heap: Vec::new(),
@@ -99,7 +105,10 @@ impl<T: Ord> PriorityQueue<T, fn(&T, &T) -> bool> {
     }
 }
 
-impl<T, F: FnMut(&T, &T) -> bool> IntoIterator for PriorityQueue<T, F> {
+impl<T, F> IntoIterator for PriorityQueue<T, F>
+where
+    F: FnMut(&T, &T) -> bool,
+{
     type Item = T;
     type IntoIter = IntoIter<T, F>;
 
@@ -108,11 +117,17 @@ impl<T, F: FnMut(&T, &T) -> bool> IntoIterator for PriorityQueue<T, F> {
     }
 }
 
-pub struct IntoIter<T, F: FnMut(&T, &T) -> bool> {
+pub struct IntoIter<T, F>
+where
+    F: FnMut(&T, &T) -> bool,
+{
     pq: PriorityQueue<T, F>,
 }
 
-impl<T, F: FnMut(&T, &T) -> bool> Iterator for IntoIter<T, F> {
+impl<T, F> Iterator for IntoIter<T, F>
+where
+    F: FnMut(&T, &T) -> bool,
+{
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -120,9 +135,12 @@ impl<T, F: FnMut(&T, &T) -> bool> Iterator for IntoIter<T, F> {
     }
 }
 
-impl<T, F: FnMut(&T, &T) -> bool> ExactSizeIterator for IntoIter<T, F> {}
+impl<T, F> ExactSizeIterator for IntoIter<T, F> where F: FnMut(&T, &T) -> bool {}
 
-impl<T, F: FnMut(&T, &T) -> bool> From<PriorityQueue<T, F>> for Vec<T> {
+impl<T, F> From<PriorityQueue<T, F>> for Vec<T>
+where
+    F: FnMut(&T, &T) -> bool,
+{
     fn from(pq: PriorityQueue<T, F>) -> Self {
         pq.into_iter().collect()
     }
