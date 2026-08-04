@@ -13,7 +13,7 @@ fn funcs<T>() -> Vec<SortFn<T>> {
 }
 
 #[test]
-fn test_empty_list() {
+fn empty_list() {
     for func in funcs() {
         let mut arr: [(); 0] = [];
         func(&mut arr, |_, _| false);
@@ -22,7 +22,7 @@ fn test_empty_list() {
 }
 
 #[test]
-fn test_one_item() {
+fn one_item() {
     for func in funcs() {
         let mut arr = [3.2];
         func(&mut arr, |_, _| false);
@@ -31,7 +31,7 @@ fn test_one_item() {
 }
 
 #[test]
-fn test_two_items() {
+fn two_items() {
     for func in funcs() {
         let mut arr = [1.2, 2.3];
         func(&mut arr, |a, b| a < b);
@@ -44,7 +44,7 @@ fn test_two_items() {
 }
 
 #[test]
-fn test_many_items() {
+fn many_items() {
     let mut rng = rand::rng();
     let sample: Vec<i32> = (0..1000).map(|_| rng.random_range(0..100)).collect();
     for func in funcs() {

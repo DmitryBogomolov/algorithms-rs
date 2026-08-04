@@ -9,6 +9,3 @@ pub use insertion::sort as insertion;
 pub use merge::sort as merge;
 pub use quick::sort as quick;
 pub use shell::sort as shell;
-
-#[cfg(test)]
-mod test_data;
