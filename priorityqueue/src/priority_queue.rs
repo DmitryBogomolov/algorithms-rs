@@ -22,7 +22,7 @@ impl<T, F: FnMut(&T, &T) -> bool> PriorityQueue<T, F> {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.size() == 0
+        self.heap.is_empty()
     }
 
     fn sink(&mut self, i: usize) {
@@ -64,10 +64,7 @@ impl<T, F: FnMut(&T, &T) -> bool> PriorityQueue<T, F> {
     }
 
     pub fn peek(&self) -> Option<&T> {
-        if self.heap.is_empty() {
-            return None;
-        }
-        Some(&self.heap[0])
+        self.heap.first()
     }
 
     pub fn remove(&mut self) -> Option<T> {
@@ -122,6 +119,9 @@ impl<T, F: FnMut(&T, &T) -> bool> Iterator for IntoIter<T, F> {
         self.pq.remove()
     }
 }
+
+impl<T, F: FnMut(&T, &T) -> bool> ExactSizeIterator for IntoIter<T, F> {}
+
 
 impl<T, F: FnMut(&T, &T) -> bool> From<PriorityQueue<T, F>> for Vec<T> {
     fn from(pq: PriorityQueue<T, F>) -> Self {
