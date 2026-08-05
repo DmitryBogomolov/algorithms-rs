@@ -127,10 +127,6 @@ where
         }
         Some(element)
     }
-
-    pub fn drain(&mut self) -> DrainableIter<&mut Self> {
-        DrainableIter::new(self)
-    }
 }
 
 fn swap<K: Hash + Eq, T>(list: &mut [(K, T)], idx: &mut HashMap<K, usize>, i: usize, j: usize) {

@@ -84,10 +84,6 @@ where
     pub fn clear(&mut self) {
         self.heap.clear();
     }
-
-    pub fn drain(&mut self) -> DrainableIter<&mut Self> {
-        DrainableIter::new(self)
-    }
 }
 
 impl<T: Ord> PriorityQueue<T, fn(&T, &T) -> bool> {

@@ -43,6 +43,12 @@ impl<T: Drainable> ExactSizeIterator for DrainableIter<T> {}
 
 macro_rules! impl_into_iter {
     ($struct_type:ty, $item_type:ty, [$($t_list:tt)+] COND [$($t_bounds:tt)*]) => {
+        impl<$($t_list)*> $struct_type $($t_bounds)* {
+            pub fn drain(&mut self) -> DrainableIter<&mut Self> {
+                DrainableIter::new(self)
+            }
+        }
+
         impl<$($t_list)*> IntoIterator for $struct_type $($t_bounds)* {
             type Item = $item_type;
             type IntoIter = DrainableIter<Self>;
