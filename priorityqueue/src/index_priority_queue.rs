@@ -170,25 +170,8 @@ where
     }
 }
 
-impl<K, T, F> IntoIterator for IndexPriorityQueue<K, T, F>
-where
-    K: Hash + Eq + Clone,
-    F: FnMut(&T, &T) -> bool,
-{
-    type Item = (K, T);
-    type IntoIter = DrainableIter<Self>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        DrainableIter::new(self)
-    }
-}
-
-impl<K, T, F> From<IndexPriorityQueue<K, T, F>> for Vec<(K, T)>
-where
-    K: Hash + Eq + Clone,
-    F: FnMut(&T, &T) -> bool,
-{
-    fn from(pq: IndexPriorityQueue<K, T, F>) -> Self {
-        pq.into_iter().collect()
-    }
-}
+impl_into_iter!(
+    IndexPriorityQueue<K, T, F>,
+    (K, T),
+    [K, T, F] COND [where K: Hash + Eq + Clone, F: FnMut(&T, &T) -> bool]
+);

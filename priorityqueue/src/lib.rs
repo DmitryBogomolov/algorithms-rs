@@ -1,3 +1,4 @@
+#[macro_use]
 mod common;
 mod index_priority_queue;
 mod priority_queue;

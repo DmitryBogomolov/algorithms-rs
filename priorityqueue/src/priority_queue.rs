@@ -115,23 +115,8 @@ where
     }
 }
 
-impl<T, F> IntoIterator for PriorityQueue<T, F>
-where
-    F: FnMut(&T, &T) -> bool,
-{
-    type Item = T;
-    type IntoIter = DrainableIter<Self>;
-
-    fn into_iter(self) -> Self::IntoIter {
-        DrainableIter::new(self)
-    }
-}
-
-impl<T, F> From<PriorityQueue<T, F>> for Vec<T>
-where
-    F: FnMut(&T, &T) -> bool,
-{
-    fn from(pq: PriorityQueue<T, F>) -> Self {
-        pq.into_iter().collect()
-    }
-}
+impl_into_iter!(
+    PriorityQueue<T, F>,
+    T,
+    [T, F] COND [where F: FnMut(&T, &T) -> bool]
+);
