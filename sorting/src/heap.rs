@@ -15,19 +15,19 @@ pub fn sort<T, F: FnMut(&T, &T) -> bool>(target: &mut [T], mut is_ord: F) {
 // c1, c2 -> p = (c - 1) / 2
 // heap condition: is_ord(c1, p), is_ord(c2, p)
 fn sink<T, F: FnMut(&T, &T) -> bool>(target: &mut [T], is_ord: &mut F, k: usize, len: usize) {
-    let mut p = k;
+    let mut parent = k;
     loop {
-        let mut c = 2 * p + 1;
-        if c + 1 < len && is_ord(&target[c], &target[c + 1]) {
-            c += 1;
+        let mut child = 2 * parent + 1;
+        if child + 1 < len && is_ord(&target[child], &target[child + 1]) {
+            child += 1;
         }
-        if c >= len {
+        if child >= len {
             break;
         }
-        if is_ord(&target[c], &target[p]) {
+        if is_ord(&target[child], &target[parent]) {
             break;
         }
-        target.swap(p, c);
-        p = c;
+        target.swap(parent, child);
+        parent = child;
     }
 }
