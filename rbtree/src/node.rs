@@ -43,15 +43,19 @@ impl<K: Ord, V> Node<K, V> {
         node.get(k)
     }
 
+    fn set_content(&mut self, k: K, v: V) {
+        self.0 = Some(Box::new(Content {
+            l_node: Self::none(),
+            r_node: Self::none(),
+            clr: Clr::B,
+            size: 1,
+            data: (k, v),
+        }));
+    }
+
     pub fn insert(&mut self, k: K, v: V) -> Option<(K, V)> {
         if self.0.is_none() {
-            self.0 = Some(Box::new(Content {
-                l_node: Self::none(),
-                r_node: Self::none(),
-                clr: Clr::B,
-                size: 1,
-                data: (k, v),
-            }));
+            self.set_content(k, v);
             return None;
         }
         let content = self.0.as_mut().unwrap();
@@ -97,5 +101,59 @@ impl<K: Ord, V> Node<K, V> {
             Ordering::Greater => &mut content.r_node,
         };
         node.remove(k)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty() {
+        let node: Node<i32, char> = Node::none();
+        assert!(node.is_empty());
+        assert_eq!(node.len(), 0);
+    }
+
+    fn take<'a, K, V>(node: &'a mut Node<K, V>, path: &str) -> &'a mut Node<K, V> {
+        let mut ret = node;
+        for c in path.chars() {
+            let content = ret.0.as_mut().unwrap();
+            ret = match c {
+                'l' => &mut content.l_node,
+                'r' => &mut content.r_node,
+                _ => panic!("bad path"),
+            };
+        }
+        ret
+    }
+
+    #[test]
+    fn get() {
+        let mut root: Node<i32, char> = Node::none();
+        root.set_content(20, 'a');
+
+        assert_eq!(root.get(&20), Some(&(20, 'a')));
+        assert_eq!(root.get(&10), None);
+
+        take(&mut root, "l").set_content(11, 'b');
+        take(&mut root, "r").set_content(32, 'c');
+
+        assert_eq!(root.get(&20), Some(&(20, 'a')));
+        assert_eq!(root.get(&11), Some(&(11, 'b')));
+        assert_eq!(root.get(&32), Some(&(32, 'c')));
+
+        take(&mut root, "ll").set_content(10, 'd');
+        take(&mut root, "lr").set_content(13, 'e');
+        take(&mut root, "rl").set_content(29, 'f');
+        take(&mut root, "rr").set_content(34, 'g');
+
+        assert_eq!(root.get(&20), Some(&(20, 'a')));
+        assert_eq!(root.get(&11), Some(&(11, 'b')));
+        assert_eq!(root.get(&32), Some(&(32, 'c')));
+        assert_eq!(root.get(&10), Some(&(10, 'd')));
+        assert_eq!(root.get(&13), Some(&(13, 'e')));
+        assert_eq!(root.get(&29), Some(&(29, 'f')));
+        assert_eq!(root.get(&34), Some(&(34, 'g')));
     }
 }
