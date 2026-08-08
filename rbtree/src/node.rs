@@ -67,7 +67,11 @@ impl<K: Ord, V> Node<K, V> {
             Ordering::Less => &mut content.l_node,
             Ordering::Greater => &mut content.r_node,
         };
-        node.insert(k, v)
+        let ret = node.insert(k, v);
+        if ret.is_none() {
+            self.0.as_mut().unwrap().size += 1;
+        }
+        ret
     }
 
     pub fn remove(&mut self, k: &K) -> Option<(K, V)> {
@@ -97,12 +101,17 @@ impl<K: Ord, V> Node<K, V> {
                 self.0.replace(target.0.take().unwrap());
                 self.0.as_mut().unwrap().l_node = content.l_node;
                 self.0.as_mut().unwrap().r_node = content.r_node;
+                self.0.as_mut().unwrap().size = content.size - 1;
                 return result;
             },
             Ordering::Less => &mut content.l_node,
             Ordering::Greater => &mut content.r_node,
         };
-        node.remove(k)
+        let ret = node.remove(k);
+        if !ret.is_none() {
+            self.0.as_mut().unwrap().size -= 1;
+        }
+        ret
     }
 }
 
@@ -169,52 +178,69 @@ mod tests {
 
         assert_eq!(root.insert(20, 'a'), None);
         assert_eq!(data(root), &(20, 'a'));
+        assert!(!root.is_empty());
+        assert_eq!(root.len(), 1);
 
         assert_eq!(root.insert(15, 'b'), None);
         assert_eq!(data(pick(root, "l")), &(15, 'b'));
+        assert_eq!(root.len(), 2);
 
         assert_eq!(root.insert(35, 'c'), None);
         assert_eq!(data(pick(root, "r")), &(35, 'c'));
+        assert_eq!(root.len(), 3);
 
         assert_eq!(root.insert(12, 'd'), None);
         assert_eq!(data(pick(root, "ll")), &(12, 'd'));
+        assert_eq!(root.len(), 4);
         
         assert_eq!(root.insert(36, 'e'), None);
         assert_eq!(data(pick(root, "rr")), &(36, 'e'));
+        assert_eq!(root.len(), 5);
 
         assert_eq!(root.insert(15, 'B'), Some((15, 'b')));
         assert_eq!(data(pick(root, "l")), &(15, 'B'));
+        assert_eq!(root.len(), 5);
 
         assert_eq!(root.insert(36, 'E'), Some((36, 'e')));
         assert_eq!(data(pick(root, "rr")), &(36, 'E'));
+        assert_eq!(root.len(), 5);
 
         assert_eq!(root.insert(20, 'A'), Some((20, 'a')));
         assert_eq!(data(root), &(20, 'A'));
+        assert_eq!(root.len(), 5);
     }
 
     #[test]
     fn remove() {
         let root = &mut Node::none();
-        root.set_content(20, 'a');
-        pick(root, "l").set_content(15, 'b');
-        pick(root, "r").set_content(35, 'c');
-        pick(root, "ll").set_content(11, 'e');
-        pick(root, "lr").set_content(16, 'f');
-        pick(root, "rl").set_content(22, 'g');
-        pick(root, "rr").set_content(41, 'h');
-        pick(root, "rrl").set_content(39, 'j');
-        pick(root, "rrll").set_content(37, 'k');
+        [
+            (20, 'a'),
+            (15, 'b'),
+            (35, 'c'),
+            (11, 'e'),
+            (16, 'f'),
+            (22, 'g'),
+            (41, 'h'),
+            (39, 'j'),
+            (37, 'k'),
+        ].into_iter().for_each(|(k, v)| { root.insert(k, v); });
+
+        assert_eq!(root.len(), 9);
 
         assert_eq!(root.remove(&16), Some((16, 'f')));
+        assert_eq!(root.len(), 8);
         assert!(pick(root, "l").0.as_ref().unwrap().r_node.is_empty());
 
         assert_eq!(root.remove(&15), Some((15, 'b')));
+        assert_eq!(root.len(), 7);
         assert_eq!(data(pick(root, "l")), &(11, 'e'));
 
         assert_eq!(root.remove(&35), Some((35, 'c')));
+        assert_eq!(root.len(), 6);
         assert_eq!(data(pick(root, "r")), &(37, 'k'));
         assert!(pick(root, "rrl").0.as_ref().unwrap().l_node.is_empty());
 
         assert_eq!(root.remove(&10), None);
+        assert_eq!(root.len(), 6);
     }
 }
