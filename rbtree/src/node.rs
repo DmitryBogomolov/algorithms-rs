@@ -93,28 +93,25 @@ impl<K: Ord, V> Node<K, V> {
     }
 
     fn remove_core(&mut self) -> Option<(K, V)> {
-        let mut content = self.take_content();
-        let result = Some(content.data);
-        if content.l_node.is_empty() && content.r_node.is_empty() {
-            return result;
+        let (no_l, no_r) = (self.content().l_node.is_empty(), self.content().r_node.is_empty());
+        if no_l && no_r {
+            let content = self.take_content();
+            return Some(content.data);
         }
-        if content.l_node.is_empty() {
-            self.0.replace(content.r_node.0.take().unwrap());
-            return result;
+        if no_l || no_r {
+            let node = if no_l { &mut self.content_mut().r_node } else { &mut self.content_mut().l_node };
+            let node_content = node.take_content();
+            let content = self.take_content();
+            self.0.replace(node_content);
+            return Some(content.data);
         }
-        if content.r_node.is_empty() {
-            self.0.replace(content.l_node.0.take().unwrap());
-            return result;
+        let mut next_min = &mut self.content_mut().r_node;
+        while !next_min.content().l_node.is_empty() {
+            next_min = &mut next_min.content_mut().l_node;
         }
-        let mut target = &mut content.r_node;
-        while !target.0.as_mut().unwrap().l_node.is_empty() {
-            target = &mut target.0.as_mut().unwrap().l_node;
-        }
-        self.0.replace(target.0.take().unwrap());
-        self.0.as_mut().unwrap().l_node = content.l_node;
-        self.0.as_mut().unwrap().r_node = content.r_node;
-        self.0.as_mut().unwrap().size = content.size - 1;
-        return result;        
+        let next_data = next_min.take_content().data;
+        let data = std::mem::replace(&mut self.content_mut().data, next_data);
+        return Some(data);
     }
 
     pub fn remove(&mut self, k: &K) -> Option<(K, V)> {
@@ -213,7 +210,7 @@ mod tests {
         assert_eq!(root.insert(12, 'd'), None);
         assert_eq!(data(pick(root, "ll")), &(12, 'd'));
         assert_eq!(root.len(), 4);
-        
+
         assert_eq!(root.insert(36, 'e'), None);
         assert_eq!(data(pick(root, "rr")), &(36, 'e'));
         assert_eq!(root.len(), 5);
