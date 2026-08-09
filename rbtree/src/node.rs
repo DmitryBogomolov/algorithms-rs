@@ -28,17 +28,28 @@ impl<K: Ord, V> Node<K, V> {
         self.0.is_none()
     }
 
+    fn cmp_key(&self, k: &K) -> Ordering {
+        k.cmp(&self.0.as_ref().unwrap().data.0)
+    }
+
+    fn content(&self) -> &Content<K, V> {
+        self.0.as_ref().unwrap()
+    }
+
+    fn content_mut(&mut self) -> &mut Content<K, V> {
+        self.0.as_mut().unwrap()
+    }
+
     pub fn get(&self, k: &K) -> Option<&(K, V)> {
         if self.0.is_none() {
             return None;
         }
-        let content = self.0.as_ref().unwrap();
-        let node = match k.cmp(&content.data.0) {
+        let node = match self.cmp_key(k) {
             Ordering::Equal => {
-                return Some(&content.data);
+                return Some(&self.content().data);
             },
-            Ordering::Less => &content.l_node,
-            Ordering::Greater => &content.r_node,
+            Ordering::Less => &self.content().l_node,
+            Ordering::Greater => &self.content().r_node,
         };
         node.get(k)
     }
@@ -53,19 +64,26 @@ impl<K: Ord, V> Node<K, V> {
         }));
     }
 
+    fn take_content(&mut self) -> Box<Content<K, V>> {
+        self.0.take().unwrap()
+    }
+
+    fn insert_core(&mut self, k: K, v: V) -> Option<(K, V)> {
+        let data = std::mem::replace(&mut self.content_mut().data, (k, v));
+        return Some(data);
+    }
+
     pub fn insert(&mut self, k: K, v: V) -> Option<(K, V)> {
         if self.0.is_none() {
             self.set_content(k, v);
             return None;
         }
-        let content = self.0.as_mut().unwrap();
-        let node = match k.cmp(&content.data.0) {
+        let node = match self.cmp_key(&k) {
             Ordering::Equal => {
-                let data = std::mem::replace(&mut content.data, (k, v));
-                return Some(data);
+                return self.insert_core(k, v);
             },
-            Ordering::Less => &mut content.l_node,
-            Ordering::Greater => &mut content.r_node,
+            Ordering::Less => &mut self.content_mut().l_node,
+            Ordering::Greater => &mut self.content_mut().r_node,
         };
         let ret = node.insert(k, v);
         if ret.is_none() {
@@ -74,38 +92,41 @@ impl<K: Ord, V> Node<K, V> {
         ret
     }
 
+    fn remove_core(&mut self) -> Option<(K, V)> {
+        let mut content = self.take_content();
+        let result = Some(content.data);
+        if content.l_node.is_empty() && content.r_node.is_empty() {
+            return result;
+        }
+        if content.l_node.is_empty() {
+            self.0.replace(content.r_node.0.take().unwrap());
+            return result;
+        }
+        if content.r_node.is_empty() {
+            self.0.replace(content.l_node.0.take().unwrap());
+            return result;
+        }
+        let mut target = &mut content.r_node;
+        while !target.0.as_mut().unwrap().l_node.is_empty() {
+            target = &mut target.0.as_mut().unwrap().l_node;
+        }
+        self.0.replace(target.0.take().unwrap());
+        self.0.as_mut().unwrap().l_node = content.l_node;
+        self.0.as_mut().unwrap().r_node = content.r_node;
+        self.0.as_mut().unwrap().size = content.size - 1;
+        return result;        
+    }
+
     pub fn remove(&mut self, k: &K) -> Option<(K, V)> {
         if self.0.is_none() {
             return None;
         }
-        let content = self.0.as_mut().unwrap();
-        let node = match k.cmp(&content.data.0) {
+        let node = match self.cmp_key(k) {
             Ordering::Equal => {
-                let mut content = self.0.take().unwrap();
-                let result = Some(content.data);
-                if content.l_node.is_empty() && content.r_node.is_empty() {
-                    return result;
-                }
-                if content.l_node.is_empty() {
-                    self.0.replace(content.r_node.0.take().unwrap());
-                    return result;
-                }
-                if content.r_node.is_empty() {
-                    self.0.replace(content.l_node.0.take().unwrap());
-                    return result;
-                }
-                let mut target = &mut content.r_node;
-                while !target.0.as_mut().unwrap().l_node.is_empty() {
-                    target = &mut target.0.as_mut().unwrap().l_node;
-                }
-                self.0.replace(target.0.take().unwrap());
-                self.0.as_mut().unwrap().l_node = content.l_node;
-                self.0.as_mut().unwrap().r_node = content.r_node;
-                self.0.as_mut().unwrap().size = content.size - 1;
-                return result;
+                return self.remove_core();
             },
-            Ordering::Less => &mut content.l_node,
-            Ordering::Greater => &mut content.r_node,
+            Ordering::Less => &mut self.content_mut().l_node,
+            Ordering::Greater => &mut self.content_mut().r_node,
         };
         let ret = node.remove(k);
         if !ret.is_none() {
