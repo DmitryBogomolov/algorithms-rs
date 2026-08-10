@@ -41,7 +41,7 @@ impl<K: Ord, V> Node<K, V> {
     }
 
     pub fn get(&self, k: &K) -> Option<&(K, V)> {
-        if self.0.is_none() {
+        if self.is_empty() {
             return None;
         }
         let node = match self.cmp_key(k) {
@@ -54,7 +54,7 @@ impl<K: Ord, V> Node<K, V> {
         node.get(k)
     }
 
-    fn set_content(&mut self, k: K, v: V) {
+    fn set_kev_val(&mut self, k: K, v: V) {
         self.0 = Some(Box::new(Content {
             l_node: Self::none(),
             r_node: Self::none(),
@@ -68,14 +68,18 @@ impl<K: Ord, V> Node<K, V> {
         self.0.take().unwrap()
     }
 
+    fn replace_content(&mut self, content: Box<Content<K, V>>) -> Box<Content<K, V>> {
+        self.0.replace(content).unwrap()
+    }
+
     fn insert_core(&mut self, k: K, v: V) -> Option<(K, V)> {
         let data = std::mem::replace(&mut self.content_mut().data, (k, v));
         return Some(data);
     }
 
     pub fn insert(&mut self, k: K, v: V) -> Option<(K, V)> {
-        if self.0.is_none() {
-            self.set_content(k, v);
+        if self.is_empty() {
+            self.set_kev_val(k, v);
             return None;
         }
         let node = match self.cmp_key(&k) {
@@ -101,21 +105,27 @@ impl<K: Ord, V> Node<K, V> {
         if no_l || no_r {
             let node = if no_l { &mut self.content_mut().r_node } else { &mut self.content_mut().l_node };
             let node_content = node.take_content();
-            let content = self.take_content();
-            self.0.replace(node_content);
+            let content = self.replace_content(node_content);
             return Some(content.data);
         }
-        let mut next_min = &mut self.content_mut().r_node;
-        while !next_min.content().l_node.is_empty() {
-            next_min = &mut next_min.content_mut().l_node;
-        }
-        let next_data = next_min.take_content().data;
+        let next_data = self.content_mut().r_node.remove_min().unwrap();
         let data = std::mem::replace(&mut self.content_mut().data, next_data);
         return Some(data);
     }
 
+    fn remove_min(&mut self) -> Option<(K, V)> {
+        if self.is_empty() {
+            return None;
+        }
+        let node = &mut self.content_mut().l_node;
+        if node.is_empty() {
+            return Some(self.take_content().data);
+        }
+        node.remove_min()
+    }
+
     pub fn remove(&mut self, k: &K) -> Option<(K, V)> {
-        if self.0.is_none() {
+        if self.is_empty() {
             return None;
         }
         let node = match self.cmp_key(k) {
@@ -164,22 +174,22 @@ mod tests {
     #[test]
     fn get() {
         let root = &mut Node::none();
-        root.set_content(20, 'a');
+        root.set_kev_val(20, 'a');
 
         assert_eq!(root.get(&20), Some(&(20, 'a')));
         assert_eq!(root.get(&10), None);
 
-        pick(root, "l").set_content(11, 'b');
-        pick(root, "r").set_content(32, 'c');
+        pick(root, "l").set_kev_val(11, 'b');
+        pick(root, "r").set_kev_val(32, 'c');
 
         assert_eq!(root.get(&20), Some(&(20, 'a')));
         assert_eq!(root.get(&11), Some(&(11, 'b')));
         assert_eq!(root.get(&32), Some(&(32, 'c')));
 
-        pick(root, "ll").set_content(10, 'd');
-        pick(root, "lr").set_content(13, 'e');
-        pick(root, "rl").set_content(29, 'f');
-        pick(root, "rr").set_content(34, 'g');
+        pick(root, "ll").set_kev_val(10, 'd');
+        pick(root, "lr").set_kev_val(13, 'e');
+        pick(root, "rl").set_kev_val(29, 'f');
+        pick(root, "rr").set_kev_val(34, 'g');
 
         assert_eq!(root.get(&20), Some(&(20, 'a')));
         assert_eq!(root.get(&11), Some(&(11, 'b')));
