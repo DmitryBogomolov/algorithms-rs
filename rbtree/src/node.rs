@@ -28,11 +28,10 @@ impl<K: Ord, V> Node<K, V> {
     }
 
     fn update_size(&mut self) {
-        let content = self.content_mut();
-        content.size = 1 + content.l_node.len() + content.r_node.len();
+        self.content_mut().size = 1 + self.l_node().len() + self.r_node().len();
     }
 
-    fn key_to_self(&self, k: &K) -> Ordering {
+    fn key_cmp(&self, k: &K) -> Ordering {
         k.cmp(&self.content().data.0)
     }
 
@@ -44,16 +43,32 @@ impl<K: Ord, V> Node<K, V> {
         self.0.as_mut().unwrap()
     }
 
+    fn l_node(&self) -> &Self {
+        &self.content().l_node
+    }
+
+    fn r_node(&self) -> &Self {
+        &self.content().r_node
+    }
+
+    fn l_node_mut(&mut self) -> &mut Self {
+        &mut self.content_mut().l_node
+    }
+
+    fn r_node_mut(&mut self) -> &mut Self {
+        &mut self.content_mut().r_node
+    }
+
     pub fn get(&self, k: &K) -> Option<&(K, V)> {
         if self.is_empty() {
             return None;
         }
-        let node = match self.key_to_self(k) {
+        let node = match self.key_cmp(k) {
             Ordering::Equal => {
                 return Some(&self.content().data);
             },
-            Ordering::Less => &self.content().l_node,
-            Ordering::Greater => &self.content().r_node,
+            Ordering::Less => self.l_node(),
+            Ordering::Greater => self.r_node(),
         };
         node.get(k)
     }
@@ -86,12 +101,12 @@ impl<K: Ord, V> Node<K, V> {
             self.set_key_val(k, v);
             return None;
         }
-        let node = match self.key_to_self(&k) {
+        let node = match self.key_cmp(&k) {
             Ordering::Equal => {
                 return self.insert_core(k, v);
             },
-            Ordering::Less => &mut self.content_mut().l_node,
-            Ordering::Greater => &mut self.content_mut().r_node,
+            Ordering::Less => self.l_node_mut(),
+            Ordering::Greater => self.r_node_mut(),
         };
         let ret = node.insert(k, v);
         self.update_size();
@@ -99,18 +114,18 @@ impl<K: Ord, V> Node<K, V> {
     }
 
     fn remove_core(&mut self) -> Option<(K, V)> {
-        let (no_l, no_r) = (self.content().l_node.is_empty(), self.content().r_node.is_empty());
+        let (no_l, no_r) = (self.l_node().is_empty(), self.r_node().is_empty());
         if no_l && no_r {
             let content = self.take_content();
             return Some(content.data);
         }
         if no_l || no_r {
-            let node = if no_l { &mut self.content_mut().r_node } else { &mut self.content_mut().l_node };
+            let node = if no_l { self.r_node_mut() } else { self.l_node_mut() };
             let node_content = node.take_content();
             let content = self.replace_content(node_content);
             return Some(content.data);
         }
-        let next_data = self.content_mut().r_node.remove_min().unwrap();
+        let next_data = self.r_node_mut().remove_min().unwrap();
         self.update_size();
         let data = std::mem::replace(&mut self.content_mut().data, next_data);
         return Some(data);
@@ -120,7 +135,7 @@ impl<K: Ord, V> Node<K, V> {
         if self.is_empty() {
             return None;
         }
-        let node = &mut self.content_mut().l_node;
+        let node = self.l_node_mut();
         if node.is_empty() {
             return Some(self.take_content().data);
         }
@@ -133,12 +148,12 @@ impl<K: Ord, V> Node<K, V> {
         if self.is_empty() {
             return None;
         }
-        let node = match self.key_to_self(k) {
+        let node = match self.key_cmp(k) {
             Ordering::Equal => {
                 return self.remove_core();
             },
-            Ordering::Less => &mut self.content_mut().l_node,
-            Ordering::Greater => &mut self.content_mut().r_node,
+            Ordering::Less => self.l_node_mut(),
+            Ordering::Greater => self.r_node_mut(),
         };
         let ret = node.remove(k);
         self.update_size();
@@ -155,6 +170,7 @@ mod tests {
         let node: Node<i32, char> = Node::none();
         assert!(node.is_empty());
         assert_eq!(node.len(), 0);
+        assert!(!node.is_red());
     }
 
     fn pick<'a, K, V>(node: &'a mut Node<K, V>, path: &str) -> &'a mut Node<K, V> {
