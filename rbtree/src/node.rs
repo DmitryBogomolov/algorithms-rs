@@ -91,9 +91,13 @@ impl<K: Ord, V> Node<K, V> {
         self.0.replace(content).unwrap()
     }
 
+    fn replace_data(&mut self, data: (K, V)) -> Option<(K, V)> {
+        let prev_data = std::mem::replace(&mut self.content_mut().data, data);
+        Some(prev_data)
+    }
+
     fn insert_core(&mut self, k: K, v: V) -> Option<(K, V)> {
-        let data = std::mem::replace(&mut self.content_mut().data, (k, v));
-        return Some(data);
+        self.replace_data((k, v))
     }
 
     pub fn insert(&mut self, k: K, v: V) -> Option<(K, V)> {
@@ -127,8 +131,7 @@ impl<K: Ord, V> Node<K, V> {
         }
         let next_data = self.r_node_mut().remove_min().unwrap();
         self.update_size();
-        let data = std::mem::replace(&mut self.content_mut().data, next_data);
-        return Some(data);
+        self.replace_data(next_data)
     }
 
     fn remove_min(&mut self) -> Option<(K, V)> {
