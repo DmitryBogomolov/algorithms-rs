@@ -28,8 +28,13 @@ impl<K: Ord, V> Node<K, V> {
         self.0.is_none()
     }
 
-    fn cmp_key(&self, k: &K) -> Ordering {
-        k.cmp(&self.0.as_ref().unwrap().data.0)
+    fn update_size(&mut self) {
+        let content = self.content_mut();
+        content.size = 1 + content.l_node.len() + content.r_node.len();
+    }
+
+    fn key_to_self(&self, k: &K) -> Ordering {
+        k.cmp(&self.content().data.0)
     }
 
     fn content(&self) -> &Content<K, V> {
@@ -44,7 +49,7 @@ impl<K: Ord, V> Node<K, V> {
         if self.is_empty() {
             return None;
         }
-        let node = match self.cmp_key(k) {
+        let node = match self.key_to_self(k) {
             Ordering::Equal => {
                 return Some(&self.content().data);
             },
@@ -82,7 +87,7 @@ impl<K: Ord, V> Node<K, V> {
             self.set_kev_val(k, v);
             return None;
         }
-        let node = match self.cmp_key(&k) {
+        let node = match self.key_to_self(&k) {
             Ordering::Equal => {
                 return self.insert_core(k, v);
             },
@@ -90,9 +95,7 @@ impl<K: Ord, V> Node<K, V> {
             Ordering::Greater => &mut self.content_mut().r_node,
         };
         let ret = node.insert(k, v);
-        if ret.is_none() {
-            self.0.as_mut().unwrap().size += 1;
-        }
+        self.update_size();
         ret
     }
 
@@ -109,6 +112,7 @@ impl<K: Ord, V> Node<K, V> {
             return Some(content.data);
         }
         let next_data = self.content_mut().r_node.remove_min().unwrap();
+        self.update_size();
         let data = std::mem::replace(&mut self.content_mut().data, next_data);
         return Some(data);
     }
@@ -121,14 +125,16 @@ impl<K: Ord, V> Node<K, V> {
         if node.is_empty() {
             return Some(self.take_content().data);
         }
-        node.remove_min()
+        let ret = node.remove_min();
+        self.update_size();
+        ret
     }
 
     pub fn remove(&mut self, k: &K) -> Option<(K, V)> {
         if self.is_empty() {
             return None;
         }
-        let node = match self.cmp_key(k) {
+        let node = match self.key_to_self(k) {
             Ordering::Equal => {
                 return self.remove_core();
             },
@@ -136,9 +142,7 @@ impl<K: Ord, V> Node<K, V> {
             Ordering::Greater => &mut self.content_mut().r_node,
         };
         let ret = node.remove(k);
-        if !ret.is_none() {
-            self.0.as_mut().unwrap().size -= 1;
-        }
+        self.update_size();
         ret
     }
 }
