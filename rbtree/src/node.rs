@@ -2,15 +2,10 @@ use std::cmp::Ordering;
 
 pub struct Node<K, V>(Option<Box<Content<K, V>>>);
 
-enum Clr {
-    R,
-    B,
-}
-
 struct Content<K, V> {
     l_node: Node<K, V>,
     r_node: Node<K, V>,
-    clr: Clr,
+    red: bool,
     size: usize,
     data: (K, V),
 }
@@ -26,6 +21,10 @@ impl<K: Ord, V> Node<K, V> {
 
     pub fn is_empty(&self) -> bool {
         self.0.is_none()
+    }
+
+    fn is_red(&self) -> bool {
+        self.0.as_ref().map_or(false, |t| t.red)
     }
 
     fn update_size(&mut self) {
@@ -59,11 +58,11 @@ impl<K: Ord, V> Node<K, V> {
         node.get(k)
     }
 
-    fn set_kev_val(&mut self, k: K, v: V) {
+    fn set_key_val(&mut self, k: K, v: V) {
         self.0 = Some(Box::new(Content {
             l_node: Self::none(),
             r_node: Self::none(),
-            clr: Clr::B,
+            red: true,
             size: 1,
             data: (k, v),
         }));
@@ -84,7 +83,7 @@ impl<K: Ord, V> Node<K, V> {
 
     pub fn insert(&mut self, k: K, v: V) -> Option<(K, V)> {
         if self.is_empty() {
-            self.set_kev_val(k, v);
+            self.set_key_val(k, v);
             return None;
         }
         let node = match self.key_to_self(&k) {
@@ -178,22 +177,22 @@ mod tests {
     #[test]
     fn get() {
         let root = &mut Node::none();
-        root.set_kev_val(20, 'a');
+        root.set_key_val(20, 'a');
 
         assert_eq!(root.get(&20), Some(&(20, 'a')));
         assert_eq!(root.get(&10), None);
 
-        pick(root, "l").set_kev_val(11, 'b');
-        pick(root, "r").set_kev_val(32, 'c');
+        pick(root, "l").set_key_val(11, 'b');
+        pick(root, "r").set_key_val(32, 'c');
 
         assert_eq!(root.get(&20), Some(&(20, 'a')));
         assert_eq!(root.get(&11), Some(&(11, 'b')));
         assert_eq!(root.get(&32), Some(&(32, 'c')));
 
-        pick(root, "ll").set_kev_val(10, 'd');
-        pick(root, "lr").set_kev_val(13, 'e');
-        pick(root, "rl").set_kev_val(29, 'f');
-        pick(root, "rr").set_kev_val(34, 'g');
+        pick(root, "ll").set_key_val(10, 'd');
+        pick(root, "lr").set_key_val(13, 'e');
+        pick(root, "rl").set_key_val(29, 'f');
+        pick(root, "rr").set_key_val(34, 'g');
 
         assert_eq!(root.get(&20), Some(&(20, 'a')));
         assert_eq!(root.get(&11), Some(&(11, 'b')));
