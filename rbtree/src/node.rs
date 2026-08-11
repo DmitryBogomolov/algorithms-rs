@@ -116,10 +116,14 @@ impl<K: Ord, V> Node<K, V> {
         if self.is_empty() || self.r_node().is_empty() {
             return;
         }
+        let root_red = self.content().red;
+        let node_red = self.r_node().content().red;
         let next_root_content = self.r_node_mut().take_content();
         let prev_root_content = self.replace_content(next_root_content);
         let prev_l_content = self.l_node_mut().replace_content(prev_root_content);
         self.l_node_mut().r_node_mut().replace_content(prev_l_content);
+        self.content_mut().red = root_red;
+        self.l_node_mut().content_mut().red = node_red;
         self.l_node_mut().update_size();
         self.update_size();
     }
@@ -128,32 +132,51 @@ impl<K: Ord, V> Node<K, V> {
         if self.is_empty() || self.l_node().is_empty() {
             return;
         }
+        let root_red = self.content().red;
+        let node_red = self.l_node().content().red;
         let next_root_content = self.l_node_mut().take_content();
         let prev_root_content = self.replace_content(next_root_content);
         let prev_r_content = self.r_node_mut().replace_content(prev_root_content);
         self.r_node_mut().l_node_mut().replace_content(prev_r_content);
+        self.content_mut().red = root_red;
+        self.r_node_mut().content_mut().red = node_red;
         self.r_node_mut().update_size();
         self.update_size();
     }
 
-    fn insert_core(&mut self, k: K, v: V) -> Option<(K, V)> {
-        self.replace_data((k, v))
+    fn balance_after_insert(&mut self) {
+        if self.r_node().is_red() && !self.l_node().is_red() {
+            self.rotate_l();
+        }
+        if self.l_node().is_red() && self.l_node().l_node().is_red() {
+            self.rotate_r();
+        }
+        if self.l_node().is_red() && self.r_node().is_red() {
+            self.flip_colors();
+        }
     }
 
-    pub fn insert(&mut self, k: K, v: V) -> Option<(K, V)> {
+    fn insert_rec(&mut self, k: K, v: V) -> Option<(K, V)> {
         if self.is_empty() {
             self.set_key_val(k, v);
             return None;
         }
         let node = match self.key_cmp(&k) {
             Ordering::Equal => {
-                return self.insert_core(k, v);
+                return self.replace_data((k, v));
             },
             Ordering::Less => self.l_node_mut(),
             Ordering::Greater => self.r_node_mut(),
         };
-        let ret = node.insert(k, v);
+        let ret = node.insert_rec(k, v);
+        self.balance_after_insert();
         self.update_size();
+        ret
+    }
+
+    pub fn insert(&mut self, k: K, v: V) -> Option<(K, V)> {
+        let ret = self.insert_rec(k, v);
+        self.content_mut().red = false;
         ret
     }
 
@@ -185,7 +208,7 @@ impl<K: Ord, V> Node<K, V> {
         ret
     }
 
-    pub fn remove(&mut self, k: &K) -> Option<(K, V)> {
+    fn remove_rec(&mut self, k: &K) -> Option<(K, V)> {
         if self.is_empty() {
             return None;
         }
@@ -196,9 +219,13 @@ impl<K: Ord, V> Node<K, V> {
             Ordering::Less => self.l_node_mut(),
             Ordering::Greater => self.r_node_mut(),
         };
-        let ret = node.remove(k);
+        let ret = node.remove_rec(k);
         self.update_size();
         ret
+    }
+
+    pub fn remove(&mut self, k: &K) -> Option<(K, V)> {
+        self.remove_rec(k)
     }
 }
 
