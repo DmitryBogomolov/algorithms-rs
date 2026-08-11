@@ -83,17 +83,57 @@ impl<K: Ord, V> Node<K, V> {
         }));
     }
 
-    fn take_content(&mut self) -> Box<Content<K, V>> {
-        self.0.take().unwrap()
+    fn take_content(&mut self) -> Option<Box<Content<K, V>>> {
+        self.0.take()
     }
 
-    fn replace_content(&mut self, content: Box<Content<K, V>>) -> Box<Content<K, V>> {
-        self.0.replace(content).unwrap()
+    fn replace_content(&mut self, content: Option<Box<Content<K, V>>>) -> Option<Box<Content<K, V>>> {
+        match content {
+            None => self.0.take(),
+            Some(c) => self.0.replace(c),
+        }
     }
 
     fn replace_data(&mut self, data: (K, V)) -> Option<(K, V)> {
         let prev_data = std::mem::replace(&mut self.content_mut().data, data);
         Some(prev_data)
+    }
+
+    fn flip_color(&mut self) {
+        self.content_mut().red = !self.content().red;
+    }
+
+    fn flip_colors(&mut self) {
+        if self.is_empty() || self.l_node().is_empty() || self.r_node().is_empty() {
+            return;
+        }
+        self.flip_color();
+        self.l_node_mut().flip_color();
+        self.r_node_mut().flip_color();
+    }
+
+    fn rotate_l(&mut self) {
+        if self.is_empty() || self.r_node().is_empty() {
+            return;
+        }
+        let next_root_content = self.r_node_mut().take_content();
+        let prev_root_content = self.replace_content(next_root_content);
+        let prev_l_content = self.l_node_mut().replace_content(prev_root_content);
+        self.l_node_mut().r_node_mut().replace_content(prev_l_content);
+        self.l_node_mut().update_size();
+        self.update_size();
+    }
+
+    fn rotate_r(&mut self) {
+        if self.is_empty() || self.l_node().is_empty() {
+            return;
+        }
+        let next_root_content = self.l_node_mut().take_content();
+        let prev_root_content = self.replace_content(next_root_content);
+        let prev_r_content = self.r_node_mut().replace_content(prev_root_content);
+        self.r_node_mut().l_node_mut().replace_content(prev_r_content);
+        self.r_node_mut().update_size();
+        self.update_size();
     }
 
     fn insert_core(&mut self, k: K, v: V) -> Option<(K, V)> {
@@ -120,14 +160,12 @@ impl<K: Ord, V> Node<K, V> {
     fn remove_core(&mut self) -> Option<(K, V)> {
         let (no_l, no_r) = (self.l_node().is_empty(), self.r_node().is_empty());
         if no_l && no_r {
-            let content = self.take_content();
-            return Some(content.data);
+            return self.take_content().map(|c| c.data);
         }
         if no_l || no_r {
             let node = if no_l { self.r_node_mut() } else { self.l_node_mut() };
             let node_content = node.take_content();
-            let content = self.replace_content(node_content);
-            return Some(content.data);
+            return self.replace_content(node_content).map(|c| c.data);
         }
         let next_data = self.r_node_mut().remove_min().unwrap();
         self.update_size();
@@ -140,7 +178,7 @@ impl<K: Ord, V> Node<K, V> {
         }
         let node = self.l_node_mut();
         if node.is_empty() {
-            return Some(self.take_content().data);
+            return self.take_content().map(|c| c.data);
         }
         let ret = node.remove_min();
         self.update_size();
