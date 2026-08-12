@@ -113,15 +113,6 @@ impl<K: Ord, V> Node<K, V> {
         self.content_mut().red = !self.content().red;
     }
 
-    fn flip_colors(&mut self) {
-        if self.is_empty() || self.l_node().is_empty() || self.r_node().is_empty() {
-            return;
-        }
-        self.flip_color();
-        self.l_node_mut().flip_color();
-        self.r_node_mut().flip_color();
-    }
-
     fn rotate_l(&mut self) {
         if self.is_empty() || self.r_node().is_empty() {
             return;
@@ -164,46 +155,34 @@ impl<K: Ord, V> Node<K, V> {
         }
     }
 
-    /// CLRS RB-INSERT-FIXUP, applied bottom-up. `self` is the grandparent of
-    /// the node just inserted; a red-red violation exists on one side when
-    /// `self`'s child (the red parent) is red and that child itself has a red
-    /// child. The sibling of the red parent is the uncle. The recursion up
-    /// through `insert_rec` plays the role of CLRS's `while z.p.color == RED`
-    /// loop: case 1 (recolor) may leave `self` red, which the parent's next
-    /// call up the stack observes.
-    ///
-    /// Because `rotate_l`/`rotate_r` swap the two rotated nodes' colors,
-    /// case 3 needs no explicit recolor — the rotation alone puts the
-    /// grandparent's black on the promoted parent and the parent's red on the
-    /// demoted grandparent, exactly the CLRS recolor-and-rotate.
     fn balance_after_insert(&mut self) {
         let l_red = self.l_node().is_red();
         let r_red = self.r_node().is_red();
         if !l_red && !r_red {
             return;
         }
+        if l_red && r_red {
+            // red parent and red uncle - recolor
+            self.flip_color();
+            self.l_node_mut().flip_color();
+            self.r_node_mut().flip_color();
+            return;
+        }
         if l_red {
-            // red parent is the left child; uncle is the right child
-            if r_red {
-                // case 1: uncle red -> recolor parent, uncle, self
-                self.flip_colors();
-                return;
-            }
-            // case 2: inner (LR) violation -> rotate the parent left so the
-            // red grandchild becomes an outer (LL) grandchild
+            // inner (LR) violation
             if self.l_node().r_node().is_red() {
                 self.l_node_mut().rotate_l();
             }
-            // case 3: outer (LL) violation -> rotate self right; the color
-            // swap recolors the new root black and the demoted self red
+            // outer (LL) violation
             if self.l_node().l_node().is_red() {
                 self.rotate_r();
             }
         } else {
-            // red parent is the right child; uncle is the left child (mirror)
+            // inner (RL) violation
             if self.r_node().l_node().is_red() {
                 self.r_node_mut().rotate_r();
             }
+            // outer (RR) violation
             if self.r_node().r_node().is_red() {
                 self.rotate_l();
             }
