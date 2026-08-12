@@ -1,7 +1,7 @@
 use super::node::Node;
 
 // Implements *Reb-Black Binary Search Tree* container.
-// https://algs4.cs.princeton.edu/33balanced/
+// Partially based on https://algs4.cs.princeton.edu/33balanced/.
 pub struct RBTree<K, V> {
     root: Node<K, V>,
 }
