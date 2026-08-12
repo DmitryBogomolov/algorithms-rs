@@ -149,9 +149,13 @@ impl<K: Ord, V> Node<K, V> {
         self.update_size();
     }
 
+    fn flip_to_black(&mut self) {
+        self.content_mut().red = false;
+    }
+
     fn force_black_root(&mut self) {
         if !self.is_empty() {
-            self.content_mut().red = false;
+            self.flip_to_black();
         }
     }
 
@@ -211,25 +215,17 @@ impl<K: Ord, V> Node<K, V> {
         ret
     }
 
-    /// Removes `self`'s data, returning it and whether the subtree is now one
-    /// black short (a black node was removed). The three node shapes:
-    /// leaf, single-child, and two-child. The bool is seeded by the color of
-    /// the node being removed here or (for the two-child case) threaded up
-    /// from `remove_min`; it is then either absorbed locally or handed to
-    /// `balance_after_remove` to propagate further.
     fn remove_core(&mut self) -> (Option<(K, V)>, bool) {
-        let (no_l, no_r) = (self.l_node().is_empty(), self.r_node().is_empty());
+        let no_l = self.l_node().is_empty();
+        let no_r = self.r_node().is_empty();
         if no_l && no_r {
-            // leaf: removing a black leaf creates a black deficit; a red one
-            // does not.
-            let was_red = self.is_red();
+            // Removed black leaf creates a black deficit.
+            let is_black = !self.is_red();
             let data = self.take_content().map(|c| c.data);
-            return (data, !was_red);
+            return (data, is_black);
         }
         if no_l || no_r {
-            // single child. In a red-black tree a node with exactly one child
-            // is black and that child is a red leaf; promote and blacken it,
-            // which absorbs any deficit locally.
+            // Node with single child is black and child is red.
             let node = if no_l {
                 self.r_node_mut()
             } else {
@@ -237,15 +233,14 @@ impl<K: Ord, V> Node<K, V> {
             };
             let node_content = node.take_content();
             let data = self.replace_content(node_content).map(|c| c.data);
-            self.flip_color_to(false);
+            // Black node deficit is restored.
+            self.flip_to_black();
             return (data, false);
         }
-        // two children: replace self's data with the successor (the min of the
-        // right subtree), removing that successor node instead. The deficit,
-        // if any, comes from the right subtree's `remove_min`.
-        let (next_data, right_deficit) = self.r_node_mut().remove_min();
+        let (next_data, deficit) = self.r_node_mut().remove_min_rec();
         let prev_data = self.replace_data(next_data.unwrap());
-        let deficit = if right_deficit {
+        // Propagate deficit of removed next min node.
+        let deficit = if deficit {
             self.balance_after_remove(Side::Right)
         } else {
             false
@@ -254,46 +249,29 @@ impl<K: Ord, V> Node<K, V> {
         (prev_data, deficit)
     }
 
-    /// Removes and returns the minimum (leftmost) node of this subtree, with a
-    /// bool saying whether the subtree is now one black short.
-    fn remove_min(&mut self) -> (Option<(K, V)>, bool) {
+    fn remove_min_rec(&mut self) -> (Option<(K, V)>, bool) {
         if self.is_empty() {
             return (None, false);
         }
         if self.l_node().is_empty() {
-            // `self` is the minimum node: it has no left child. In a general
-            // (not necessarily left-leaning) red-black tree it may still have
-            // a right child, which must be promoted — `take_content` would
-            // pull the whole subtree and return only `data`, dropping it.
-            let was_red = self.is_red();
-            let has_right = !self.r_node().is_empty();
+            let is_black = !self.is_red();
             let r_content = self.r_node_mut().take_content();
+            let has_r_node = r_content.is_some();
             let data = self.replace_content(r_content).map(|c| c.data);
-            // a red leaf leaves no deficit. A black leaf does. A black node
-            // with a right child has a red child (invariant); promoting and
-            // blackening it absorbs the deficit.
-            if has_right {
-                self.flip_color_to(false);
-                return (data, false);
+            // Red leaf leaves no deficit. Red child of black node restores deficit.
+            if has_r_node {
+                self.flip_to_black();
             }
-            return (data, !was_red);
+            return (data, is_black && !has_r_node);
         }
-        let (ret, child_deficit) = self.l_node_mut().remove_min();
-        let deficit = if child_deficit {
+        let (ret, deficit) = self.l_node_mut().remove_min_rec();
+        let deficit = if deficit {
             self.balance_after_remove(Side::Left)
         } else {
             false
         };
         self.update_size();
         (ret, deficit)
-    }
-
-    /// Sets this node's color to `red`, leaving it empty unchanged. Cheaper
-    /// than a full flip when the target color is known.
-    fn flip_color_to(&mut self, red: bool) {
-        if let Some(c) = self.0.as_mut() {
-            c.red = red;
-        }
     }
 
     /// Bottom-up red-black delete fixup. `self`'s child on `side` has lost a
