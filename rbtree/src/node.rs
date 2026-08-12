@@ -144,6 +144,12 @@ impl<K: Ord, V> Node<K, V> {
         self.update_size();
     }
 
+    fn force_black_root(&mut self) {
+        if !self.is_empty() {
+            self.content_mut().red = false;
+        }
+    }
+
     fn balance_after_insert(&mut self) {
         if self.r_node().is_red() && !self.l_node().is_red() {
             self.rotate_l();
@@ -176,7 +182,7 @@ impl<K: Ord, V> Node<K, V> {
 
     pub fn insert(&mut self, k: K, v: V) -> Option<(K, V)> {
         let ret = self.insert_rec(k, v);
-        self.content_mut().red = false;
+        self.force_black_root();
         ret
     }
 
@@ -208,6 +214,10 @@ impl<K: Ord, V> Node<K, V> {
         ret
     }
 
+    fn balance_after_remove(&mut self) {
+        // TODO: implement?
+    }
+
     fn remove_rec(&mut self, k: &K) -> Option<(K, V)> {
         if self.is_empty() {
             return None;
@@ -220,12 +230,15 @@ impl<K: Ord, V> Node<K, V> {
             Ordering::Greater => self.r_node_mut(),
         };
         let ret = node.remove_rec(k);
+        self.balance_after_remove();
         self.update_size();
         ret
     }
 
     pub fn remove(&mut self, k: &K) -> Option<(K, V)> {
-        self.remove_rec(k)
+        let ret = self.remove_rec(k);
+        self.force_black_root();
+        ret
     }
 }
 
