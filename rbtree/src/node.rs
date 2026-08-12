@@ -10,13 +10,34 @@ struct Content<K, V> {
     data: (K, V),
 }
 
-/// Which child the deletion-path came through. Used to tell
-/// `balance_after_remove` which side may be black-deficient without it having
-/// to recompute black heights.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Side {
-    Left,
-    Right,
+    L,
+    R,
+}
+
+impl Side {
+    fn from_is_left(is_left: bool) -> Self {
+        match is_left {
+            true => Self::L,
+            false => Self::R,
+        }
+    }
+
+    fn from_ord(ord: Ordering) -> Self {
+        match ord {
+            Ordering::Less => Self::L,
+            Ordering::Greater => Self::R,
+            _ => unreachable!("unexpected ordering"),
+        }
+    }
+
+    fn other(self) -> Self {
+        match self {
+            Self::L => Self::R,
+            Self::R => Self::L,
+        }
+    }
 }
 
 impl<K: Ord, V> Node<K, V> {
@@ -68,14 +89,27 @@ impl<K: Ord, V> Node<K, V> {
         &mut self.content_mut().r_node
     }
 
+    fn node(&self, side: Side) -> &Self {
+        match side {
+            Side::L => &self.content().l_node,
+            Side::R => &self.content().r_node,
+        }
+    }
+
+    fn node_mut(&mut self, side: Side) -> &mut Self {
+        match side {
+            Side::L => &mut self.content_mut().l_node,
+            Side::R => &mut self.content_mut().r_node,
+        }
+    }
+
     pub fn get(&self, k: &K) -> Option<&(K, V)> {
         if self.is_empty() {
             return None;
         }
         let node = match self.key_cmp(k) {
             Ordering::Equal => return Some(&self.content().data),
-            Ordering::Less => self.l_node(),
-            Ordering::Greater => self.r_node(),
+            ord => self.node(Side::from_ord(ord)),
         };
         node.get(k)
     }
@@ -113,40 +147,31 @@ impl<K: Ord, V> Node<K, V> {
         self.content_mut().red = !self.content().red;
     }
 
-    fn rotate_l(&mut self) {
-        if self.is_empty() || self.r_node().is_empty() {
+    fn rotate(&mut self, side: Side) {
+        let other_side = side.other();
+        if self.is_empty() || self.node(other_side).is_empty() {
             return;
         }
         let root_red = self.content().red;
-        let node_red = self.r_node().content().red;
-        let next_root_content = self.r_node_mut().take_content();
+        let node_red = self.node(other_side).content().red;
+        let next_root_content = self.node_mut(other_side).take_content();
         let prev_root_content = self.replace_content(next_root_content);
-        let prev_l_content = self.l_node_mut().replace_content(prev_root_content);
-        self.l_node_mut()
-            .r_node_mut()
-            .replace_content(prev_l_content);
+        let prev_content = self.node_mut(side).replace_content(prev_root_content);
+        self.node_mut(side)
+            .node_mut(other_side)
+            .replace_content(prev_content);
         self.content_mut().red = root_red;
-        self.l_node_mut().content_mut().red = node_red;
-        self.l_node_mut().update_size();
+        self.node_mut(side).content_mut().red = node_red;
+        self.node_mut(side).update_size();
         self.update_size();
     }
 
+    fn rotate_l(&mut self) {
+        self.rotate(Side::L);
+    }
+
     fn rotate_r(&mut self) {
-        if self.is_empty() || self.l_node().is_empty() {
-            return;
-        }
-        let root_red = self.content().red;
-        let node_red = self.l_node().content().red;
-        let next_root_content = self.l_node_mut().take_content();
-        let prev_root_content = self.replace_content(next_root_content);
-        let prev_r_content = self.r_node_mut().replace_content(prev_root_content);
-        self.r_node_mut()
-            .l_node_mut()
-            .replace_content(prev_r_content);
-        self.content_mut().red = root_red;
-        self.r_node_mut().content_mut().red = node_red;
-        self.r_node_mut().update_size();
-        self.update_size();
+        self.rotate(Side::R);
     }
 
     fn flip_to_black(&mut self) {
@@ -160,36 +185,26 @@ impl<K: Ord, V> Node<K, V> {
     }
 
     fn balance_after_insert(&mut self) {
-        let l_red = self.l_node().is_red();
-        let r_red = self.r_node().is_red();
+        let l_red = self.node(Side::L).is_red();
+        let r_red = self.node(Side::R).is_red();
         if !l_red && !r_red {
             return;
         }
         if l_red && r_red {
             // red parent and red uncle - recolor
             self.flip_color();
-            self.l_node_mut().flip_color();
-            self.r_node_mut().flip_color();
+            self.node_mut(Side::L).flip_color();
+            self.node_mut(Side::R).flip_color();
             return;
         }
-        if l_red {
-            // inner (LR) violation
-            if self.l_node().r_node().is_red() {
-                self.l_node_mut().rotate_l();
-            }
-            // outer (LL) violation
-            if self.l_node().l_node().is_red() {
-                self.rotate_r();
-            }
-        } else {
-            // inner (RL) violation
-            if self.r_node().l_node().is_red() {
-                self.r_node_mut().rotate_r();
-            }
-            // outer (RR) violation
-            if self.r_node().r_node().is_red() {
-                self.rotate_l();
-            }
+        let side = Side::from_is_left(l_red);
+        // inner (LR or RL) violation
+        if self.node(side).node(side.other()).is_red() {
+            self.node_mut(side).rotate(side);
+        }
+        // outer (LL or RR) violation
+        if self.node(side).node(side).is_red() {
+            self.rotate(side.other());
         }
     }
 
@@ -200,8 +215,7 @@ impl<K: Ord, V> Node<K, V> {
         }
         let node = match self.key_cmp(&k) {
             Ordering::Equal => return self.replace_data((k, v)),
-            Ordering::Less => self.l_node_mut(),
-            Ordering::Greater => self.r_node_mut(),
+            ord => self.node_mut(Side::from_ord(ord)),
         };
         let ret = node.insert_rec(k, v);
         self.balance_after_insert();
@@ -226,22 +240,18 @@ impl<K: Ord, V> Node<K, V> {
         }
         if no_l || no_r {
             // Node with single child is black and child is red.
-            let node = if no_l {
-                self.r_node_mut()
-            } else {
-                self.l_node_mut()
-            };
+            let node = self.node_mut(Side::from_is_left(!no_l));
             let node_content = node.take_content();
             let data = self.replace_content(node_content).map(|c| c.data);
             // Black node deficit is restored.
             self.flip_to_black();
             return (data, false);
         }
-        let (next_data, deficit) = self.r_node_mut().remove_min_rec();
+        let (next_data, deficit) = self.node_mut(Side::R).remove_min_rec();
         let prev_data = self.replace_data(next_data.unwrap());
         // Propagate deficit of removed next min node.
         let deficit = if deficit {
-            self.balance_after_remove(Side::Right)
+            self.balance_after_remove(Side::R)
         } else {
             false
         };
@@ -266,7 +276,7 @@ impl<K: Ord, V> Node<K, V> {
         }
         let (ret, deficit) = self.l_node_mut().remove_min_rec();
         let deficit = if deficit {
-            self.balance_after_remove(Side::Left)
+            self.balance_after_remove(Side::L)
         } else {
             false
         };
@@ -289,8 +299,8 @@ impl<K: Ord, V> Node<K, V> {
             return false;
         }
         let sibling_red = match side {
-            Side::Left => self.r_node().is_red(),
-            Side::Right => self.l_node().is_red(),
+            Side::L => self.r_node().is_red(),
+            Side::R => self.l_node().is_red(),
         };
         if sibling_red {
             // case 1: red sibling -> rotate (the color swap blackens it),
@@ -298,19 +308,19 @@ impl<K: Ord, V> Node<K, V> {
             // absorbs a one-black deficit (case 2) or resolves it by rotation
             // (cases 3-4), so that recursion never propagates back here.
             return match side {
-                Side::Left => {
+                Side::L => {
                     self.rotate_l();
-                    self.l_node_mut().balance_after_remove(Side::Left)
+                    self.l_node_mut().balance_after_remove(Side::L)
                 }
-                Side::Right => {
+                Side::R => {
                     self.rotate_r();
-                    self.r_node_mut().balance_after_remove(Side::Right)
+                    self.r_node_mut().balance_after_remove(Side::R)
                 }
             };
         }
         let w_empty = match side {
-            Side::Left => self.r_node().is_empty(),
-            Side::Right => self.l_node().is_empty(),
+            Side::L => self.r_node().is_empty(),
+            Side::R => self.l_node().is_empty(),
         };
         if w_empty {
             // A genuine deficit requires a non-empty sibling to borrow from;
@@ -319,11 +329,11 @@ impl<K: Ord, V> Node<K, V> {
         }
         // near = sibling child on the deficit side; far = the other.
         let (near_red, far_red) = match side {
-            Side::Left => (
+            Side::L => (
                 self.r_node().l_node().is_red(),
                 self.r_node().r_node().is_red(),
             ),
-            Side::Right => (
+            Side::R => (
                 self.l_node().r_node().is_red(),
                 self.l_node().l_node().is_red(),
             ),
@@ -332,8 +342,8 @@ impl<K: Ord, V> Node<K, V> {
             // case 2: both sibling children black -> recolor sibling red; if
             // self is red it absorbs (resolved), else the deficit propagates up.
             match side {
-                Side::Left => self.r_node_mut().flip_color(),
-                Side::Right => self.l_node_mut().flip_color(),
+                Side::L => self.r_node_mut().flip_color(),
+                Side::R => self.l_node_mut().flip_color(),
             }
             if self.is_red() {
                 self.flip_color();
@@ -346,20 +356,20 @@ impl<K: Ord, V> Node<K, V> {
             // nephew becomes the far one, then case 4 resolves it.
             if near_red && !far_red {
                 match side {
-                    Side::Left => self.r_node_mut().rotate_r(),
-                    Side::Right => self.l_node_mut().rotate_l(),
+                    Side::L => self.r_node_mut().rotate_r(),
+                    Side::R => self.l_node_mut().rotate_l(),
                 }
             }
             // case 4: far nephew red -> pull it over; the color-swap rotation
             // settles colors, deficit resolved.
             match side {
-                Side::Left => {
+                Side::L => {
                     if self.r_node().r_node().is_red() {
                         self.r_node_mut().r_node_mut().flip_color();
                     }
                     self.rotate_l();
                 }
-                Side::Right => {
+                Side::R => {
                     if self.l_node().l_node().is_red() {
                         self.l_node_mut().l_node_mut().flip_color();
                     }
@@ -376,11 +386,10 @@ impl<K: Ord, V> Node<K, V> {
         }
         let (side, node) = match self.key_cmp(k) {
             Ordering::Equal => return self.remove_core(),
-            Ordering::Less => (Side::Left, self.l_node_mut()),
-            Ordering::Greater => (Side::Right, self.r_node_mut()),
+            ord => (Side::from_ord(ord), self.node_mut(Side::from_ord(ord))),
         };
-        let (ret, child_deficit) = node.remove_rec(k);
-        let deficit = if child_deficit {
+        let (ret, deficit) = node.remove_rec(k);
+        let deficit = if deficit {
             self.balance_after_remove(side)
         } else {
             false
