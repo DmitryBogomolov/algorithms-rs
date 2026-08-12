@@ -58,7 +58,7 @@ impl<K: Ord, V> Node<K, V> {
     }
 
     fn update_size(&mut self) {
-        self.content_mut().size = 1 + self.l_node().len() + self.r_node().len();
+        self.content_mut().size = 1 + self.node(Side::L).len() + self.node(Side::R).len();
     }
 
     fn key_cmp(&self, k: &K) -> Ordering {
@@ -166,14 +166,6 @@ impl<K: Ord, V> Node<K, V> {
         self.update_size();
     }
 
-    fn rotate_l(&mut self) {
-        self.rotate(Side::L);
-    }
-
-    fn rotate_r(&mut self) {
-        self.rotate(Side::R);
-    }
-
     fn flip_to_black(&mut self) {
         self.content_mut().red = false;
     }
@@ -230,8 +222,8 @@ impl<K: Ord, V> Node<K, V> {
     }
 
     fn remove_core(&mut self) -> (Option<(K, V)>, bool) {
-        let no_l = self.l_node().is_empty();
-        let no_r = self.r_node().is_empty();
+        let no_l = self.node(Side::L).is_empty();
+        let no_r = self.node(Side::R).is_empty();
         if no_l && no_r {
             // Removed black leaf creates a black deficit.
             let is_black = !self.is_red();
@@ -263,9 +255,9 @@ impl<K: Ord, V> Node<K, V> {
         if self.is_empty() {
             return (None, false);
         }
-        if self.l_node().is_empty() {
+        if self.node(Side::L).is_empty() {
             let is_black = !self.is_red();
-            let r_content = self.r_node_mut().take_content();
+            let r_content = self.node_mut(Side::R).take_content();
             let has_r_node = r_content.is_some();
             let data = self.replace_content(r_content).map(|c| c.data);
             // Red leaf leaves no deficit. Red child of black node restores deficit.
@@ -274,7 +266,7 @@ impl<K: Ord, V> Node<K, V> {
             }
             return (data, is_black && !has_r_node);
         }
-        let (ret, deficit) = self.l_node_mut().remove_min_rec();
+        let (ret, deficit) = self.node_mut(Side::L).remove_min_rec();
         let deficit = if deficit {
             self.balance_after_remove(Side::L)
         } else {
@@ -298,53 +290,27 @@ impl<K: Ord, V> Node<K, V> {
         if self.is_empty() {
             return false;
         }
-        let sibling_red = match side {
-            Side::L => self.r_node().is_red(),
-            Side::R => self.l_node().is_red(),
-        };
-        if sibling_red {
+        let other_side = side.other();
+        if self.node(other_side).is_red() {
             // case 1: red sibling -> rotate (the color swap blackens it),
             // moving the deficit down to the now-red child. A red node always
             // absorbs a one-black deficit (case 2) or resolves it by rotation
             // (cases 3-4), so that recursion never propagates back here.
-            return match side {
-                Side::L => {
-                    self.rotate_l();
-                    self.l_node_mut().balance_after_remove(Side::L)
-                }
-                Side::R => {
-                    self.rotate_r();
-                    self.r_node_mut().balance_after_remove(Side::R)
-                }
-            };
+            self.rotate(side);
+            return self.node_mut(side).balance_after_remove(side);
         }
-        let w_empty = match side {
-            Side::L => self.r_node().is_empty(),
-            Side::R => self.l_node().is_empty(),
-        };
-        if w_empty {
+        if self.node(other_side).is_empty() {
             // A genuine deficit requires a non-empty sibling to borrow from;
             // empty here means no deficit reached this node. Defensive.
             return false;
         }
         // near = sibling child on the deficit side; far = the other.
-        let (near_red, far_red) = match side {
-            Side::L => (
-                self.r_node().l_node().is_red(),
-                self.r_node().r_node().is_red(),
-            ),
-            Side::R => (
-                self.l_node().r_node().is_red(),
-                self.l_node().l_node().is_red(),
-            ),
-        };
+        let near_red = self.node(other_side).node(side).is_red();
+        let far_red = self.node(other_side).node(other_side).is_red();
         if !near_red && !far_red {
             // case 2: both sibling children black -> recolor sibling red; if
             // self is red it absorbs (resolved), else the deficit propagates up.
-            match side {
-                Side::L => self.r_node_mut().flip_color(),
-                Side::R => self.l_node_mut().flip_color(),
-            }
+            self.node_mut(other_side).flip_color();
             if self.is_red() {
                 self.flip_color();
                 false
@@ -355,27 +321,14 @@ impl<K: Ord, V> Node<K, V> {
             // case 3: near red, far black -> rotate at sibling so the red
             // nephew becomes the far one, then case 4 resolves it.
             if near_red && !far_red {
-                match side {
-                    Side::L => self.r_node_mut().rotate_r(),
-                    Side::R => self.l_node_mut().rotate_l(),
-                }
+                self.node_mut(other_side).rotate(other_side);
             }
             // case 4: far nephew red -> pull it over; the color-swap rotation
             // settles colors, deficit resolved.
-            match side {
-                Side::L => {
-                    if self.r_node().r_node().is_red() {
-                        self.r_node_mut().r_node_mut().flip_color();
-                    }
-                    self.rotate_l();
-                }
-                Side::R => {
-                    if self.l_node().l_node().is_red() {
-                        self.l_node_mut().l_node_mut().flip_color();
-                    }
-                    self.rotate_r();
-                }
+            if self.node(other_side).node(other_side).is_red() {
+                self.node_mut(other_side).node_mut(other_side).flip_color();
             }
+            self.rotate(side);
             false
         }
     }
