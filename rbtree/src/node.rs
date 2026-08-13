@@ -55,7 +55,7 @@ impl<K, V> Node<K, V> {
     }
 
     fn is_red(&self) -> bool {
-        self.0.as_ref().map_or(false, |t| t.red)
+        self.0.as_ref().is_some_and(|t| t.red)
     }
 
     fn update_size(&mut self) {
@@ -441,13 +441,19 @@ mod tests {
             assert_eq!(node.get(i.to_string().as_str()), Some(&i));
         }
         for i in range.clone() {
-            assert_eq!(node.insert(i.to_string(), i + 100), Some((i.to_string(), i)));
+            assert_eq!(
+                node.insert(i.to_string(), i + 100),
+                Some((i.to_string(), i))
+            );
         }
         for i in range.clone() {
             assert_eq!(node.get(i.to_string().as_str()), Some(&(i + 100)));
         }
         for i in range.clone() {
-            assert_eq!(node.remove(i.to_string().as_str()), Some((i.to_string(), i + 100)));
+            assert_eq!(
+                node.remove(i.to_string().as_str()),
+                Some((i.to_string(), i + 100))
+            );
         }
 
         assert!(node.is_empty());
@@ -464,11 +470,21 @@ mod tests {
         depths.sort();
         let min_depth = *depths.first().unwrap();
         let max_depth = *depths.last().unwrap();
-        assert!(max_depth <= 2 * min_depth + 1, "not balanced ({}, {})", min_depth, max_depth);
+        assert!(
+            max_depth <= 2 * min_depth + 1,
+            "not balanced ({}, {})",
+            min_depth,
+            max_depth
+        );
         assert!(keys.is_sorted(), "not sorted");
     }
 
-    fn collect<K: Clone, V>(node: &Node<K, V>, depth: usize, depths: &mut Vec<usize>, keys: &mut Vec<K>) {
+    fn collect<K: Clone, V>(
+        node: &Node<K, V>,
+        depth: usize,
+        depths: &mut Vec<usize>,
+        keys: &mut Vec<K>,
+    ) {
         let l_node = node.node(Side::L);
         let r_node = node.node(Side::R);
         if l_node.is_empty() && r_node.is_empty() {
