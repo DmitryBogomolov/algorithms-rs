@@ -25,21 +25,18 @@ impl<K: Ord, V> RBTree<K, V> {
         Q: Ord + ?Sized,
         K: Borrow<Q>,
     {
-        let r = self.root.get(key);
-        r.map(|t| &t.1)
+        self.root.get(key)
     }
 
-    pub fn insert(&mut self, key: K, val: V) -> Option<V> {
-        let r = self.root.insert(key, val);
-        r.map(|t| t.1)
+    pub fn insert(&mut self, key: K, val: V) -> Option<(K, V)> {
+        self.root.insert(key, val)
     }
 
-    pub fn remove<Q>(&mut self, key: &Q) -> Option<V>
+    pub fn remove<Q>(&mut self, key: &Q) -> Option<(K, V)>
     where
         Q: Ord + ?Sized,
         K: Borrow<Q>,
     {
-        let r = self.root.remove(key);
-        r.map(|t| t.1)
+        self.root.remove(key)
     }
 }

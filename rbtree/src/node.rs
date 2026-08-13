@@ -92,7 +92,7 @@ impl<K, V> Node<K, V> {
         }
     }
 
-    pub fn get<Q>(&self, k: &Q) -> Option<&(K, V)>
+    pub fn get<Q>(&self, k: &Q) -> Option<&V>
     where
         Q: Ord + ?Sized,
         K: Borrow<Q>,
@@ -101,7 +101,7 @@ impl<K, V> Node<K, V> {
             return None;
         }
         let node = match self.key_cmp(k) {
-            Ordering::Equal => return Some(&self.content().data),
+            Ordering::Equal => return Some(&self.content().data.1),
             ord => self.node(Side::from_ord(ord)),
         };
         node.get(k)
@@ -362,7 +362,7 @@ mod tests {
         let mut node = Node::none();
         
         assert_eq!(node.insert(10, 'a'), None);
-        assert_eq!(node.get(&10), Some(&(10, 'a')));
+        assert_eq!(node.get(&10), Some(&'a'));
 
         assert!(!node.is_empty());
         assert_eq!(node.len(), 1);
@@ -387,7 +387,7 @@ mod tests {
         node.insert(10, 'a');
 
         assert_eq!(node.insert(10, 'b'), Some((10, 'a')));
-        assert_eq!(node.get(&10), Some(&(10, 'b')));
+        assert_eq!(node.get(&10), Some(&'b'));
 
         assert!(!node.is_empty());
         assert_eq!(node.len(), 1);
@@ -457,28 +457,28 @@ mod tests {
         let root = &mut Node::none();
         root.set_data((20, 'a'));
 
-        assert_eq!(root.get(&20), Some(&(20, 'a')));
+        assert_eq!(root.get(&20), Some(&'a'));
         assert_eq!(root.get(&10), None);
 
         pick(root, "l").set_data((11, 'b'));
         pick(root, "r").set_data((32, 'c'));
 
-        assert_eq!(root.get(&20), Some(&(20, 'a')));
-        assert_eq!(root.get(&11), Some(&(11, 'b')));
-        assert_eq!(root.get(&32), Some(&(32, 'c')));
+        assert_eq!(root.get(&20), Some(&'a'));
+        assert_eq!(root.get(&11), Some(&'b'));
+        assert_eq!(root.get(&32), Some(&'c'));
 
         pick(root, "ll").set_data((10, 'd'));
         pick(root, "lr").set_data((13, 'e'));
         pick(root, "rl").set_data((29, 'f'));
         pick(root, "rr").set_data((34, 'g'));
 
-        assert_eq!(root.get(&20), Some(&(20, 'a')));
-        assert_eq!(root.get(&11), Some(&(11, 'b')));
-        assert_eq!(root.get(&32), Some(&(32, 'c')));
-        assert_eq!(root.get(&10), Some(&(10, 'd')));
-        assert_eq!(root.get(&13), Some(&(13, 'e')));
-        assert_eq!(root.get(&29), Some(&(29, 'f')));
-        assert_eq!(root.get(&34), Some(&(34, 'g')));
+        assert_eq!(root.get(&20), Some(&'a'));
+        assert_eq!(root.get(&11), Some(&'b'));
+        assert_eq!(root.get(&32), Some(&'c'));
+        assert_eq!(root.get(&10), Some(&'d'));
+        assert_eq!(root.get(&13), Some(&'e'));
+        assert_eq!(root.get(&29), Some(&'f'));
+        assert_eq!(root.get(&34), Some(&'g'));
     }
 
     #[test]
@@ -492,19 +492,19 @@ mod tests {
         }
         assert_eq!(root.len(), items.len());
         for (k, v) in items {
-            assert_eq!(root.get(&k), Some(&(k, v)));
+            assert_eq!(root.get(&k), Some(&v));
         }
 
         // duplicate keys return the old value and update in place
         assert_eq!(root.insert(15, 'B'), Some((15, 'b')));
         assert!(is_valid(root));
-        assert_eq!(root.get(&15), Some(&(15, 'B')));
+        assert_eq!(root.get(&15), Some(&'B'));
         assert_eq!(root.insert(36, 'E'), Some((36, 'e')));
         assert!(is_valid(root));
-        assert_eq!(root.get(&36), Some(&(36, 'E')));
+        assert_eq!(root.get(&36), Some(&'E'));
         assert_eq!(root.insert(20, 'A'), Some((20, 'a')));
         assert!(is_valid(root));
-        assert_eq!(root.get(&20), Some(&(20, 'A')));
+        assert_eq!(root.get(&20), Some(&'A'));
         assert_eq!(root.len(), items.len());
     }
 
@@ -538,7 +538,7 @@ mod tests {
             remaining.retain(|(rk, _)| *rk != k);
             assert_eq!(root.len(), remaining.len());
             for (rk, rv) in &remaining {
-                assert_eq!(root.get(rk), Some(&(*rk, *rv)));
+                assert_eq!(root.get(rk), Some(&(*rv)));
             }
         }
 
@@ -566,7 +566,7 @@ mod tests {
         }
         assert_eq!(root.len(), n as usize);
         for k in 0..n {
-            assert_eq!(root.get(&k), Some(&(k, k)));
+            assert_eq!(root.get(&k), Some(&k));
         }
         for k in 0..n {
             assert_eq!(root.remove(&k), Some((k, k)));
@@ -589,14 +589,14 @@ mod tests {
 
         // get with &str (K: Borrow<str> for K = String)
         for (k, v) in items {
-            assert_eq!(root.get(k).map(|t| t.1), Some(v));
+            assert_eq!(root.get(k), Some(&v));
         }
-        assert_eq!(root.get("cherry").map(|t| t.1), None);
+        assert_eq!(root.get("cherry"), None);
 
         // remove with &str
         assert_eq!(root.remove("apple").map(|t| t.1), Some(2));
         assert!(is_valid(root));
-        assert_eq!(root.get("apple").map(|t| t.1), None);
+        assert_eq!(root.get("apple"), None);
         assert_eq!(root.len(), items.len() - 1);
 
         // removing an absent key is a no-op
