@@ -1,3 +1,4 @@
+use std::borrow::Borrow;
 use std::cmp::Ordering;
 
 pub struct Node<K, V>(Option<Box<Content<K, V>>>);
@@ -61,8 +62,12 @@ impl<K: Ord, V> Node<K, V> {
         self.content_mut().size = 1 + self.node(Side::L).len() + self.node(Side::R).len();
     }
 
-    fn key_cmp(&self, k: &K) -> Ordering {
-        k.cmp(&self.content().data.0)
+    fn key_cmp<Q>(&self, k: &Q) -> Ordering
+    where
+        Q: Ord + ?Sized,
+        K: Borrow<Q>,
+    {
+        k.cmp(self.content().data.0.borrow())
     }
 
     fn content(&self) -> &Content<K, V> {
@@ -103,7 +108,11 @@ impl<K: Ord, V> Node<K, V> {
         }
     }
 
-    pub fn get(&self, k: &K) -> Option<&(K, V)> {
+    pub fn get<Q>(&self, k: &Q) -> Option<&(K, V)>
+    where
+        Q: Ord + ?Sized,
+        K: Borrow<Q>,
+    {
         if self.is_empty() {
             return None;
         }
@@ -317,7 +326,11 @@ impl<K: Ord, V> Node<K, V> {
         false
     }
 
-    fn remove_recursive(&mut self, k: &K) -> (Option<(K, V)>, bool) {
+    fn remove_recursive<Q>(&mut self, k: &Q) -> (Option<(K, V)>, bool)
+    where
+        Q: Ord + ?Sized,
+        K: Borrow<Q>,
+    {
         if self.is_empty() {
             return (None, false);
         }
@@ -331,7 +344,11 @@ impl<K: Ord, V> Node<K, V> {
         (ret, deficit)
     }
 
-    pub fn remove(&mut self, k: &K) -> Option<(K, V)> {
+    pub fn remove<Q>(&mut self, k: &Q) -> Option<(K, V)>
+    where
+        Q: Ord + ?Sized,
+        K: Borrow<Q>,
+    {
         let (ret, _deficit) = self.remove_recursive(k);
         self.force_black_root();
         ret
@@ -519,6 +536,45 @@ mod tests {
         }
         assert!(root.is_empty());
         assert_eq!(root.remove(&0), None);
+    }
+
+    #[test]
+    fn borrowed_key_query() {
+        // A String-keyed tree should be queried with &str without allocation.
+        let root = &mut Node::none();
+        let items: [(&str, i32); 4] = [("fig", 1), ("apple", 2), ("pear", 3), ("banana", 4)];
+        for (k, v) in items {
+            assert_eq!(root.insert(k.to_string(), v), None);
+            assert!(is_valid(root));
+        }
+        assert_eq!(root.len(), items.len());
+
+        // get with &str (K: Borrow<str> for K = String)
+        for (k, v) in items {
+            assert_eq!(root.get(k).map(|t| t.1), Some(v));
+        }
+        assert_eq!(root.get("cherry").map(|t| t.1), None);
+
+        // remove with &str
+        assert_eq!(root.remove("apple").map(|t| t.1), Some(2));
+        assert!(is_valid(root));
+        assert_eq!(root.get("apple").map(|t| t.1), None);
+        assert_eq!(root.len(), items.len() - 1);
+
+        // removing an absent key is a no-op
+        assert_eq!(root.remove("cherry"), None);
+        assert!(is_valid(root));
+        assert_eq!(root.len(), items.len() - 1);
+
+        // drain the rest by &str
+        for (k, v) in items {
+            if k == "apple" {
+                continue;
+            }
+            assert_eq!(root.remove(&k.to_string()), Some((k.to_string(), v)));
+            assert!(is_valid(root));
+        }
+        assert!(root.is_empty());
     }
 
     /// Deterministic pseudo-random permutation (LCG), so the test is
