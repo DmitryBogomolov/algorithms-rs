@@ -123,13 +123,13 @@ impl<K: Ord, V> Node<K, V> {
         node.get(k)
     }
 
-    fn set_key_val(&mut self, k: K, v: V) {
+    fn set_data(&mut self, data: (K, V)) {
         self.0 = Some(Box::new(Content {
             l_node: Self::none(),
             r_node: Self::none(),
             red: true,
             size: 1,
-            data: (k, v),
+            data,
         }));
     }
 
@@ -209,23 +209,23 @@ impl<K: Ord, V> Node<K, V> {
         }
     }
 
-    fn insert_recursive(&mut self, k: K, v: V) -> Option<(K, V)> {
+    fn insert_recursive(&mut self, data: (K, V)) -> Option<(K, V)> {
         if self.is_empty() {
-            self.set_key_val(k, v);
+            self.set_data(data);
             return None;
         }
-        let node = match self.key_cmp(&k) {
-            Ordering::Equal => return self.replace_data((k, v)),
+        let node = match self.key_cmp(&data.0) {
+            Ordering::Equal => return self.replace_data(data),
             ord => self.node_mut(Side::from_ord(ord)),
         };
-        let ret = node.insert_recursive(k, v);
+        let ret = node.insert_recursive(data);
         self.balance_after_insert();
         self.update_size();
         ret
     }
 
     pub fn insert(&mut self, k: K, v: V) -> Option<(K, V)> {
-        let ret = self.insert_recursive(k, v);
+        let ret = self.insert_recursive((k, v));
         self.force_black_root();
         ret
     }
@@ -417,22 +417,22 @@ mod tests {
     #[test]
     fn get() {
         let root = &mut Node::none();
-        root.set_key_val(20, 'a');
+        root.set_data((20, 'a'));
 
         assert_eq!(root.get(&20), Some(&(20, 'a')));
         assert_eq!(root.get(&10), None);
 
-        pick(root, "l").set_key_val(11, 'b');
-        pick(root, "r").set_key_val(32, 'c');
+        pick(root, "l").set_data((11, 'b'));
+        pick(root, "r").set_data((32, 'c'));
 
         assert_eq!(root.get(&20), Some(&(20, 'a')));
         assert_eq!(root.get(&11), Some(&(11, 'b')));
         assert_eq!(root.get(&32), Some(&(32, 'c')));
 
-        pick(root, "ll").set_key_val(10, 'd');
-        pick(root, "lr").set_key_val(13, 'e');
-        pick(root, "rl").set_key_val(29, 'f');
-        pick(root, "rr").set_key_val(34, 'g');
+        pick(root, "ll").set_data((10, 'd'));
+        pick(root, "lr").set_data((13, 'e'));
+        pick(root, "rl").set_data((29, 'f'));
+        pick(root, "rr").set_data((34, 'g'));
 
         assert_eq!(root.get(&20), Some(&(20, 'a')));
         assert_eq!(root.get(&11), Some(&(11, 'b')));
