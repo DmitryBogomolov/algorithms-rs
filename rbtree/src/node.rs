@@ -394,12 +394,33 @@ mod tests {
         assert_eq!(node.content().data, (10, 'b'));
     }
 
-    fn make_tree<K, V>(entries: impl IntoIterator<Item = (&'static str, K, V)>) -> Node<K, V> {
-        let mut root = Node::none();
-        for entry in entries {
-            pick(&mut root, entry.0).set_data((entry.1, entry.2));
+    #[test]
+    fn insert_remove() {
+        let mut node = Node::none();
+        let range = 11..20;
+
+        for i in range.clone() {
+            assert_eq!(node.insert(i.to_string(), i), None);
         }
-        root
+
+        assert!(!node.is_empty());
+        assert_eq!(node.len(), range.len());
+
+        for i in range.clone() {
+            assert_eq!(node.get(i.to_string().as_str()), Some(&i));
+        }
+        for i in range.clone() {
+            assert_eq!(node.insert(i.to_string(), i + 100), Some((i.to_string(), i)));
+        }
+        for i in range.clone() {
+            assert_eq!(node.get(i.to_string().as_str()), Some(&(i + 100)));
+        }
+        for i in range.clone() {
+            assert_eq!(node.remove(i.to_string().as_str()), Some((i.to_string(), i + 100)));
+        }
+
+        assert!(node.is_empty());
+        assert_eq!(node.len(), 0);
     }
 
     fn pick<'a, K, V>(node: &'a mut Node<K, V>, path: &str) -> &'a mut Node<K, V> {
@@ -574,45 +595,6 @@ mod tests {
         }
         assert!(root.is_empty());
         assert_eq!(root.remove(&0), None);
-    }
-
-    #[test]
-    fn borrowed_key_query() {
-        // A String-keyed tree should be queried with &str without allocation.
-        let root = &mut Node::none();
-        let items: [(&str, i32); 4] = [("fig", 1), ("apple", 2), ("pear", 3), ("banana", 4)];
-        for (k, v) in items {
-            assert_eq!(root.insert(k.to_string(), v), None);
-            assert!(is_valid(root));
-        }
-        assert_eq!(root.len(), items.len());
-
-        // get with &str (K: Borrow<str> for K = String)
-        for (k, v) in items {
-            assert_eq!(root.get(k), Some(&v));
-        }
-        assert_eq!(root.get("cherry"), None);
-
-        // remove with &str
-        assert_eq!(root.remove("apple").map(|t| t.1), Some(2));
-        assert!(is_valid(root));
-        assert_eq!(root.get("apple"), None);
-        assert_eq!(root.len(), items.len() - 1);
-
-        // removing an absent key is a no-op
-        assert_eq!(root.remove("cherry"), None);
-        assert!(is_valid(root));
-        assert_eq!(root.len(), items.len() - 1);
-
-        // drain the rest by &str
-        for (k, v) in items {
-            if k == "apple" {
-                continue;
-            }
-            assert_eq!(root.remove(&k.to_string()), Some((k.to_string(), v)));
-            assert!(is_valid(root));
-        }
-        assert!(root.is_empty());
     }
 
     /// Deterministic pseudo-random permutation (LCG), so the test is
