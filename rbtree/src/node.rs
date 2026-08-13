@@ -200,7 +200,7 @@ impl<K: Ord, V> Node<K, V> {
         }
     }
 
-    fn insert_rec(&mut self, k: K, v: V) -> Option<(K, V)> {
+    fn insert_recursive(&mut self, k: K, v: V) -> Option<(K, V)> {
         if self.is_empty() {
             self.set_key_val(k, v);
             return None;
@@ -209,14 +209,14 @@ impl<K: Ord, V> Node<K, V> {
             Ordering::Equal => return self.replace_data((k, v)),
             ord => self.node_mut(Side::from_ord(ord)),
         };
-        let ret = node.insert_rec(k, v);
+        let ret = node.insert_recursive(k, v);
         self.balance_after_insert();
         self.update_size();
         ret
     }
 
     pub fn insert(&mut self, k: K, v: V) -> Option<(K, V)> {
-        let ret = self.insert_rec(k, v);
+        let ret = self.insert_recursive(k, v);
         self.force_black_root();
         ret
     }
@@ -247,7 +247,7 @@ impl<K: Ord, V> Node<K, V> {
             self.flip_to_black();
             return (data, false);
         }
-        let (next_data, deficit) = self.node_mut(Side::R).remove_min_rec();
+        let (next_data, deficit) = self.node_mut(Side::R).remove_min_recursive();
         let prev_data = self.replace_data(next_data.unwrap());
         // Propagate deficit of removed next min node.
         let deficit = self.propagate_deficit(deficit, Side::R);
@@ -255,7 +255,7 @@ impl<K: Ord, V> Node<K, V> {
         (prev_data, deficit)
     }
 
-    fn remove_min_rec(&mut self) -> (Option<(K, V)>, bool) {
+    fn remove_min_recursive(&mut self) -> (Option<(K, V)>, bool) {
         if self.is_empty() {
             return (None, false);
         }
@@ -270,7 +270,7 @@ impl<K: Ord, V> Node<K, V> {
             }
             return (data, is_black && !has_r_node);
         }
-        let (ret, deficit) = self.node_mut(Side::L).remove_min_rec();
+        let (ret, deficit) = self.node_mut(Side::L).remove_min_recursive();
         let deficit = self.propagate_deficit(deficit, Side::L);
         self.update_size();
         (ret, deficit)
@@ -303,7 +303,7 @@ impl<K: Ord, V> Node<K, V> {
                 false
             } else {
                 true
-            }
+            };
         }
         // (3) Near red, far black. Rotate at sibling so the red nephew becomes the far one.
         if near_red && !far_red {
@@ -317,7 +317,7 @@ impl<K: Ord, V> Node<K, V> {
         false
     }
 
-    fn remove_rec(&mut self, k: &K) -> (Option<(K, V)>, bool) {
+    fn remove_recursive(&mut self, k: &K) -> (Option<(K, V)>, bool) {
         if self.is_empty() {
             return (None, false);
         }
@@ -325,14 +325,14 @@ impl<K: Ord, V> Node<K, V> {
             Ordering::Equal => return self.remove_core(),
             ord => (Side::from_ord(ord), self.node_mut(Side::from_ord(ord))),
         };
-        let (ret, deficit) = node.remove_rec(k);
+        let (ret, deficit) = node.remove_recursive(k);
         let deficit = self.propagate_deficit(deficit, side);
         self.update_size();
         (ret, deficit)
     }
 
     pub fn remove(&mut self, k: &K) -> Option<(K, V)> {
-        let (ret, _deficit) = self.remove_rec(k);
+        let (ret, _deficit) = self.remove_recursive(k);
         self.force_black_root();
         ret
     }
