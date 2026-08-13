@@ -107,6 +107,21 @@ impl<K, V> Node<K, V> {
         node.get(k)
     }
 
+    pub fn get_mut<Q>(&mut self, k: &Q) -> Option<&mut V>
+    where
+        Q: Ord + ?Sized,
+        K: Borrow<Q>,
+    {
+        if self.is_empty() {
+            return None;
+        }
+        let node = match self.key_cmp(k) {
+            Ordering::Equal => return Some(&mut self.content_mut().data.1),
+            ord => self.node_mut(Side::from_ord(ord)),
+        };
+        node.get_mut(k)
+    }
+
     fn set_data(&mut self, data: (K, V)) {
         self.0 = Some(Box::new(Content {
             l_node: Self::none(),
@@ -392,6 +407,22 @@ mod tests {
         assert!(!node.is_empty());
         assert_eq!(node.len(), 1);
         assert_eq!(node.content().data, (10, 'b'));
+    }
+
+    #[test]
+    fn mutate_value() {
+        let mut node = Node::none();
+        node.insert(10, 'a');
+        node.insert(20, 'b');
+        node.insert(30, 'c');
+
+        *node.get_mut(&10).unwrap() = 'A';
+        *node.get_mut(&20).unwrap() = 'B';
+        *node.get_mut(&30).unwrap() = 'C';
+
+        assert_eq!(node.get(&10), Some(&'A'));
+        assert_eq!(node.get(&20), Some(&'B'));
+        assert_eq!(node.get(&30), Some(&'C'));
     }
 
     #[test]
