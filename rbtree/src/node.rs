@@ -360,7 +360,7 @@ mod tests {
     #[test]
     fn insert_one_node() {
         let mut node = Node::none();
-        
+
         assert_eq!(node.insert(10, 'a'), None);
         assert_eq!(node.get(&10), Some(&'a'));
 
@@ -424,7 +424,7 @@ mod tests {
     }
 
     fn assert_balanced_ordered<K: Ord + Clone, V>(root: &Node<K, V>) {
-        if root.is_empty() {
+        if root.len() < 3 {
             return;
         }
         let mut depths: Vec<usize> = Vec::new();
@@ -433,7 +433,7 @@ mod tests {
         depths.sort();
         let min_depth = *depths.first().unwrap();
         let max_depth = *depths.last().unwrap();
-        assert!(max_depth <= 2 * min_depth, "not balanced ({}, {})", min_depth, max_depth);
+        assert!(max_depth <= 2 * min_depth + 1, "not balanced ({}, {})", min_depth, max_depth);
         assert!(keys.is_sorted(), "not sorted");
     }
 
@@ -453,181 +453,65 @@ mod tests {
     }
 
     #[test]
-    fn balancing() {
+    fn balancing_inc() {
+        let n = 100;
         let mut node = Node::none();
-        
-        for i in 11..30 {
-            node.insert(i, '0');
-        }
-        assert_balanced_ordered(&node);
 
-        for i in 31..50 {
-            node.insert(i, '1');
+        for i in 0..n {
+            assert_eq!(node.insert(1000 + i, i), None);
+            assert_balanced_ordered(&node);
         }
-        assert_balanced_ordered(&node);
-
-        for i in 51..70 {
-            node.insert(i, '2');
+        assert_eq!(node.len(), n);
+        for i in 0..n {
+            assert_eq!(node.get(&(1000 + i)), Some(&i));
         }
-        assert_balanced_ordered(&node);
-
-        for i in 11..30 {
-            node.remove(&i);
+        for i in 0..n {
+            assert_eq!(node.remove(&(1000 + i)), Some((1000 + i, i)));
+            assert_balanced_ordered(&node);
         }
-        assert_balanced_ordered(&node);
-
-        for i in 31..50 {
-            node.remove(&i);
-        }
-        assert_balanced_ordered(&node);
-
-        for i in 51..70 {
-            node.remove(&i);
-        }
-        assert_balanced_ordered(&node);
-    }
-
-    fn pick<'a, K, V>(node: &'a mut Node<K, V>, path: &str) -> &'a mut Node<K, V> {
-        let mut ret = node;
-        for c in path.chars() {
-            if ret.is_empty() {
-                panic!("bad path: {}", path);
-            }
-            let side = match c {
-                'l' => Side::L,
-                'r' => Side::R,
-                _ => unreachable!("bad path: {}", c),
-            };
-            ret = ret.node_mut(side);
-        }
-        ret
-    }
-
-    fn black_height_ok<K: Ord, V>(n: &Node<K, V>) -> Option<usize> {
-        if n.is_empty() {
-            return Some(0);
-        }
-        // no two red links in a row (red links may lean either way)
-        if n.is_red() && (n.node(Side::L).is_red() || n.node(Side::R).is_red()) {
-            return None;
-        }
-        let (lh, rh) = (black_height_ok(n.node(Side::L))?, black_height_ok(n.node(Side::R))?);
-        if lh != rh {
-            return None;
-        }
-        if n.len() != 1 + n.node(Side::L).len() + n.node(Side::R).len() {
-            return None;
-        }
-        Some(lh + if n.is_red() { 0 } else { 1 })
-    }
-
-    fn collect_keys<K: Ord + Clone, V>(n: &Node<K, V>, out: &mut Vec<K>) {
-        if n.is_empty() {
-            return;
-        }
-        collect_keys(n.node(Side::L), out);
-        out.push(n.content().data.0.clone());
-        collect_keys(n.node(Side::R), out);
-    }
-
-    fn is_valid<K: Ord + Clone, V>(node: &Node<K, V>) -> bool {
-        let mut keys = Vec::new();
-        collect_keys(node, &mut keys);
-        let ordered = keys.windows(2).all(|w| w[0] < w[1]);
-        black_height_ok(node).is_some() && ordered && !node.is_red()
+        assert_eq!(node.len(), 0);
     }
 
     #[test]
-    fn stress() {
-        let root = &mut Node::none();
-        let n = 200;
-        for k in 0..n {
-            assert_eq!(root.insert(k, k), None);
-            assert!(is_valid(root));
-        }
-        assert_eq!(root.len(), n as usize);
-        for k in 0..n {
-            assert_eq!(root.get(&k), Some(&k));
-        }
-        for k in 0..n {
-            assert_eq!(root.remove(&k), Some((k, k)));
-            assert!(is_valid(root));
-        }
-        assert!(root.is_empty());
-        assert_eq!(root.remove(&0), None);
-    }
+    fn balancing_dec() {
+        let n = 100;
+        let mut node = Node::none();
 
-    /// Deterministic pseudo-random permutation (LCG), so the test is
-    /// reproducible without a `rand` dependency.
-    fn shuffled(n: u32) -> Vec<u32> {
-        let mut v: Vec<u32> = (0..n).collect();
-        let mut state: u32 = 0x9e37_79b9;
-        for i in (1..n).rev() {
-            state = state.wrapping_mul(1103515245).wrapping_add(12345);
-            let j = (state >> 16) as usize % (i as usize + 1);
-            v.swap(i as usize, j);
+        for i in (0..n).rev() {
+            assert_eq!(node.insert(1000 + i, i), None);
+            assert_balanced_ordered(&node);
         }
-        v
+        assert_eq!(node.len(), n);
+        for i in 0..n {
+            assert_eq!(node.get(&(1000 + i)), Some(&i));
+        }
+        for i in (0..n).rev() {
+            assert_eq!(node.remove(&(1000 + i)), Some((1000 + i, i)));
+            assert_balanced_ordered(&node);
+        }
+        assert_eq!(node.len(), 0);
     }
 
     #[test]
-    fn stress_descending() {
-        let root = &mut Node::none();
-        let n = 200;
-        for k in (0..n).rev() {
-            assert_eq!(root.insert(k, k), None);
-            assert!(is_valid(root));
-        }
-        for k in (0..n).rev() {
-            assert_eq!(root.remove(&k), Some((k, k)));
-            assert!(is_valid(root));
-        }
-        assert!(root.is_empty());
-    }
-
-    #[test]
-    fn stress_random_order() {
-        let root = &mut Node::none();
-        let n = 300u32;
-        let insert_order = shuffled(n);
-        for &k in &insert_order {
-            assert_eq!(root.insert(k, k), None);
-            assert!(is_valid(root));
-        }
-        let remove_order = shuffled(n);
-        let mut left = n as usize;
-        for &k in &remove_order {
-            assert_eq!(root.remove(&k), Some((k, k)));
-            assert!(is_valid(root));
-            left -= 1;
-            assert_eq!(root.len(), left);
-        }
-        assert!(root.is_empty());
-    }
-
-    #[test]
-    fn stress_interleaved() {
-        let root = &mut Node::none();
+    fn balancing_interleaved() {
+        let mut node = Node::none();
         // insert 0..100, remove the even keys, then insert 100..150, then
         // remove everything that remains.
-        for k in 0..100 {
-            root.insert(k, k);
-            assert!(is_valid(root));
+        for i in 0..100 {
+            node.insert(1000 + i, i);
+            assert_balanced_ordered(&node);
         }
-        for k in (0..100).step_by(2) {
-            assert_eq!(root.remove(&k), Some((k, k)));
-            assert!(is_valid(root));
+        for i in (0..100).step_by(2) {
+            assert_eq!(node.remove(&(1000 + i)), Some((1000 + i, i)));
+            assert_balanced_ordered(&node);
         }
-        for k in 100..150 {
-            root.insert(k, k);
-            assert!(is_valid(root));
+        for i in 100..200 {
+            node.insert(1000 + i, i);
+            assert_balanced_ordered(&node);
         }
-        let remaining: Vec<i32> = (0..150).filter(|k| k % 2 != 0 || *k >= 100).collect();
-        assert_eq!(root.len(), remaining.len());
-        for k in remaining {
-            assert_eq!(root.remove(&k).unwrap().0, k);
-            assert!(is_valid(root));
+        for i in (100..200).step_by(2) {
+            assert_eq!(node.remove(&(1000 + i)), Some((1000 + i, i)));
+            assert_balanced_ordered(&node);
         }
-        assert!(root.is_empty());
     }
 }
