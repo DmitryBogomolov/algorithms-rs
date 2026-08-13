@@ -423,6 +423,70 @@ mod tests {
         assert_eq!(node.len(), 0);
     }
 
+    fn assert_balanced_ordered<K: Ord + Clone, V>(root: &Node<K, V>) {
+        if root.is_empty() {
+            return;
+        }
+        let mut depths: Vec<usize> = Vec::new();
+        let mut keys: Vec<K> = Vec::new();
+        collect(root, 0, &mut depths, &mut keys);
+        depths.sort();
+        let min_depth = *depths.first().unwrap();
+        let max_depth = *depths.last().unwrap();
+        assert!(max_depth <= 2 * min_depth, "not balanced ({}, {})", min_depth, max_depth);
+        assert!(keys.is_sorted(), "not sorted");
+    }
+
+    fn collect<K: Clone, V>(node: &Node<K, V>, depth: usize, depths: &mut Vec<usize>, keys: &mut Vec<K>) {
+        let l_node = node.node(Side::L);
+        let r_node = node.node(Side::R);
+        if l_node.is_empty() && r_node.is_empty() {
+            depths.push(depth);
+        }
+        if !l_node.is_empty() {
+            collect(l_node, depth + 1, depths, keys);
+        }
+        keys.push(node.content().data.0.clone());
+        if !r_node.is_empty() {
+            collect(r_node, depth + 1, depths, keys);
+        }
+    }
+
+    #[test]
+    fn balancing() {
+        let mut node = Node::none();
+        
+        for i in 11..30 {
+            node.insert(i, '0');
+        }
+        assert_balanced_ordered(&node);
+
+        for i in 31..50 {
+            node.insert(i, '1');
+        }
+        assert_balanced_ordered(&node);
+
+        for i in 51..70 {
+            node.insert(i, '2');
+        }
+        assert_balanced_ordered(&node);
+
+        for i in 11..30 {
+            node.remove(&i);
+        }
+        assert_balanced_ordered(&node);
+
+        for i in 31..50 {
+            node.remove(&i);
+        }
+        assert_balanced_ordered(&node);
+
+        for i in 51..70 {
+            node.remove(&i);
+        }
+        assert_balanced_ordered(&node);
+    }
+
     fn pick<'a, K, V>(node: &'a mut Node<K, V>, path: &str) -> &'a mut Node<K, V> {
         let mut ret = node;
         for c in path.chars() {
