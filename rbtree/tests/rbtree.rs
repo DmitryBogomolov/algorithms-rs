@@ -39,3 +39,13 @@ fn mutate() {
 
     assert_eq!(tree.get("11"), Some(&12));
 }
+
+#[test]
+fn from_iterator() {
+    let tree: RBTree<i32, char> = [(1, 'a'), (2, 'b'), (3, 'c')].into_iter().collect();
+
+    assert_eq!(tree.len(), 3);
+    assert_eq!(tree.get(&1), Some(&'a'));
+    assert_eq!(tree.get(&2), Some(&'b'));
+    assert_eq!(tree.get(&3), Some(&'c'));
+}

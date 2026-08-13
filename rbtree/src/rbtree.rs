@@ -48,3 +48,13 @@ impl<K: Ord, V> RBTree<K, V> {
         self.root.remove(key)
     }
 }
+
+impl<K: Ord, V> FromIterator<(K, V)> for RBTree<K, V> {
+    fn from_iter<I: IntoIterator<Item = (K, V)>>(iter: I) -> Self {
+        let mut tree = Self::new();
+        for (k, v) in iter {
+            tree.insert(k, v);
+        }
+        tree
+    }
+}
