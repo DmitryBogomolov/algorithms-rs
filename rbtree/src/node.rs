@@ -276,61 +276,45 @@ impl<K: Ord, V> Node<K, V> {
         (ret, deficit)
     }
 
-    /// Bottom-up red-black delete fixup. `self`'s child on `side` has lost a
-    /// black node below (is one black short); the other child — the sibling —
-    /// is a valid red-black tree. This is CLRS RB-DELETE-FIXUP, but instead of
-    /// a double-black marker re-derived by `black_height` comparison, the
-    /// deficit is threaded in as the `side` argument and threaded out as the
-    /// return value: `true` means the deficit was not absorbed here and
-    /// `self`'s subtree is now one black short, so the parent's own
-    /// `balance_after_remove` call must finish the job.
-    ///
-    /// Uses only O(1) color checks (`is_red`/`is_empty`); no `black_height`.
     fn balance_after_remove(&mut self, side: Side) -> bool {
         if self.is_empty() {
             return false;
         }
         let other_side = side.other();
         if self.node(other_side).is_red() {
-            // case 1: red sibling -> rotate (the color swap blackens it),
-            // moving the deficit down to the now-red child. A red node always
-            // absorbs a one-black deficit (case 2) or resolves it by rotation
-            // (cases 3-4), so that recursion never propagates back here.
+            // (1) Red sibling. Rotate (the color swap blackens it),moving the deficit down to the now-red child.
+            // Red node always absorbs a one-black deficit (2) or resolves it by rotation (3, 4).
+            // So that recursion never propagates back here.
             self.rotate(side);
             return self.node_mut(side).balance_after_remove(side);
         }
         if self.node(other_side).is_empty() {
-            // A genuine deficit requires a non-empty sibling to borrow from;
-            // empty here means no deficit reached this node. Defensive.
+            // Empty here means no deficit reached this node.
             return false;
         }
-        // near = sibling child on the deficit side; far = the other.
         let near_red = self.node(other_side).node(side).is_red();
         let far_red = self.node(other_side).node(other_side).is_red();
         if !near_red && !far_red {
-            // case 2: both sibling children black -> recolor sibling red; if
-            // self is red it absorbs (resolved), else the deficit propagates up.
+            // (2) Both sibling children black. Recolor sibling red.
+            // If self is red it absorbs (resolved), else the deficit propagates up.
             self.node_mut(other_side).flip_color();
-            if self.is_red() {
+            return if self.is_red() {
                 self.flip_color();
                 false
             } else {
                 true
             }
-        } else {
-            // case 3: near red, far black -> rotate at sibling so the red
-            // nephew becomes the far one, then case 4 resolves it.
-            if near_red && !far_red {
-                self.node_mut(other_side).rotate(other_side);
-            }
-            // case 4: far nephew red -> pull it over; the color-swap rotation
-            // settles colors, deficit resolved.
-            if self.node(other_side).node(other_side).is_red() {
-                self.node_mut(other_side).node_mut(other_side).flip_color();
-            }
-            self.rotate(side);
-            false
         }
+        // (3) Near red, far black. Rotate at sibling so the red nephew becomes the far one.
+        if near_red && !far_red {
+            self.node_mut(other_side).rotate(other_side);
+        }
+        // (4) Far nephew red. Pull it over. Color-swap rotationsettles colors, deficit resolved.
+        if self.node(other_side).node(other_side).is_red() {
+            self.node_mut(other_side).node_mut(other_side).flip_color();
+        }
+        self.rotate(side);
+        false
     }
 
     fn remove_rec(&mut self, k: &K) -> (Option<(K, V)>, bool) {
