@@ -144,7 +144,7 @@ impl<K: Ord, V> Node<K, V> {
     }
 
     fn flip_color(&mut self) {
-        self.content_mut().red = !self.content().red;
+        self.content_mut().red = !self.is_red();
     }
 
     fn rotate(&mut self, side: Side) {
@@ -152,16 +152,16 @@ impl<K: Ord, V> Node<K, V> {
         if self.is_empty() || self.node(other_side).is_empty() {
             return;
         }
-        let root_red = self.content().red;
-        let node_red = self.node(other_side).content().red;
+        let is_root_red = self.is_red();
+        let is_node_red = self.node(other_side).is_red();
         let next_root_content = self.node_mut(other_side).take_content();
         let prev_root_content = self.replace_content(next_root_content);
         let prev_content = self.node_mut(side).replace_content(prev_root_content);
         self.node_mut(side)
             .node_mut(other_side)
             .replace_content(prev_content);
-        self.content_mut().red = root_red;
-        self.node_mut(side).content_mut().red = node_red;
+        self.content_mut().red = is_root_red;
+        self.node_mut(side).content_mut().red = is_node_red;
         self.node_mut(side).update_size();
         self.update_size();
     }
@@ -221,6 +221,14 @@ impl<K: Ord, V> Node<K, V> {
         ret
     }
 
+    fn propagate_deficit(&mut self, deficit: bool, side: Side) -> bool {
+        if deficit {
+            self.balance_after_remove(side)
+        } else {
+            false
+        }
+    }
+
     fn remove_core(&mut self) -> (Option<(K, V)>, bool) {
         let no_l = self.node(Side::L).is_empty();
         let no_r = self.node(Side::R).is_empty();
@@ -242,11 +250,7 @@ impl<K: Ord, V> Node<K, V> {
         let (next_data, deficit) = self.node_mut(Side::R).remove_min_rec();
         let prev_data = self.replace_data(next_data.unwrap());
         // Propagate deficit of removed next min node.
-        let deficit = if deficit {
-            self.balance_after_remove(Side::R)
-        } else {
-            false
-        };
+        let deficit = self.propagate_deficit(deficit, Side::R);
         self.update_size();
         (prev_data, deficit)
     }
@@ -267,11 +271,7 @@ impl<K: Ord, V> Node<K, V> {
             return (data, is_black && !has_r_node);
         }
         let (ret, deficit) = self.node_mut(Side::L).remove_min_rec();
-        let deficit = if deficit {
-            self.balance_after_remove(Side::L)
-        } else {
-            false
-        };
+        let deficit = self.propagate_deficit(deficit, Side::L);
         self.update_size();
         (ret, deficit)
     }
@@ -326,11 +326,7 @@ impl<K: Ord, V> Node<K, V> {
             ord => (Side::from_ord(ord), self.node_mut(Side::from_ord(ord))),
         };
         let (ret, deficit) = node.remove_rec(k);
-        let deficit = if deficit {
-            self.balance_after_remove(side)
-        } else {
-            false
-        };
+        let deficit = self.propagate_deficit(deficit, side);
         self.update_size();
         (ret, deficit)
     }
