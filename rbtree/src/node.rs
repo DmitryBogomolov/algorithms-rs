@@ -357,14 +357,63 @@ mod tests {
         assert!(!node.is_red());
     }
 
+    #[test]
+    fn insert_one_node() {
+        let mut node = Node::none();
+        
+        assert_eq!(node.insert(10, 'a'), None);
+        assert_eq!(node.get(&10), Some(&(10, 'a')));
+
+        assert!(!node.is_empty());
+        assert_eq!(node.len(), 1);
+        assert_eq!(node.content().data, (10, 'a'));
+    }
+
+    #[test]
+    fn remove_one_node() {
+        let mut node = Node::none();
+        node.insert(10, 'a');
+
+        assert_eq!(node.remove(&10), Some((10, 'a')));
+        assert_eq!(node.get(&10), None);
+
+        assert!(node.is_empty());
+        assert_eq!(node.len(), 0);
+    }
+
+    #[test]
+    fn replace_one_node() {
+        let mut node = Node::none();
+        node.insert(10, 'a');
+
+        assert_eq!(node.insert(10, 'b'), Some((10, 'a')));
+        assert_eq!(node.get(&10), Some(&(10, 'b')));
+
+        assert!(!node.is_empty());
+        assert_eq!(node.len(), 1);
+        assert_eq!(node.content().data, (10, 'b'));
+    }
+
+    fn make_tree<K, V>(entries: impl IntoIterator<Item = (&'static str, K, V)>) -> Node<K, V> {
+        let mut root = Node::none();
+        for entry in entries {
+            pick(&mut root, entry.0).set_data((entry.1, entry.2));
+        }
+        root
+    }
+
     fn pick<'a, K, V>(node: &'a mut Node<K, V>, path: &str) -> &'a mut Node<K, V> {
         let mut ret = node;
         for c in path.chars() {
-            ret = match c {
-                'l' => ret.node_mut(Side::L),
-                'r' => ret.node_mut(Side::R),
+            if ret.is_empty() {
+                panic!("bad path: {}", path);
+            }
+            let side = match c {
+                'l' => Side::L,
+                'r' => Side::R,
                 _ => unreachable!("bad path: {}", c),
             };
+            ret = ret.node_mut(side);
         }
         ret
     }
