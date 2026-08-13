@@ -41,7 +41,7 @@ impl Side {
     }
 }
 
-impl<K: Ord, V> Node<K, V> {
+impl<K, V> Node<K, V> {
     pub fn none() -> Self {
         Self(None)
     }
@@ -76,22 +76,6 @@ impl<K: Ord, V> Node<K, V> {
 
     fn content_mut(&mut self) -> &mut Content<K, V> {
         self.0.as_mut().unwrap()
-    }
-
-    fn l_node(&self) -> &Self {
-        &self.content().l_node
-    }
-
-    fn r_node(&self) -> &Self {
-        &self.content().r_node
-    }
-
-    fn l_node_mut(&mut self) -> &mut Self {
-        &mut self.content_mut().l_node
-    }
-
-    fn r_node_mut(&mut self) -> &mut Self {
-        &mut self.content_mut().r_node
     }
 
     fn node(&self, side: Side) -> &Self {
@@ -209,7 +193,10 @@ impl<K: Ord, V> Node<K, V> {
         }
     }
 
-    fn insert_recursive(&mut self, data: (K, V)) -> Option<(K, V)> {
+    fn insert_recursive(&mut self, data: (K, V)) -> Option<(K, V)>
+    where
+        K: Ord,
+    {
         if self.is_empty() {
             self.set_data(data);
             return None;
@@ -224,7 +211,10 @@ impl<K: Ord, V> Node<K, V> {
         ret
     }
 
-    pub fn insert(&mut self, k: K, v: V) -> Option<(K, V)> {
+    pub fn insert(&mut self, k: K, v: V) -> Option<(K, V)>
+    where
+        K: Ord,
+    {
         let ret = self.insert_recursive((k, v));
         self.force_black_root();
         ret
@@ -361,7 +351,7 @@ mod tests {
 
     #[test]
     fn empty() {
-        let node: Node<i32, char> = Node::none();
+        let node: Node<(), ()> = Node::none();
         assert!(node.is_empty());
         assert_eq!(node.len(), 0);
         assert!(!node.is_red());
@@ -370,11 +360,10 @@ mod tests {
     fn pick<'a, K, V>(node: &'a mut Node<K, V>, path: &str) -> &'a mut Node<K, V> {
         let mut ret = node;
         for c in path.chars() {
-            let content = ret.0.as_mut().unwrap();
             ret = match c {
-                'l' => &mut content.l_node,
-                'r' => &mut content.r_node,
-                _ => panic!("bad path"),
+                'l' => ret.node_mut(Side::L),
+                'r' => ret.node_mut(Side::R),
+                _ => unreachable!("bad path: {}", c),
             };
         }
         ret
@@ -385,14 +374,14 @@ mod tests {
             return Some(0);
         }
         // no two red links in a row (red links may lean either way)
-        if n.is_red() && (n.l_node().is_red() || n.r_node().is_red()) {
+        if n.is_red() && (n.node(Side::L).is_red() || n.node(Side::R).is_red()) {
             return None;
         }
-        let (lh, rh) = (black_height_ok(n.l_node())?, black_height_ok(n.r_node())?);
+        let (lh, rh) = (black_height_ok(n.node(Side::L))?, black_height_ok(n.node(Side::R))?);
         if lh != rh {
             return None;
         }
-        if n.len() != 1 + n.l_node().len() + n.r_node().len() {
+        if n.len() != 1 + n.node(Side::L).len() + n.node(Side::R).len() {
             return None;
         }
         Some(lh + if n.is_red() { 0 } else { 1 })
@@ -402,9 +391,9 @@ mod tests {
         if n.is_empty() {
             return;
         }
-        collect_keys(n.l_node(), out);
+        collect_keys(n.node(Side::L), out);
         out.push(n.content().data.0.clone());
-        collect_keys(n.r_node(), out);
+        collect_keys(n.node(Side::R), out);
     }
 
     fn is_valid<K: Ord + Clone, V>(node: &Node<K, V>) -> bool {
