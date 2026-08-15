@@ -67,7 +67,7 @@ impl<K, V> Node<K, V> {
         Q: Ord + ?Sized,
         K: Borrow<Q>,
     {
-        k.cmp(self.content().data.0.borrow())
+        k.cmp(self.key().borrow())
     }
 
     fn content(&self) -> &Content<K, V> {
@@ -76,6 +76,18 @@ impl<K, V> Node<K, V> {
 
     fn content_mut(&mut self) -> &mut Content<K, V> {
         self.0.as_mut().unwrap()
+    }
+
+    pub fn key(&self) -> &K {
+        &self.content().data.0
+    }
+
+    pub fn val(&self) -> &V {
+        &self.content().data.1
+    }
+
+    pub fn val_mut(&mut self) -> &mut V {
+        &mut self.content_mut().data.1
     }
 
     pub fn node(&self, side: Side) -> &Self {
@@ -101,7 +113,7 @@ impl<K, V> Node<K, V> {
             return None;
         }
         let node = match self.key_cmp(k) {
-            Ordering::Equal => return Some(&self.content().data.1),
+            Ordering::Equal => return Some(&self.val()),
             ord => self.node(Side::from_ord(ord)),
         };
         node.get(k)
@@ -116,7 +128,7 @@ impl<K, V> Node<K, V> {
             return None;
         }
         let node = match self.key_cmp(k) {
-            Ordering::Equal => return Some(&mut self.content_mut().data.1),
+            Ordering::Equal => return Some(self.val_mut()),
             ord => self.node_mut(Side::from_ord(ord)),
         };
         node.get_mut(k)
@@ -381,7 +393,8 @@ mod tests {
 
         assert!(!node.is_empty());
         assert_eq!(node.len(), 1);
-        assert_eq!(node.content().data, (10, 'a'));
+        assert_eq!(node.key(), &10);
+        assert_eq!(node.val(), &'a');
     }
 
     #[test]
@@ -406,7 +419,8 @@ mod tests {
 
         assert!(!node.is_empty());
         assert_eq!(node.len(), 1);
-        assert_eq!(node.content().data, (10, 'b'));
+        assert_eq!(node.key(), &10);
+        assert_eq!(node.val(), &'b');
     }
 
     #[test]
@@ -493,7 +507,7 @@ mod tests {
         if !l_node.is_empty() {
             collect(l_node, depth + 1, depths, keys);
         }
-        keys.push(node.content().data.0.clone());
+        keys.push(node.key().clone());
         if !r_node.is_empty() {
             collect(r_node, depth + 1, depths, keys);
         }
