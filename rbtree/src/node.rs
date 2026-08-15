@@ -104,6 +104,11 @@ impl<K, V> Node<K, V> {
         }
     }
 
+    pub fn into_parts(mut self) -> ((K, V), Self, Self) {
+        let content = self.take_content().unwrap();
+        (content.data, content.l_node, content.r_node)
+    }
+
     pub fn get<Q>(&self, k: &Q) -> Option<&V>
     where
         Q: Ord + ?Sized,
@@ -472,6 +477,19 @@ mod tests {
 
         assert!(node.is_empty());
         assert_eq!(node.len(), 0);
+    }
+
+    #[test]
+    fn split_to_parts() {
+        let mut node = Node::none();
+        node.insert(10, 'a');
+        node.insert(20, 'b');
+        node.insert(30, 'c');
+
+        let (kv, l_node, r_node) = node.into_parts();
+        assert_eq!(kv, (20, 'b'));
+        assert_eq!(l_node.key(), &10);
+        assert_eq!(r_node.key(), &30);
     }
 
     fn assert_balanced_ordered<K: Ord + Clone, V>(root: &Node<K, V>) {
