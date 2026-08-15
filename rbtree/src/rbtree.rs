@@ -7,7 +7,7 @@ pub struct RBTree<K, V> {
     root: Node<K, V>,
 }
 
-impl<K: Ord, V> RBTree<K, V> {
+impl<K, V> RBTree<K, V> {
     pub fn new() -> Self {
         Self { root: Node::none() }
     }
@@ -20,6 +20,12 @@ impl<K: Ord, V> RBTree<K, V> {
         self.root.is_empty()
     }
 
+    pub(crate) fn take_root(self) -> Node<K, V> {
+        self.root
+    }
+}
+
+impl<K: Ord, V> RBTree<K, V> {
     pub fn get<Q>(&self, key: &Q) -> Option<&V>
     where
         Q: Ord + ?Sized,

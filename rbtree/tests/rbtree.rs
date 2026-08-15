@@ -59,3 +59,14 @@ fn from_array() {
     assert_eq!(tree.get(&2), Some(&'b'));
     assert_eq!(tree.get(&3), Some(&'c'));
 }
+
+#[test]
+fn into_iter() {
+    let tree: RBTree<_, _> = [(1, 'a'), (2, 'b'), (3, 'c')].into();
+
+    let mut items = vec![];
+    for item in tree {
+        items.push(item);
+    }
+    assert_eq!(items, [(1, 'a'), (2, 'b'), (3, 'c')]);
+}
