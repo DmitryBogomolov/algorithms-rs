@@ -12,7 +12,7 @@ struct Content<K, V> {
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-enum Side {
+pub enum Side {
     L,
     R,
 }
@@ -78,14 +78,14 @@ impl<K, V> Node<K, V> {
         self.0.as_mut().unwrap()
     }
 
-    fn node(&self, side: Side) -> &Self {
+    pub fn node(&self, side: Side) -> &Self {
         match side {
             Side::L => &self.content().l_node,
             Side::R => &self.content().r_node,
         }
     }
 
-    fn node_mut(&mut self, side: Side) -> &mut Self {
+    pub fn node_mut(&mut self, side: Side) -> &mut Self {
         match side {
             Side::L => &mut self.content_mut().l_node,
             Side::R => &mut self.content_mut().r_node,
