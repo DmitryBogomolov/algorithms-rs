@@ -13,11 +13,14 @@ pub struct TreeIterMut<'a, K, V> {
     stack: Vec<((&'a K, &'a mut V), &'a mut Node<K, V>)>,
 }
 
+fn get_depth<K, V>(root: &Node<K, V>) -> usize {
+    (root.len() as f32).log2().ceil() as usize
+}
+
 impl<K, V> TreeIter<K, V> {
     fn new(node: Node<K, V>) -> Self {
-        let depth = (node.len() as f32).log2().ceil() as usize;
         let mut iter = Self {
-            stack: Vec::with_capacity(depth),
+            stack: Vec::with_capacity(get_depth(&node)),
         };
         iter.push(node);
         iter
@@ -35,9 +38,8 @@ impl<K, V> TreeIter<K, V> {
 
 impl<'a, K, V> TreeIterRef<'a, K, V> {
     fn new(node: &'a Node<K, V>) -> Self {
-        let depth = (node.len() as f32).log2().ceil() as usize;
         let mut iter = Self {
-            stack: Vec::with_capacity(depth),
+            stack: Vec::with_capacity(get_depth(node)),
         };
         iter.push(node);
         iter
@@ -54,22 +56,22 @@ impl<'a, K, V> TreeIterRef<'a, K, V> {
 
 impl<'a, K, V> TreeIterMut<'a, K, V> {
     fn new(node: &'a mut Node<K, V>) -> Self {
-        let depth = (node.len() as f32).log2().ceil() as usize;
         let mut iter = Self {
-            stack: Vec::with_capacity(depth),
+            stack: Vec::with_capacity(get_depth(node)),
         };
         iter.push(node);
         iter
     }
 
-    fn push(&mut self, node: *mut Node<K, V>) {
-        unsafe {
-            if (*node).is_empty() {
-                return;
-            }
-            self.stack.push((((*node).key(), (*node).val_mut()), (*node).node_mut(Side::R)));
-            self.push((*node).node_mut(Side::L));
+    fn push(&mut self, node: &mut Node<K, V>) {
+        if node.is_empty() {
+            return;
         }
+        let ptr: *mut Node<K, V> = node;
+        unsafe {
+            self.stack.push((((*ptr).key(), (*ptr).val_mut()), (*ptr).node_mut(Side::R)));
+        }
+        self.push(node.node_mut(Side::L));
     }
 }
 
