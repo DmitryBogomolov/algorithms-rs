@@ -96,3 +96,29 @@ fn into_iter_mut() {
     assert_eq!(tree.get(&2), Some(&'0'));
     assert_eq!(tree.get(&3), Some(&'0'));
 }
+
+#[test]
+fn iter() {
+    let tree: RBTree<_, _> = [(2, 'b'), (3, 'c'), (1, 'a')].into();
+
+    let mut items = vec![];
+    for item in tree.iter() {
+        items.push(item);
+    }
+    assert_eq!(items, [(&1, &'a'), (&2, &'b'), (&3, &'c')]);
+}
+
+#[test]
+fn iter_mut() {
+    let mut tree: RBTree<_, _> = [(2, 'b'), (3, 'c'), (1, 'a')].into();
+
+    let mut items = vec![];
+    for item in tree.iter_mut() {
+        *item.1 = '0';
+        items.push(item);
+    }
+    assert_eq!(items, [(&1, &mut '0'), (&2, &mut '0'), (&3, &mut '0')]);
+    assert_eq!(tree.get(&1), Some(&'0'));
+    assert_eq!(tree.get(&2), Some(&'0'));
+    assert_eq!(tree.get(&3), Some(&'0'));
+}

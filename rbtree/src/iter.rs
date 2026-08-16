@@ -129,3 +129,13 @@ impl<'a, K, V> IntoIterator for &'a mut RBTree<K, V> {
         Self::IntoIter::new(self.root_mut())
     }
 }
+
+impl<K, V> RBTree<K, V> {
+    pub fn iter(&self) -> TreeIterRef<'_, K, V> {
+        TreeIterRef::new(self.root())
+    }
+
+    pub fn iter_mut(&mut self) -> TreeIterMut<'_, K, V> {
+        TreeIterMut::new(self.root_mut())
+    }
+}
