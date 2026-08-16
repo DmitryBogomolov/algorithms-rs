@@ -3,14 +3,17 @@ use super::node::{Node, Side};
 
 pub struct TreeIter<K, V> {
     stack: Vec<((K, V), Node<K, V>)>,
+    len: usize,
 }
 
 pub struct TreeIterRef<'a, K, V> {
     stack: Vec<((&'a K, &'a V), &'a Node<K, V>)>,
+    len: usize,
 }
 
 pub struct TreeIterMut<'a, K, V> {
     stack: Vec<((&'a K, &'a mut V), &'a mut Node<K, V>)>,
+    len: usize,
 }
 
 fn get_depth<K, V>(root: &Node<K, V>) -> usize {
@@ -21,6 +24,7 @@ impl<K, V> TreeIter<K, V> {
     fn new(node: Node<K, V>) -> Self {
         let mut iter = Self {
             stack: Vec::with_capacity(get_depth(&node)),
+            len: node.len(),
         };
         iter.push(node);
         iter
@@ -40,6 +44,7 @@ impl<'a, K, V> TreeIterRef<'a, K, V> {
     fn new(node: &'a Node<K, V>) -> Self {
         let mut iter = Self {
             stack: Vec::with_capacity(get_depth(node)),
+            len: node.len(),
         };
         iter.push(node);
         iter
@@ -58,6 +63,7 @@ impl<'a, K, V> TreeIterMut<'a, K, V> {
     fn new(node: &'a mut Node<K, V>) -> Self {
         let mut iter = Self {
             stack: Vec::with_capacity(get_depth(node)),
+            len: node.len(),
         };
         iter.push(node);
         iter
@@ -80,8 +86,13 @@ impl<K, V> Iterator for TreeIter<K, V> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let (data, r_node) = self.stack.pop()?;
+        self.len -= 1;
         self.push(r_node);
         Some(data)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len, Some(self.len))
     }
 }
 
@@ -90,8 +101,13 @@ impl<'a, K, V> Iterator for TreeIterRef<'a, K, V> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let (data, r_node) = self.stack.pop()?;
+        self.len -= 1;
         self.push(r_node);
         Some(data)
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len, Some(self.len))
     }
 }
 
@@ -100,10 +116,21 @@ impl<'a, K, V> Iterator for TreeIterMut<'a, K, V> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let (data, r_node) = self.stack.pop()?;
+        self.len -= 1;
         self.push(r_node);
         Some(data)
     }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len, Some(self.len))
+    }
 }
+
+impl<K, V> ExactSizeIterator for TreeIter<K, V> {}
+
+impl<'a, K, V> ExactSizeIterator for TreeIterRef<'a, K, V> {}
+
+impl<'a, K, V> ExactSizeIterator for TreeIterMut<'a, K, V> {}
 
 impl<K, V> IntoIterator for RBTree<K, V> {
     type Item = (K, V);
