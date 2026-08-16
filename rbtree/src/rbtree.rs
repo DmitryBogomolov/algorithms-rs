@@ -63,6 +63,10 @@ impl<K: Ord, V> RBTree<K, V> {
     {
         self.root.remove(key)
     }
+
+    pub fn clear(&mut self) {
+        self.root_mut().take_content();
+    }
 }
 
 impl<K: Ord, V> FromIterator<(K, V)> for RBTree<K, V> {

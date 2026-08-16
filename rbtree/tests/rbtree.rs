@@ -31,6 +31,18 @@ fn remove() {
 }
 
 #[test]
+fn clear() {
+    let mut tree = RBTree::new();
+    tree.insert(1, 'a');
+    tree.insert(2, 'b');
+
+    tree.clear();
+
+    assert!(tree.is_empty());
+    assert_eq!(tree.len(), 0);
+}
+
+#[test]
 fn mutate() {
     let mut tree = RBTree::new();
     tree.insert("11".to_string(), 11);
