@@ -88,3 +88,9 @@ impl<K: Ord, V, const N: usize> From<[(K, V); N]> for RBTree<K, V> {
         tree
     }
 }
+
+impl<K, V> Default for RBTree<K, V> {
+    fn default() -> Self {
+        Self::new()
+    }
+}

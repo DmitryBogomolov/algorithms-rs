@@ -118,7 +118,7 @@ impl<K, V> Node<K, V> {
             return None;
         }
         let node = match self.key_cmp(k) {
-            Ordering::Equal => return Some(&self.val()),
+            Ordering::Equal => return Some(self.val()),
             ord => self.node(Side::from_ord(ord)),
         };
         node.get(k)

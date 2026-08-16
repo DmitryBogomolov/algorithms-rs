@@ -7,11 +7,13 @@ pub struct TreeIter<K, V> {
 }
 
 pub struct TreeIterRef<'a, K, V> {
+    #[allow(clippy::type_complexity)]
     stack: Vec<((&'a K, &'a V), &'a Node<K, V>)>,
     len: usize,
 }
 
 pub struct TreeIterMut<'a, K, V> {
+    #[allow(clippy::type_complexity)]
     stack: Vec<((&'a K, &'a mut V), &'a mut Node<K, V>)>,
     len: usize,
 }
