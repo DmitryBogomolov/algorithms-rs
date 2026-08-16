@@ -28,8 +28,10 @@ impl<K, V> RBTree<K, V> {
         &mut self.root
     }
 
-    pub(crate) fn take_root(self) -> Node<K, V> {
-        self.root
+    pub(crate) fn take_root(&mut self) -> Node<K, V> {
+        let mut node = Node::none();
+        node.replace_content(self.root_mut().take_content());
+        node
     }
 }
 

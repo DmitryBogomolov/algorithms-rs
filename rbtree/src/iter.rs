@@ -109,7 +109,7 @@ impl<K, V> IntoIterator for RBTree<K, V> {
     type Item = (K, V);
     type IntoIter = TreeIter<K, V>;
 
-    fn into_iter(self) -> Self::IntoIter {
+    fn into_iter(mut self) -> Self::IntoIter {
         Self::IntoIter::new(self.take_root())
     }
 }
@@ -139,5 +139,9 @@ impl<K, V> RBTree<K, V> {
 
     pub fn iter_mut(&mut self) -> TreeIterMut<'_, K, V> {
         TreeIterMut::new(self.root_mut())
+    }
+
+    pub fn drain(&mut self) -> TreeIter<K, V> {
+        TreeIter::new(self.take_root())
     }
 }

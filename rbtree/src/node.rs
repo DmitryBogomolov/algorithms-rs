@@ -3,7 +3,7 @@ use std::cmp::Ordering;
 
 pub struct Node<K, V>(Option<Box<Content<K, V>>>);
 
-struct Content<K, V> {
+pub struct Content<K, V> {
     l_node: Node<K, V>,
     r_node: Node<K, V>,
     red: bool,
@@ -149,11 +149,11 @@ impl<K, V> Node<K, V> {
         }));
     }
 
-    fn take_content(&mut self) -> Option<Box<Content<K, V>>> {
+    pub fn take_content(&mut self) -> Option<Box<Content<K, V>>> {
         self.0.take()
     }
 
-    fn replace_content(
+    pub fn replace_content(
         &mut self,
         content: Option<Box<Content<K, V>>>,
     ) -> Option<Box<Content<K, V>>> {

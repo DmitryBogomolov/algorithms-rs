@@ -122,3 +122,14 @@ fn iter_mut() {
     assert_eq!(tree.get(&2), Some(&'0'));
     assert_eq!(tree.get(&3), Some(&'0'));
 }
+
+#[test]
+fn drain() {
+    let mut tree: RBTree<_, _> = [(2, 'b'), (3, 'c'), (1, 'a')].into();
+
+    let items: Vec<_> = tree.drain().collect();
+
+    assert_eq!(tree.len(), 0);
+    assert!(tree.is_empty());
+    assert_eq!(items, [(1, 'a'), (2, 'b'), (3, 'c')]);
+}
