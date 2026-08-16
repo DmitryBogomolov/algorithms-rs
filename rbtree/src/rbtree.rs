@@ -20,6 +20,14 @@ impl<K, V> RBTree<K, V> {
         self.root.is_empty()
     }
 
+    pub(crate) fn root(&self) -> &Node<K, V> {
+        &self.root
+    }
+
+    pub(crate) fn root_mut(&mut self) -> &mut Node<K, V> {
+        &mut self.root
+    }
+
     pub(crate) fn take_root(self) -> Node<K, V> {
         self.root
     }

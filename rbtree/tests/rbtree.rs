@@ -62,11 +62,37 @@ fn from_array() {
 
 #[test]
 fn into_iter() {
-    let tree: RBTree<_, _> = [(1, 'a'), (2, 'b'), (3, 'c')].into();
+    let tree: RBTree<_, _> = [(2, 'b'), (3, 'c'), (1, 'a')].into();
 
     let mut items = vec![];
     for item in tree {
         items.push(item);
     }
     assert_eq!(items, [(1, 'a'), (2, 'b'), (3, 'c')]);
+}
+
+#[test]
+fn into_iter_ref() {
+    let tree: RBTree<_, _> = [(2, 'b'), (3, 'c'), (1, 'a')].into();
+
+    let mut items = vec![];
+    for item in &tree {
+        items.push(item);
+    }
+    assert_eq!(items, [(&1, &'a'), (&2, &'b'), (&3, &'c')]);
+}
+
+#[test]
+fn into_iter_mut() {
+    let mut tree: RBTree<_, _> = [(2, 'b'), (3, 'c'), (1, 'a')].into();
+
+    let mut items = vec![];
+    for item in &mut tree {
+        *item.1 = '0';
+        items.push(item);
+    }
+    assert_eq!(items, [(&1, &mut '0'), (&2, &mut '0'), (&3, &mut '0')]);
+    assert_eq!(tree.get(&1), Some(&'0'));
+    assert_eq!(tree.get(&2), Some(&'0'));
+    assert_eq!(tree.get(&3), Some(&'0'));
 }
