@@ -1,5 +1,5 @@
-use super::rbtree::RBTree;
 use super::node::{Node, Side};
+use super::rbtree::RBTree;
 
 pub struct TreeIter<K, V> {
     stack: Vec<((K, V), Node<K, V>)>,
@@ -54,7 +54,8 @@ impl<'a, K, V> TreeIterRef<'a, K, V> {
         if node.is_empty() {
             return;
         }
-        self.stack.push(((node.key(), node.val()), node.node(Side::R)));
+        self.stack
+            .push(((node.key(), node.val()), node.node(Side::R)));
         self.push(node.node(Side::L));
     }
 }
@@ -75,7 +76,8 @@ impl<'a, K, V> TreeIterMut<'a, K, V> {
         }
         let ptr: *mut Node<K, V> = node;
         unsafe {
-            self.stack.push((((*ptr).key(), (*ptr).val_mut()), (*ptr).node_mut(Side::R)));
+            self.stack
+                .push((((*ptr).key(), (*ptr).val_mut()), (*ptr).node_mut(Side::R)));
         }
         self.push(node.node_mut(Side::L));
     }
