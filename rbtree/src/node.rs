@@ -109,7 +109,7 @@ impl<K, V> Node<K, V> {
         (content.data, content.l_node, content.r_node)
     }
 
-    pub fn get<Q>(&self, k: &Q) -> Option<&V>
+    pub fn get<Q>(&self, k: &Q) -> Option<&Self>
     where
         Q: Ord + ?Sized,
         K: Borrow<Q>,
@@ -117,14 +117,13 @@ impl<K, V> Node<K, V> {
         if self.is_empty() {
             return None;
         }
-        let node = match self.key_cmp(k) {
-            Ordering::Equal => return Some(self.val()),
-            ord => self.node(Side::from_ord(ord)),
-        };
-        node.get(k)
+        match self.key_cmp(k) {
+            Ordering::Equal => Some(self),
+            ord => self.node(Side::from_ord(ord)).get(k),
+        }
     }
 
-    pub fn get_mut<Q>(&mut self, k: &Q) -> Option<&mut V>
+    pub fn get_mut<Q>(&mut self, k: &Q) -> Option<&mut Self>
     where
         Q: Ord + ?Sized,
         K: Borrow<Q>,
@@ -132,11 +131,10 @@ impl<K, V> Node<K, V> {
         if self.is_empty() {
             return None;
         }
-        let node = match self.key_cmp(k) {
-            Ordering::Equal => return Some(self.val_mut()),
-            ord => self.node_mut(Side::from_ord(ord)),
-        };
-        node.get_mut(k)
+        match self.key_cmp(k) {
+            Ordering::Equal => Some(self),
+            ord => self.node_mut(Side::from_ord(ord)).get_mut(k),
+        }
     }
 
     fn set_data(&mut self, data: (K, V)) {
@@ -394,7 +392,7 @@ mod tests {
         let mut node = Node::none();
 
         assert_eq!(node.insert(10, 'a'), None);
-        assert_eq!(node.get(&10), Some(&'a'));
+        assert_eq!(node.get(&10).map(|t| t.val()), Some(&'a'));
 
         assert!(!node.is_empty());
         assert_eq!(node.len(), 1);
@@ -408,10 +406,14 @@ mod tests {
         node.insert(10, 'a');
 
         assert_eq!(node.remove(&10), Some((10, 'a')));
-        assert_eq!(node.get(&10), None);
+        assert!(node.get(&10).is_none());
 
         assert!(node.is_empty());
         assert_eq!(node.len(), 0);
+    }
+
+    fn val<K, V>(n: &Node<K, V>) -> &V {
+        n.val()
     }
 
     #[test]
@@ -420,7 +422,7 @@ mod tests {
         node.insert(10, 'a');
 
         assert_eq!(node.insert(10, 'b'), Some((10, 'a')));
-        assert_eq!(node.get(&10), Some(&'b'));
+        assert_eq!(node.get(&10).map(val), Some(&'b'));
 
         assert!(!node.is_empty());
         assert_eq!(node.len(), 1);
@@ -435,13 +437,13 @@ mod tests {
         node.insert(20, 'b');
         node.insert(30, 'c');
 
-        *node.get_mut(&10).unwrap() = 'A';
-        *node.get_mut(&20).unwrap() = 'B';
-        *node.get_mut(&30).unwrap() = 'C';
+        *node.get_mut(&10).unwrap().val_mut() = 'A';
+        *node.get_mut(&20).unwrap().val_mut() = 'B';
+        *node.get_mut(&30).unwrap().val_mut() = 'C';
 
-        assert_eq!(node.get(&10), Some(&'A'));
-        assert_eq!(node.get(&20), Some(&'B'));
-        assert_eq!(node.get(&30), Some(&'C'));
+        assert_eq!(node.get(&10).map(val), Some(&'A'));
+        assert_eq!(node.get(&20).map(val), Some(&'B'));
+        assert_eq!(node.get(&30).map(val), Some(&'C'));
     }
 
     #[test]
@@ -457,7 +459,7 @@ mod tests {
         assert_eq!(node.len(), range.len());
 
         for i in range.clone() {
-            assert_eq!(node.get(i.to_string().as_str()), Some(&i));
+            assert_eq!(node.get(i.to_string().as_str()).map(val), Some(&i));
         }
         for i in range.clone() {
             assert_eq!(
@@ -466,7 +468,7 @@ mod tests {
             );
         }
         for i in range.clone() {
-            assert_eq!(node.get(i.to_string().as_str()), Some(&(i + 100)));
+            assert_eq!(node.get(i.to_string().as_str()).map(val), Some(&(i + 100)));
         }
         for i in range.clone() {
             assert_eq!(
@@ -542,7 +544,7 @@ mod tests {
         }
         assert_eq!(node.len(), n);
         for i in 0..n {
-            assert_eq!(node.get(&(1000 + i)), Some(&i));
+            assert_eq!(node.get(&(1000 + i)).map(val), Some(&i));
         }
         for i in 0..n {
             assert_eq!(node.remove(&(1000 + i)), Some((1000 + i, i)));
@@ -562,7 +564,7 @@ mod tests {
         }
         assert_eq!(node.len(), n);
         for i in 0..n {
-            assert_eq!(node.get(&(1000 + i)), Some(&i));
+            assert_eq!(node.get(&(1000 + i)).map(val), Some(&i));
         }
         for i in (0..n).rev() {
             assert_eq!(node.remove(&(1000 + i)), Some((1000 + i, i)));
