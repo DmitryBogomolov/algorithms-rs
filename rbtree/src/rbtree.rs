@@ -81,11 +81,7 @@ impl<K: Ord, V> FromIterator<(K, V)> for RBTree<K, V> {
 
 impl<K: Ord, V, const N: usize> From<[(K, V); N]> for RBTree<K, V> {
     fn from(arr: [(K, V); N]) -> Self {
-        let mut tree = Self::new();
-        for (k, v) in arr {
-            tree.insert(k, v);
-        }
-        tree
+        arr.into_iter().collect()
     }
 }
 
