@@ -33,9 +33,7 @@ impl<K, V> RBTree<K, V> {
         node.replace_content(self.root_mut().take_content());
         node
     }
-}
 
-impl<K: Ord, V> RBTree<K, V> {
     pub fn get<Q>(&self, key: &Q) -> Option<&V>
     where
         Q: Ord + ?Sized,
@@ -52,7 +50,10 @@ impl<K: Ord, V> RBTree<K, V> {
         Some(self.root.get_mut(key)?.val_mut())
     }
 
-    pub fn insert(&mut self, key: K, val: V) -> Option<(K, V)> {
+    pub fn insert(&mut self, key: K, val: V) -> Option<(K, V)>
+    where
+        K: Ord,
+    {
         self.root.insert(key, val)
     }
 
@@ -69,7 +70,10 @@ impl<K: Ord, V> RBTree<K, V> {
     }
 }
 
-impl<K: Ord, V> FromIterator<(K, V)> for RBTree<K, V> {
+impl<K, V> FromIterator<(K, V)> for RBTree<K, V>
+where
+    K: Ord,
+{
     fn from_iter<I: IntoIterator<Item = (K, V)>>(iter: I) -> Self {
         let mut tree = Self::new();
         for (k, v) in iter {
@@ -79,7 +83,10 @@ impl<K: Ord, V> FromIterator<(K, V)> for RBTree<K, V> {
     }
 }
 
-impl<K: Ord, V, const N: usize> From<[(K, V); N]> for RBTree<K, V> {
+impl<K, V, const N: usize> From<[(K, V); N]> for RBTree<K, V>
+where
+    K: Ord,
+{
     fn from(arr: [(K, V); N]) -> Self {
         arr.into_iter().collect()
     }
