@@ -36,6 +36,24 @@ impl<K, V> RBTree<K, V> {
         Some(self.root.find_mut(key)?.val_mut())
     }
 
+    pub fn get_kv<Q>(&self, key: &Q) -> Option<(&K, &V)>
+    where
+        Q: Ord + ?Sized,
+        K: Borrow<Q>,
+    {
+        let node = self.root.find(key)?;
+        Some((node.key(), node.val()))
+    }
+
+    pub fn get_kv_mut<Q>(&mut self, key: &Q) -> Option<(&K, &mut V)>
+    where
+        Q: Ord + ?Sized,
+        K: Borrow<Q>,
+    {
+        let ptr: *mut Node<K, V> = self.root.find_mut(key)?;
+        unsafe { Some(((*ptr).key(), (*ptr).val_mut())) }
+    }
+
     pub fn insert(&mut self, key: K, val: V) -> Option<(K, V)>
     where
         K: Ord,
