@@ -101,3 +101,25 @@ impl<K, V> Default for RBTree<K, V> {
         Self::new()
     }
 }
+
+impl<Q, K, V> std::ops::Index<&Q> for RBTree<K, V>
+where
+    Q: Ord + ?Sized,
+    K: Borrow<Q>,
+{
+    type Output = V;
+
+    fn index(&self, index: &Q) -> &Self::Output {
+        self.get(index).unwrap_or_else(|| panic!("bad index"))
+    }
+}
+
+impl<Q, K, V> std::ops::IndexMut<&Q> for RBTree<K, V>
+where
+    Q: Ord + ?Sized,
+    K: Borrow<Q>,
+{
+    fn index_mut(&mut self, index: &Q) -> &mut Self::Output {
+        self.get_mut(index).unwrap_or_else(|| panic!("bad index"))
+    }
+}
