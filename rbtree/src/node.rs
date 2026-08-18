@@ -231,14 +231,15 @@ impl<K, V> Node<K, V> {
             self.set_data(data);
             return None;
         }
-        let node = match self.key_cmp(&data.0) {
-            Ordering::Equal => return self.replace_data(data),
-            ord => self.node_mut(Side::from_ord(ord)),
-        };
-        let ret = node.insert_recursive(data);
-        self.balance_after_insert();
-        self.update_size();
-        ret
+        match self.key_cmp(&data.0) {
+            Ordering::Equal => self.replace_data(data),
+            ord => {
+                let ret = self.node_mut(Side::from_ord(ord)).insert_recursive(data);
+                self.balance_after_insert();
+                self.update_size();
+                ret
+            }
+        }
     }
 
     pub fn insert(&mut self, k: K, v: V) -> Option<(K, V)>
@@ -354,14 +355,15 @@ impl<K, V> Node<K, V> {
         if self.is_empty() {
             return (None, false);
         }
-        let (side, node) = match self.key_cmp(k) {
-            Ordering::Equal => return self.remove_core(),
-            ord => (Side::from_ord(ord), self.node_mut(Side::from_ord(ord))),
-        };
-        let (ret, deficit) = node.remove_recursive(k);
-        let deficit = self.propagate_deficit(deficit, side);
-        self.update_size();
-        (ret, deficit)
+        match self.key_cmp(k) {
+            Ordering::Equal => self.remove_core(),
+            ord => {
+                let (ret, deficit) = self.node_mut(Side::from_ord(ord)).remove_recursive(k);
+                let deficit = self.propagate_deficit(deficit, Side::from_ord(ord));
+                self.update_size();
+                (ret, deficit)
+            }
+        }
     }
 
     pub fn remove<Q>(&mut self, k: &Q) -> Option<(K, V)>
