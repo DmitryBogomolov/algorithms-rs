@@ -39,7 +39,7 @@ impl<K, V> RBTree<K, V> {
         Q: Ord + ?Sized,
         K: Borrow<Q>,
     {
-        Some(self.root.get(key)?.val())
+        Some(self.root.find(key)?.val())
     }
 
     pub fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut V>
@@ -47,7 +47,7 @@ impl<K, V> RBTree<K, V> {
         Q: Ord + ?Sized,
         K: Borrow<Q>,
     {
-        Some(self.root.get_mut(key)?.val_mut())
+        Some(self.root.find_mut(key)?.val_mut())
     }
 
     pub fn insert(&mut self, key: K, val: V) -> Option<(K, V)>

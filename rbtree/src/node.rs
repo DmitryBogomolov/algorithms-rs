@@ -109,7 +109,7 @@ impl<K, V> Node<K, V> {
         (content.data, content.l_node, content.r_node)
     }
 
-    pub fn get<Q>(&self, k: &Q) -> Option<&Self>
+    pub fn find<Q>(&self, k: &Q) -> Option<&Self>
     where
         Q: Ord + ?Sized,
         K: Borrow<Q>,
@@ -119,11 +119,11 @@ impl<K, V> Node<K, V> {
         }
         match self.key_cmp(k) {
             Ordering::Equal => Some(self),
-            ord => self.node(Side::from_ord(ord)).get(k),
+            ord => self.node(Side::from_ord(ord)).find(k),
         }
     }
 
-    pub fn get_mut<Q>(&mut self, k: &Q) -> Option<&mut Self>
+    pub fn find_mut<Q>(&mut self, k: &Q) -> Option<&mut Self>
     where
         Q: Ord + ?Sized,
         K: Borrow<Q>,
@@ -133,7 +133,7 @@ impl<K, V> Node<K, V> {
         }
         match self.key_cmp(k) {
             Ordering::Equal => Some(self),
-            ord => self.node_mut(Side::from_ord(ord)).get_mut(k),
+            ord => self.node_mut(Side::from_ord(ord)).find_mut(k),
         }
     }
 
@@ -392,7 +392,7 @@ mod tests {
         let mut node = Node::none();
 
         assert_eq!(node.insert(10, 'a'), None);
-        assert_eq!(node.get(&10).map(|t| t.val()), Some(&'a'));
+        assert_eq!(node.find(&10).map(|t| t.val()), Some(&'a'));
 
         assert!(!node.is_empty());
         assert_eq!(node.len(), 1);
@@ -406,7 +406,7 @@ mod tests {
         node.insert(10, 'a');
 
         assert_eq!(node.remove(&10), Some((10, 'a')));
-        assert!(node.get(&10).is_none());
+        assert!(node.find(&10).is_none());
 
         assert!(node.is_empty());
         assert_eq!(node.len(), 0);
@@ -422,7 +422,7 @@ mod tests {
         node.insert(10, 'a');
 
         assert_eq!(node.insert(10, 'b'), Some((10, 'a')));
-        assert_eq!(node.get(&10).map(val), Some(&'b'));
+        assert_eq!(node.find(&10).map(val), Some(&'b'));
 
         assert!(!node.is_empty());
         assert_eq!(node.len(), 1);
@@ -437,13 +437,13 @@ mod tests {
         node.insert(20, 'b');
         node.insert(30, 'c');
 
-        *node.get_mut(&10).unwrap().val_mut() = 'A';
-        *node.get_mut(&20).unwrap().val_mut() = 'B';
-        *node.get_mut(&30).unwrap().val_mut() = 'C';
+        *node.find_mut(&10).unwrap().val_mut() = 'A';
+        *node.find_mut(&20).unwrap().val_mut() = 'B';
+        *node.find_mut(&30).unwrap().val_mut() = 'C';
 
-        assert_eq!(node.get(&10).map(val), Some(&'A'));
-        assert_eq!(node.get(&20).map(val), Some(&'B'));
-        assert_eq!(node.get(&30).map(val), Some(&'C'));
+        assert_eq!(node.find(&10).map(val), Some(&'A'));
+        assert_eq!(node.find(&20).map(val), Some(&'B'));
+        assert_eq!(node.find(&30).map(val), Some(&'C'));
     }
 
     #[test]
@@ -459,7 +459,7 @@ mod tests {
         assert_eq!(node.len(), range.len());
 
         for i in range.clone() {
-            assert_eq!(node.get(i.to_string().as_str()).map(val), Some(&i));
+            assert_eq!(node.find(i.to_string().as_str()).map(val), Some(&i));
         }
         for i in range.clone() {
             assert_eq!(
@@ -468,7 +468,7 @@ mod tests {
             );
         }
         for i in range.clone() {
-            assert_eq!(node.get(i.to_string().as_str()).map(val), Some(&(i + 100)));
+            assert_eq!(node.find(i.to_string().as_str()).map(val), Some(&(i + 100)));
         }
         for i in range.clone() {
             assert_eq!(
@@ -544,7 +544,7 @@ mod tests {
         }
         assert_eq!(node.len(), n);
         for i in 0..n {
-            assert_eq!(node.get(&(1000 + i)).map(val), Some(&i));
+            assert_eq!(node.find(&(1000 + i)).map(val), Some(&i));
         }
         for i in 0..n {
             assert_eq!(node.remove(&(1000 + i)), Some((1000 + i, i)));
@@ -564,7 +564,7 @@ mod tests {
         }
         assert_eq!(node.len(), n);
         for i in 0..n {
-            assert_eq!(node.get(&(1000 + i)).map(val), Some(&i));
+            assert_eq!(node.find(&(1000 + i)).map(val), Some(&i));
         }
         for i in (0..n).rev() {
             assert_eq!(node.remove(&(1000 + i)), Some((1000 + i, i)));
