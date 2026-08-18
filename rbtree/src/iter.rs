@@ -141,7 +141,7 @@ impl<K, V> IntoIterator for RBTree<K, V> {
     type IntoIter = TreeIter<K, V>;
 
     fn into_iter(mut self) -> Self::IntoIter {
-        Self::IntoIter::new(self.take_root())
+        Self::IntoIter::new(take_root(&mut self))
     }
 }
 
@@ -150,7 +150,7 @@ impl<'a, K, V> IntoIterator for &'a RBTree<K, V> {
     type IntoIter = TreeIterRef<'a, K, V>;
 
     fn into_iter(self) -> Self::IntoIter {
-        Self::IntoIter::new(self.root())
+        Self::IntoIter::new(&self.root)
     }
 }
 
@@ -159,20 +159,26 @@ impl<'a, K, V> IntoIterator for &'a mut RBTree<K, V> {
     type IntoIter = TreeIterMut<'a, K, V>;
 
     fn into_iter(self) -> Self::IntoIter {
-        Self::IntoIter::new(self.root_mut())
+        Self::IntoIter::new(&mut self.root)
     }
 }
 
 impl<K, V> RBTree<K, V> {
     pub fn iter(&self) -> TreeIterRef<'_, K, V> {
-        TreeIterRef::new(self.root())
+        TreeIterRef::new(&self.root)
     }
 
     pub fn iter_mut(&mut self) -> TreeIterMut<'_, K, V> {
-        TreeIterMut::new(self.root_mut())
+        TreeIterMut::new(&mut self.root)
     }
 
     pub fn drain(&mut self) -> TreeIter<K, V> {
-        TreeIter::new(self.take_root())
+        TreeIter::new(take_root(self))
     }
+}
+
+fn take_root<K, V>(tree: &mut RBTree<K, V>) -> Node<K, V> {
+    let mut node = Node::none();
+    node.replace_content(tree.root.take_content());
+    node
 }

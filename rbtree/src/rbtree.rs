@@ -4,7 +4,7 @@ use std::borrow::Borrow;
 // Implements *Reb-Black Binary Search Tree* container.
 // Partially based on https://algs4.cs.princeton.edu/33balanced/.
 pub struct RBTree<K, V> {
-    root: Node<K, V>,
+    pub(crate) root: Node<K, V>,
 }
 
 impl<K, V> RBTree<K, V> {
@@ -18,20 +18,6 @@ impl<K, V> RBTree<K, V> {
 
     pub fn is_empty(&self) -> bool {
         self.root.is_empty()
-    }
-
-    pub(crate) fn root(&self) -> &Node<K, V> {
-        &self.root
-    }
-
-    pub(crate) fn root_mut(&mut self) -> &mut Node<K, V> {
-        &mut self.root
-    }
-
-    pub(crate) fn take_root(&mut self) -> Node<K, V> {
-        let mut node = Node::none();
-        node.replace_content(self.root_mut().take_content());
-        node
     }
 
     pub fn get<Q>(&self, key: &Q) -> Option<&V>
@@ -66,7 +52,7 @@ impl<K, V> RBTree<K, V> {
     }
 
     pub fn clear(&mut self) {
-        self.root_mut().take_content();
+        self.root.take_content();
     }
 }
 
