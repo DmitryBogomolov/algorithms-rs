@@ -152,7 +152,12 @@ fn drain() {
 
 #[test]
 fn indexing() {
-    let mut tree: RBTree<_, _> = [(2, "b".to_owned()), (3, "c".to_owned()), (1, "a".to_owned())].into();
+    let mut tree: RBTree<_, _> = [
+        (2, "b".to_owned()),
+        (3, "c".to_owned()),
+        (1, "a".to_owned()),
+    ]
+    .into();
 
     assert_eq!(tree[&1], "a");
     assert_eq!(tree[&2], "b");
