@@ -1,7 +1,7 @@
 use super::node::{Node, Side};
 use super::rbtree::RBTree;
 
-pub trait IterItem<K, V>: Sized {
+pub trait IterItem: Sized {
     type Data;
 
     fn len(&self) -> usize;
@@ -9,7 +9,7 @@ pub trait IterItem<K, V>: Sized {
     fn split(self) -> (Self::Data, Self, Self);
 }
 
-impl<K, V> IterItem<K, V> for Node<K, V> {
+impl<K, V> IterItem for Node<K, V> {
     type Data = (K, V);
 
     fn len(&self) -> usize {
@@ -25,7 +25,7 @@ impl<K, V> IterItem<K, V> for Node<K, V> {
     }
 }
 
-impl<'a, K, V> IterItem<K, V> for &'a Node<K, V> {
+impl<'a, K, V> IterItem for &'a Node<K, V> {
     type Data = (&'a K, &'a V);
 
     fn len(&self) -> usize {
@@ -45,7 +45,7 @@ impl<'a, K, V> IterItem<K, V> for &'a Node<K, V> {
     }
 }
 
-impl<'a, K, V> IterItem<K, V> for &'a mut Node<K, V> {
+impl<'a, K, V> IterItem for &'a mut Node<K, V> {
     type Data = (&'a K, &'a mut V);
 
     fn len(&self) -> usize {
@@ -68,12 +68,12 @@ impl<'a, K, V> IterItem<K, V> for &'a mut Node<K, V> {
     }
 }
 
-pub struct TreeIter<K, V, T: IterItem<K, V>> {
+pub struct TreeIter<T: IterItem> {
     stack: Vec<(T::Data, T)>,
     len: usize,
 }
 
-impl<K, V, T: IterItem<K, V>> TreeIter<K, V, T> {
+impl<T: IterItem> TreeIter<T> {
     fn new(node: T) -> Self {
         let len = node.len();
         if len == 0 {
@@ -101,7 +101,7 @@ impl<K, V, T: IterItem<K, V>> TreeIter<K, V, T> {
     }
 }
 
-impl<K, V, T: IterItem<K, V>> Iterator for TreeIter<K, V, T> {
+impl<T: IterItem> Iterator for TreeIter<T> {
     type Item = T::Data;
 
     fn next(&mut self) -> Option<Self::Item> {
@@ -116,11 +116,11 @@ impl<K, V, T: IterItem<K, V>> Iterator for TreeIter<K, V, T> {
     }
 }
 
-impl<K, V, T: IterItem<K, V>> ExactSizeIterator for TreeIter<K, V, T> {}
+impl<T: IterItem> ExactSizeIterator for TreeIter<T> {}
 
-pub type TreeIterOut<K, V> = TreeIter<K, V, Node<K, V>>;
-pub type TreeIterRef<'a, K, V> = TreeIter<K, V, &'a Node<K, V>>;
-pub type TreeIterMut<'a, K, V> = TreeIter<K, V, &'a mut Node<K, V>>;
+pub type TreeIterOut<K, V> = TreeIter<Node<K, V>>;
+pub type TreeIterRef<'a, K, V> = TreeIter<&'a Node<K, V>>;
+pub type TreeIterMut<'a, K, V> = TreeIter<&'a mut Node<K, V>>;
 
 fn iter_out<K, V>(tree: &mut RBTree<K, V>) -> TreeIterOut<K, V> {
     let mut node = Node::none();
