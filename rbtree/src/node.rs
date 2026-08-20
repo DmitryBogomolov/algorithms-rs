@@ -312,7 +312,7 @@ impl<K, V> Node<K, V> {
         }
         let other_side = side.other();
         if self.node(other_side).is_red() {
-            // (1) Red sibling. Rotate (the color swap blackens it),moving the deficit down to the now-red child.
+            // (1) Red sibling. Rotate (the color swap blackens it), moving the deficit down to the now-red child.
             // Red node always absorbs a one-black deficit (2) or resolves it by rotation (3, 4).
             // So that recursion never propagates back here.
             self.rotate(side);
@@ -339,7 +339,7 @@ impl<K, V> Node<K, V> {
         if near_red && !far_red {
             self.node_mut(other_side).rotate(other_side);
         }
-        // (4) Far nephew red. Pull it over. Color-swap rotationsettles colors, deficit resolved.
+        // (4) Far nephew red. Pull it over. Color-swap rotation settles colors, deficit resolved.
         if self.node(other_side).node(other_side).is_red() {
             self.node_mut(other_side).node_mut(other_side).flip_color();
         }

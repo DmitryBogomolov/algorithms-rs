@@ -1,7 +1,7 @@
 use super::node::Node;
 use std::borrow::Borrow;
 
-// Implements *Reb-Black Binary Search Tree* container.
+// Implements *Red-Black Binary Search Tree* container.
 // Partially based on https://algs4.cs.princeton.edu/33balanced/.
 pub struct RBTree<K, V> {
     pub(crate) root: Node<K, V>,
