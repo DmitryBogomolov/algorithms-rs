@@ -1,3 +1,3 @@
 [workspace]
 resolver = "3"
-members = ["priorityqueue","sorting", "unionfind"]
+members = ["priorityqueue", "rbtree","sorting", "unionfind"]
