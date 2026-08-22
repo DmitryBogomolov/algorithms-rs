@@ -7,55 +7,50 @@ impl<K, V> Batch<K, V> {
         Self(None)
     }
 
-    pub fn get<Q>(&self, key: &Q) -> Option<(&K, &V)>
+    pub fn get<Q>(&self, key: &Q) -> Option<&Box<(K, V)>>
     where
         Q: Eq + ?Sized,
         K: Borrow<Q>,
     {
         let idx = self.find_index(key)?;
-        let data = self.0.as_ref().unwrap().get(idx)?;
-        Some((&data.0, &data.1))
+        self.0.as_ref().unwrap().get(idx)
     }
 
-    pub fn get_mut<Q>(&mut self, key: &Q) -> Option<(&K, &mut V)>
+    pub fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut Box<(K, V)>>
     where
         Q: Eq + ?Sized,
         K: Borrow<Q>,
     {
         let idx = self.find_index(key)?;
-        let data = self.0.as_mut().unwrap().get_mut(idx)?;
-        let ptr: *mut Box<(K, V)> = data;
-        unsafe { Some((&(*ptr).0, &mut (*ptr).1)) }
+        self.0.as_mut().unwrap().get_mut(idx)
     }
 
-    pub fn insert(&mut self, key: K, val: V) -> Option<(K, V)>
+    pub fn insert(&mut self, data: Box<(K, V)>) -> Option<Box<(K, V)>>
     where
         K: Eq,
     {
-        match self.find_index(&key) {
+        match self.find_index(&data.0) {
             None => {
                 if self.0.is_none() {
                     self.0 = Some(Vec:: new());
                 }
-                self.0.as_mut().unwrap().push(Box::new((key, val)));
+                self.0.as_mut().unwrap().push(data);
                 None
             },
             Some(idx) => {
                 let item = self.0.as_mut().unwrap().get_mut(idx).unwrap();
-                let k = std::mem::replace(&mut item.as_mut().0, key);
-                let v = std::mem::replace(&mut item.as_mut().1, val);
-                Some((k, v))
+                Some(std::mem::replace(item, data))
             },
         }
     }
 
-    pub fn remove<Q>(&mut self, key: &Q) -> Option<(K, V)>
+    pub fn remove<Q>(&mut self, key: &Q) -> Option<Box<(K, V)>>
     where
         Q: Eq + ?Sized,
         K: Borrow<Q>,
     {
         let idx = self.find_index(key)?;
-        Some(*self.0.as_mut().unwrap().swap_remove(idx))
+        Some(self.0.as_mut().unwrap().swap_remove(idx))
     }
 
     fn find_index<Q>(&self, key: &Q) -> Option<usize>
@@ -72,5 +67,12 @@ impl<K, V> Batch<K, V> {
             }
         }
         None
+    }
+
+    pub fn take(self) -> impl Iterator<Item = Box<(K, V)>> {
+        match self.0 {
+            None => Vec::new().into_iter(),
+            Some(arr) => arr.into_iter(),
+        }
     }
 }

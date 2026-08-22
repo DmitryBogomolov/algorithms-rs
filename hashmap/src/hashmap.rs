@@ -52,7 +52,7 @@ impl<K, V> HashMap<K, V> {
     {
         let h = self.hash(key);
         let data = self.slots.get(h)?.get(key)?;
-        Some(data.1)
+        Some(&data.1)
     }
 
     pub fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut V>
@@ -62,14 +62,28 @@ impl<K, V> HashMap<K, V> {
     {
         let h = self.hash(key);
         let data = self.slots.get_mut(h)?.get_mut(key)?;
-        Some(data.1)
+        Some(&mut data.1)
     }
 
-    fn resize_slots(&mut self, new_size: usize) {
-        // TODO
+    fn resize_slots(&mut self, new_size: usize)
+    where
+        K: Hash + Eq,
+    {
+        let mut new_slots: Vec<Batch<K, V>> = Vec::new();
+        new_slots.resize_with(new_size, || Batch::new());
+        let old_slots = std::mem::replace(&mut self.slots, new_slots);
+        for slot in old_slots {
+            for item in slot.take() {
+                let h = self.hash(&item.0);
+                self.slots.get_mut(h).unwrap().insert(item);
+            }
+        }
     }
 
-    fn check_size(&mut self) {
+    fn check_size(&mut self)
+    where
+        K: Hash + Eq,
+    {
         let slot_len = self.slots.len();
         if self.len <= slot_len * MIN_BATCH_CAPACITY {
             let new_slot_len = (slot_len / 2).max(BASE_SLOT_COUNT);
@@ -88,18 +102,18 @@ impl<K, V> HashMap<K, V> {
     {
         let h = self.hash(&key);
         let slot = self.slots.get_mut(h)?;
-        let ret = slot.insert(key, val);
+        let ret = slot.insert(Box::new((key, val)));
         if ret.is_none() {
             self.len += 1;
             self.check_size();
         }
-        ret
+        ret.map(|t| *t)
     }
 
     pub fn remove<Q>(&mut self, key: &Q) -> Option<(K, V)>
     where
         Q: Hash + Eq + ?Sized,
-        K: Borrow<Q>,
+        K: Hash + Eq + Borrow<Q>,
     {
         let h = self.hash(key);
         let slot = self.slots.get_mut(h)?;
@@ -108,6 +122,6 @@ impl<K, V> HashMap<K, V> {
             self.len -= 1;
             self.check_size();
         }
-        ret
+        ret.map(|t| *t)
     }
 }
