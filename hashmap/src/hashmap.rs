@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, hash::{DefaultHasher, Hash, Hasher}};
+use std::{borrow::Borrow, hash::{DefaultHasher, Hash, Hasher}, usize};
 use super::batch::Batch;
 
 // Implements *Hash Map* container.
@@ -24,14 +24,34 @@ impl<K, V> HashMap<K, V> {
         self.len == 0
     }
 
-    pub fn get<Q>(&mut self, key: &Q) -> Option<&V>
+    fn hash<Q>(&self, key: &Q) -> usize
+    where
+        Q: Hash + ?Sized,
+    {
+        if self.slots.is_empty() {
+            return usize::MAX;
+        }
+        let mut hasher = DefaultHasher::new();
+        key.hash(&mut hasher);
+        hasher.finish() as usize & (self.slots.len() - 1)
+    }
+
+    pub fn get<Q>(&self, key: &Q) -> Option<&V>
     where
         Q: Hash + Eq + ?Sized,
         K: Borrow<Q>,
     {
-        let slot = &self.slots[hash(key)];
-        let data = slot.get(key)?;
-        Some(&data.1)
+        let data = self.slots.get(self.hash(key))?.get(key)?;
+        Some(data.1)
+    }
+
+    pub fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut V>
+    where
+        Q: Hash + Eq + ?Sized,
+        K: Borrow<Q>,
+    {
+        let data = self.slots.get_mut(self.hash(key))?.get_mut(key)?;
+        Some(data.1)
     }
 
     pub fn insert(&mut self, key: K, val: V) -> Option<(K, V)>
@@ -48,10 +68,4 @@ impl<K, V> HashMap<K, V> {
     {
         None
     }
-}
-
-fn hash<T: Hash>(t: T) -> usize {
-    let mut hasher = DefaultHasher::new();
-    t.hash(&mut hasher);
-    hasher.finish() as usize
 }
