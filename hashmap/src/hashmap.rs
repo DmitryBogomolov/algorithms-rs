@@ -41,7 +41,8 @@ impl<K, V> HashMap<K, V> {
         Q: Hash + Eq + ?Sized,
         K: Borrow<Q>,
     {
-        let data = self.slots.get(self.hash(key))?.get(key)?;
+        let h = self.hash(key);
+        let data = self.slots.get(h)?.get(key)?;
         Some(data.1)
     }
 
@@ -50,22 +51,27 @@ impl<K, V> HashMap<K, V> {
         Q: Hash + Eq + ?Sized,
         K: Borrow<Q>,
     {
-        let data = self.slots.get_mut(self.hash(key))?.get_mut(key)?;
+        let h = self.hash(key);
+        let data = self.slots.get_mut(h)?.get_mut(key)?;
         Some(data.1)
     }
 
     pub fn insert(&mut self, key: K, val: V) -> Option<(K, V)>
     where
-        K: PartialEq,
+        K: Hash + Eq,
     {
-        None
+        let h = self.hash(&key);
+        let slot = self.slots.get_mut(h)?;
+        slot.insert(key, val)
     }
 
     pub fn remove<Q>(&mut self, key: &Q) -> Option<(K, V)>
     where
-        Q: PartialEq + ?Sized,
+        Q: Hash + Eq + ?Sized,
         K: Borrow<Q>,
     {
-        None
+        let h = self.hash(key);
+        let slot = self.slots.get_mut(h)?;
+        slot.remove(key)
     }
 }
