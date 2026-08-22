@@ -9,7 +9,7 @@ impl<K, V> Batch<K, V> {
 
     pub fn get<Q>(&self, key: &Q) -> Option<(&K, &V)>
     where
-        Q: PartialEq + ?Sized,
+        Q: Eq + ?Sized,
         K: Borrow<Q>,
     {
         let idx = self.find_index(key)?;
@@ -19,7 +19,7 @@ impl<K, V> Batch<K, V> {
 
     pub fn get_mut<Q>(&mut self, key: &Q) -> Option<(&K, &mut V)>
     where
-        Q: PartialEq + ?Sized,
+        Q: Eq + ?Sized,
         K: Borrow<Q>,
     {
         let idx = self.find_index(key)?;
@@ -30,7 +30,7 @@ impl<K, V> Batch<K, V> {
 
     pub fn insert(&mut self, key: K, val: V) -> Option<(K, V)>
     where
-        K: PartialEq,
+        K: Eq,
     {
         match self.find_index(&key) {
             None => {
@@ -51,7 +51,7 @@ impl<K, V> Batch<K, V> {
 
     pub fn remove<Q>(&mut self, key: &Q) -> Option<(K, V)>
     where
-        Q: PartialEq + ?Sized,
+        Q: Eq + ?Sized,
         K: Borrow<Q>,
     {
         let idx = self.find_index(key)?;
@@ -60,7 +60,7 @@ impl<K, V> Batch<K, V> {
 
     fn find_index<Q>(&self, key: &Q) -> Option<usize>
     where
-        Q: PartialEq + ?Sized,
+        Q: Eq + ?Sized,
         K: Borrow<Q>,
     {
         if self.0.is_none() {
