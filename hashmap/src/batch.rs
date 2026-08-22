@@ -42,8 +42,9 @@ impl<K, V> Batch<K, V> {
             },
             Some(idx) => {
                 let item = self.0.as_mut().unwrap().get_mut(idx).unwrap();
-                let prev = std::mem::replace(item, Box::new((key, val)));
-                Some(*prev)
+                let k = std::mem::replace(&mut item.as_mut().0, key);
+                let v = std::mem::replace(&mut item.as_mut().1, val);
+                Some((k, v))
             },
         }
     }
