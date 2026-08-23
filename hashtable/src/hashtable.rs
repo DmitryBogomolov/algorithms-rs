@@ -65,6 +65,27 @@ impl<K, V> HashTable<K, V> {
         Some(&mut data.1)
     }
 
+    pub fn get_kv<Q>(&self, key: &Q) -> Option<(&K, &V)>
+    where
+        Q: Hash + Ord + ?Sized,
+        K: Borrow<Q>,
+    {
+        let h = self.hash(key);
+        let data = self.slots.get(h)?.get(key)?;
+        Some((&data.0, &data.1))
+    }
+
+    pub fn get_kv_mut<Q>(&mut self, key: &Q) -> Option<(&K, &mut V)>
+    where
+        Q: Hash + Ord + ?Sized,
+        K: Borrow<Q>,
+    {
+        let h = self.hash(key);
+        let data = self.slots.get_mut(h)?.get_mut(key)?;
+        let ptr: *mut Box<(K, V)> = data;
+        unsafe { Some((&(*ptr).0, &mut (*ptr).1)) }
+    }    
+
     fn resize_slots(&mut self, new_size: usize)
     where
         K: Hash + Eq,
