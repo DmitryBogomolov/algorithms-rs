@@ -1,0 +1,57 @@
+use hashtable::HashTable;
+
+#[test]
+fn empty() {
+    let table: HashTable<(), ()> = HashTable::new();
+    assert!(table.is_empty());
+    assert_eq!(table.len(), 0);
+}
+
+#[test]
+fn insert() {
+    let mut table = HashTable::new();
+
+    assert_eq!(table.insert("11".to_string(), 11), None);
+    assert!(!table.is_empty());
+    assert_eq!(table.len(), 1);
+    assert_eq!(table.get("11"), Some(&11));
+    assert_eq!(table.get("11_"), None);
+    // assert_eq!(map.get_kv("11"), Some((&"11".to_string(), &11)));
+    // assert_eq!(map.get_kv("11_"), None);
+}
+
+#[test]
+fn remove() {
+    let mut table = HashTable::new();
+    table.insert("11".to_string(), 11);
+
+    assert_eq!(table.remove("11"), Some(("11".to_string(), 11)));
+    assert!(table.is_empty());
+    assert_eq!(table.len(), 0);
+    assert_eq!(table.remove("11"), None);
+    assert_eq!(table.get("11"), None);
+}
+
+#[test]
+fn clear() {
+    let mut table = HashTable::new();
+    table.insert(1, 'a');
+    table.insert(2, 'b');
+
+    table.clear();
+
+    assert!(table.is_empty());
+    assert_eq!(table.len(), 0);
+}
+
+#[test]
+fn mutate() {
+    let mut table = HashTable::new();
+    table.insert("11".to_string(), 11);
+
+    *table.get_mut("11").unwrap() += 1;
+    assert_eq!(table.get("11"), Some(&12));
+
+    // *map.get_kv_mut("11").unwrap().1 += 2;
+    // assert_eq!(map.get_kv("11"), Some((&"11".to_string(), &14)));
+}

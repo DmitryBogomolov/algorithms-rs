@@ -3,7 +3,7 @@ use super::batch::Batch;
 
 // Implements *Hash Map* container.
 // Partially based on https://algs4.cs.princeton.edu/34hash/.
-pub struct HashMap<K, V> {
+pub struct HashTable<K, V> {
     len: usize,
     slots: Vec<Batch<K, V>>,
 }
@@ -12,7 +12,7 @@ const BASE_SLOT_COUNT: usize = 4;
 const MIN_BATCH_CAPACITY: usize = 2;
 const MAX_BATCH_CAPACITY: usize = 8;
 
-impl<K, V> HashMap<K, V> {
+impl<K, V> HashTable<K, V> {
     pub fn new() -> Self {
         let mut ret = Self {
             len: 0,
