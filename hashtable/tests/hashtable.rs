@@ -55,3 +55,20 @@ fn mutate() {
     *table.get_kv_mut("11").unwrap().1 += 2;
     assert_eq!(table.get_kv("11"), Some((&"11".to_string(), &14)));
 }
+
+#[test]
+fn test_many() {
+    let mut table = HashTable::new();
+    for i in 0..400 {
+        assert_eq!(table.insert(1000 + i, i), None);
+    }
+    for i in (0..400).step_by(2) {
+        assert_eq!(table.remove(&(1000 + i)), Some((1000 + i, i)));
+    }
+    for i in 400..800 {
+        assert_eq!(table.insert(1000 + i, i), None);
+    }
+    for i in (400..800).step_by(2) {
+        assert_eq!(table.remove(&(1000 + i)), Some((1000 + i, i)));
+    }
+}
