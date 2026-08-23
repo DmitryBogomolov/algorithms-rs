@@ -22,24 +22,36 @@ fn insert() {
 
 #[test]
 fn remove() {
-    let mut tree = HashMap::new();
-    tree.insert("11".to_string(), 11);
+    let mut map = HashMap::new();
+    map.insert("11".to_string(), 11);
 
-    assert_eq!(tree.remove("11"), Some(("11".to_string(), 11)));
-    assert!(tree.is_empty());
-    assert_eq!(tree.len(), 0);
-    assert_eq!(tree.remove("11"), None);
-    assert_eq!(tree.get("11"), None);
+    assert_eq!(map.remove("11"), Some(("11".to_string(), 11)));
+    assert!(map.is_empty());
+    assert_eq!(map.len(), 0);
+    assert_eq!(map.remove("11"), None);
+    assert_eq!(map.get("11"), None);
 }
 
 #[test]
 fn clear() {
-    let mut tree = HashMap::new();
-    tree.insert(1, 'a');
-    tree.insert(2, 'b');
+    let mut map = HashMap::new();
+    map.insert(1, 'a');
+    map.insert(2, 'b');
 
-    tree.clear();
+    map.clear();
 
-    assert!(tree.is_empty());
-    assert_eq!(tree.len(), 0);
+    assert!(map.is_empty());
+    assert_eq!(map.len(), 0);
+}
+
+#[test]
+fn mutate() {
+    let mut map = HashMap::new();
+    map.insert("11".to_string(), 11);
+
+    *map.get_mut("11").unwrap() += 1;
+    assert_eq!(map.get("11"), Some(&12));
+
+    // *map.get_kv_mut("11").unwrap().1 += 2;
+    // assert_eq!(map.get_kv("11"), Some((&"11".to_string(), &14)));
 }
