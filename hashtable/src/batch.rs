@@ -1,38 +1,38 @@
-use std::borrow::Borrow;
+pub struct Batch<T> (Option<Vec<T>>);
 
-pub struct Batch<K, V> (Option<Vec<Box<(K, V)>>>);
-
-impl<K, V> Batch<K, V> {
+impl<T> Batch<T> {
     pub fn new() -> Self {
         Self(None)
     }
 
-    pub fn get<Q>(&self, key: &Q) -> Option<&Box<(K, V)>>
+    pub fn get<F, K>(&self, key_func: F, key: &K) -> Option<&T>
     where
-        Q: Eq + ?Sized,
-        K: Borrow<Q>,
+        F: FnMut(&T) -> &K,
+        K: Eq + ?Sized,
     {
-        let idx = self.find_index(key)?;
+        let idx = self.find_index(key_func, key)?;
         self.0.as_ref().unwrap().get(idx)
     }
 
-    pub fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut Box<(K, V)>>
+    pub fn get_mut<F, K>(&mut self, key_func: F, key: &K) -> Option<&mut T>
     where
-        Q: Eq + ?Sized,
-        K: Borrow<Q>,
+        F:FnMut(&T) -> &K,
+        K: Eq + ?Sized,
     {
-        let idx = self.find_index(key)?;
+        let idx = self.find_index(key_func, key)?;
         self.0.as_mut().unwrap().get_mut(idx)
     }
 
-    pub fn insert(&mut self, data: Box<(K, V)>) -> Option<Box<(K, V)>>
+    pub fn insert<F, K>(&mut self, data: T, mut key_func: F) -> Option<T>
     where
-        K: Eq,
+        F: FnMut(&T) -> &K,
+        K: Eq + ?Sized,
     {
-        match self.find_index(&data.0) {
+        let k = key_func(&data);
+        match self.find_index(key_func, k) {
             None => {
                 if self.0.is_none() {
-                    self.0 = Some(Vec:: new());
+                    self.0 = Some(Vec::new());
                 }
                 self.0.as_mut().unwrap().push(data);
                 None
@@ -44,32 +44,32 @@ impl<K, V> Batch<K, V> {
         }
     }
 
-    pub fn remove<Q>(&mut self, key: &Q) -> Option<Box<(K, V)>>
+    pub fn remove<F, K>(&mut self, key_func: F, key: &K) -> Option<T>
     where
-        Q: Eq + ?Sized,
-        K: Borrow<Q>,
+        F: FnMut(&T) -> &K,
+        K: Eq + ?Sized,
     {
-        let idx = self.find_index(key)?;
+        let idx = self.find_index(key_func, key)?;
         Some(self.0.as_mut().unwrap().swap_remove(idx))
     }
 
-    fn find_index<Q>(&self, key: &Q) -> Option<usize>
+    fn find_index<F, K>(&self, mut key_func: F, key: &K) -> Option<usize>
     where
-        Q: Eq + ?Sized,
-        K: Borrow<Q>,
+        F: FnMut(&T) -> &K,
+        K: Eq + ?Sized,
     {
         if self.0.is_none() {
             return None;
         }
         for (i, data) in self.0.as_ref().unwrap().iter().enumerate() {
-            if data.as_ref().0.borrow() == key {
+            if key_func(data) == key {
                 return Some(i);
             }
         }
         None
     }
 
-    pub fn take(self) -> impl Iterator<Item = Box<(K, V)>> {
+    pub fn take(self) -> impl Iterator<Item = T> {
         match self.0 {
             None => Vec::new().into_iter(),
             Some(arr) => arr.into_iter(),

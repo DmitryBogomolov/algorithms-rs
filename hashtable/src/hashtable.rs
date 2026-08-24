@@ -1,11 +1,11 @@
-use std::{borrow::Borrow, hash::{DefaultHasher, Hash, Hasher}, usize};
+use std::{borrow::Borrow, hash::{DefaultHasher, Hash, Hasher}};
 use super::batch::Batch;
 
 // Implements *Hash Map* container.
 // Partially based on https://algs4.cs.princeton.edu/34hash/.
 pub struct HashTable<K, V> {
     len: usize,
-    slots: Vec<Batch<K, V>>,
+    slots: Vec<Batch<(K, V)>>,
 }
 
 const BASE_SLOT_COUNT: usize = 4;
@@ -51,7 +51,7 @@ impl<K, V> HashTable<K, V> {
         K: Borrow<Q>,
     {
         let h = self.hash(key);
-        let data = self.slots.get(h)?.get(key)?;
+        let data = self.slots.get(h)?.get(|t| t.0.borrow(), key)?;
         Some(&data.1)
     }
 
@@ -61,42 +61,42 @@ impl<K, V> HashTable<K, V> {
         K: Borrow<Q>,
     {
         let h = self.hash(key);
-        let data = self.slots.get_mut(h)?.get_mut(key)?;
+        let data = self.slots.get_mut(h)?.get_mut(|t| t.0.borrow(), key)?;
         Some(&mut data.1)
     }
 
     pub fn get_kv<Q>(&self, key: &Q) -> Option<(&K, &V)>
     where
-        Q: Hash + Ord + ?Sized,
+        Q: Hash + Eq + ?Sized,
         K: Borrow<Q>,
     {
         let h = self.hash(key);
-        let data = self.slots.get(h)?.get(key)?;
+        let data = self.slots.get(h)?.get(|t| t.0.borrow(), key)?;
         Some((&data.0, &data.1))
     }
 
     pub fn get_kv_mut<Q>(&mut self, key: &Q) -> Option<(&K, &mut V)>
     where
-        Q: Hash + Ord + ?Sized,
+        Q: Hash + Eq + ?Sized,
         K: Borrow<Q>,
     {
         let h = self.hash(key);
-        let data = self.slots.get_mut(h)?.get_mut(key)?;
-        let ptr: *mut Box<(K, V)> = data;
+        let data = self.slots.get_mut(h)?.get_mut(|t| t.0.borrow(), key)?;
+        let ptr: *mut (K, V) = data;
         unsafe { Some((&(*ptr).0, &mut (*ptr).1)) }
-    }    
+    }
 
     fn resize_slots(&mut self, new_size: usize)
     where
         K: Hash + Eq,
     {
-        let mut new_slots: Vec<Batch<K, V>> = Vec::new();
+        let mut new_slots: Vec<Batch<(K, V)>> = Vec::new();
         new_slots.resize_with(new_size, || Batch::new());
         let old_slots = std::mem::replace(&mut self.slots, new_slots);
         for slot in old_slots {
             for item in slot.take() {
                 let h = self.hash(&item.0);
-                self.slots.get_mut(h).unwrap().insert(item);
+                self.slots.get_mut(h).unwrap().insert(item, |t| &t.0);
             }
         }
     }
@@ -123,12 +123,12 @@ impl<K, V> HashTable<K, V> {
     {
         let h = self.hash(&key);
         let slot = self.slots.get_mut(h)?;
-        let ret = slot.insert(Box::new((key, val)));
+        let ret = slot.insert((key, val), |t| &t.0);
         if ret.is_none() {
             self.len += 1;
             self.check_size();
         }
-        ret.map(|t| *t)
+        ret
     }
 
     pub fn remove<Q>(&mut self, key: &Q) -> Option<(K, V)>
@@ -138,11 +138,11 @@ impl<K, V> HashTable<K, V> {
     {
         let h = self.hash(key);
         let slot = self.slots.get_mut(h)?;
-        let ret = slot.remove(key);
+        let ret = slot.remove(|t| t.0.borrow(), key);
         if ret.is_some() {
             self.len -= 1;
             self.check_size();
         }
-        ret.map(|t| *t)
+        ret
     }
 }
