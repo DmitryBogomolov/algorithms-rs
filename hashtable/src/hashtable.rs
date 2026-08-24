@@ -168,3 +168,9 @@ where
         arr.into_iter().collect()
     }
 }
+
+impl<K, V> Default for HashTable<K, V> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
