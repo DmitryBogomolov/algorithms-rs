@@ -92,3 +92,26 @@ fn from_array() {
     assert_eq!(tree.get(&2), Some(&'b'));
     assert_eq!(tree.get(&3), Some(&'c'));
 }
+
+
+#[test]
+fn indexing() {
+    let mut tree: HashTable<_, _> = [
+        (2, "b".to_owned()),
+        (3, "c".to_owned()),
+        (1, "a".to_owned()),
+    ]
+    .into();
+
+    assert_eq!(tree[&1], "a");
+    assert_eq!(tree[&2], "b");
+    assert_eq!(tree[&3], "c");
+
+    tree[&1] = "A".to_owned();
+    tree[&2] = "B".to_owned();
+    tree[&3] = "C".to_owned();
+
+    assert_eq!(tree[&1], "A");
+    assert_eq!(tree[&2], "B");
+    assert_eq!(tree[&3], "C");
+}
