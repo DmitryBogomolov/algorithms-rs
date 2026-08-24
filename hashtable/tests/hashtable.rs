@@ -72,3 +72,23 @@ fn test_many() {
         assert_eq!(table.remove(&(1000 + i)), Some((1000 + i, i)));
     }
 }
+
+#[test]
+fn from_iterator() {
+    let tree: HashTable<i32, char> = [(1, 'a'), (2, 'b'), (3, 'c')].into_iter().collect();
+
+    assert_eq!(tree.len(), 3);
+    assert_eq!(tree.get(&1), Some(&'a'));
+    assert_eq!(tree.get(&2), Some(&'b'));
+    assert_eq!(tree.get(&3), Some(&'c'));
+}
+
+#[test]
+fn from_array() {
+    let tree: HashTable<_, _> = [(1, 'a'), (2, 'b'), (3, 'c')].into();
+
+    assert_eq!(tree.len(), 3);
+    assert_eq!(tree.get(&1), Some(&'a'));
+    assert_eq!(tree.get(&2), Some(&'b'));
+    assert_eq!(tree.get(&3), Some(&'c'));
+}

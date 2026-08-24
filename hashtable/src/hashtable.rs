@@ -146,3 +146,25 @@ impl<K, V> HashTable<K, V> {
         ret
     }
 }
+
+impl<K, V> FromIterator<(K, V)> for HashTable<K, V>
+where
+    K: Hash + Eq,
+{
+    fn from_iter<I: IntoIterator<Item = (K, V)>>(iter: I) -> Self {
+        let mut tree = Self::new();
+        for (k, v) in iter {
+            tree.insert(k, v);
+        }
+        tree
+    }
+}
+
+impl<K, V, const N: usize> From<[(K, V); N]> for HashTable<K, V>
+where
+    K: Hash + Eq,
+{
+    fn from(arr: [(K, V); N]) -> Self {
+        arr.into_iter().collect()
+    }
+}
