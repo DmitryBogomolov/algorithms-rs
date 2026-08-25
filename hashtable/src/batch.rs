@@ -76,3 +76,60 @@ impl<T> Batch<T> {
         }
     }
 }
+
+pub struct BatchIterOut<T>(Option<std::vec::IntoIter<T>>);
+
+impl<T> Iterator for BatchIterOut<T> {
+    type Item = T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.as_mut()?.next()
+    }
+}
+
+pub struct BatchIterRef<'a, T>(Option<std::slice::Iter<'a, T>>);
+
+impl<'a, T> Iterator for BatchIterRef<'a, T> {
+    type Item = &'a T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.as_mut()?.next()
+    }
+}
+
+pub struct BatchIterMut<'a, T>(Option<std::slice::IterMut<'a, T>>);
+
+impl<'a, T> Iterator for BatchIterMut<'a, T> {
+    type Item = &'a mut T;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.as_mut()?.next()
+    }
+}
+
+impl<T> IntoIterator for Batch<T> {
+    type Item = T;
+    type IntoIter = BatchIterOut<T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        BatchIterOut(self.0.map(|t| t.into_iter()))
+    }
+}
+
+impl<'a, T> IntoIterator for &'a Batch<T> {
+    type Item = &'a T;
+    type IntoIter = BatchIterRef<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        BatchIterRef(self.0.as_ref().map(|t| t.iter()))
+    }
+}
+
+impl<'a, T> IntoIterator for &'a mut Batch<T> {
+    type Item = &'a mut T;
+    type IntoIter = BatchIterMut<'a, T>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        BatchIterMut(self.0.as_mut().map(|t| t.iter_mut()))
+    }
+}
