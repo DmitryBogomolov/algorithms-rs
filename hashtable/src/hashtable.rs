@@ -4,8 +4,8 @@ use super::batch::Batch;
 // Implements *Hash Map* container.
 // Partially based on https://algs4.cs.princeton.edu/34hash/.
 pub struct HashTable<K, V> {
-    len: usize,
-    slots: Vec<Batch<(K, V)>>,
+    pub(crate) len: usize,
+    pub(crate) slots: Vec<Batch<Box<(K, V)>>>,
 }
 
 const BASE_SLOT_COUNT: usize = 4;
@@ -82,7 +82,7 @@ impl<K, V> HashTable<K, V> {
     {
         let h = self.hash(key);
         let data = self.slots.get_mut(h)?.get_mut(|t| t.0.borrow(), key)?;
-        let ptr: *mut (K, V) = data;
+        let ptr: *mut Box<(K, V)> = data;
         unsafe { Some((&(*ptr).0, &mut (*ptr).1)) }
     }
 
@@ -90,7 +90,7 @@ impl<K, V> HashTable<K, V> {
     where
         K: Hash + Eq,
     {
-        let mut new_slots: Vec<Batch<(K, V)>> = Vec::new();
+        let mut new_slots: Vec<Batch<Box<(K, V)>>> = Vec::new();
         new_slots.resize_with(new_size, || Batch::new());
         let old_slots = std::mem::replace(&mut self.slots, new_slots);
         for slot in old_slots {
@@ -123,12 +123,12 @@ impl<K, V> HashTable<K, V> {
     {
         let h = self.hash(&key);
         let slot = self.slots.get_mut(h)?;
-        let ret = slot.insert((key, val), |t| &t.0);
+        let ret = slot.insert(Box::new((key, val)), |t| &t.0);
         if ret.is_none() {
             self.len += 1;
             self.check_size();
         }
-        ret
+        ret.map(|t| *t)
     }
 
     pub fn remove<Q>(&mut self, key: &Q) -> Option<(K, V)>
@@ -143,7 +143,7 @@ impl<K, V> HashTable<K, V> {
             self.len -= 1;
             self.check_size();
         }
-        ret
+        ret.map(|t| *t)
     }
 }
 
