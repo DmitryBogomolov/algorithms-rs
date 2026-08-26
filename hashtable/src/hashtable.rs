@@ -145,6 +145,25 @@ impl<K, V> HashTable<K, V> {
         }
         ret.map(|t| *t)
     }
+
+    // TODO: Return actual type + IntoInterator for HashTable
+    pub fn drain(&mut self) -> impl Iterator<Item = (K, V)> {
+        self.len = 0;
+        self.slots.drain(..).flatten().map(|t| *t)
+    }
+
+    // TODO: Return actual type + IntoIterator for &HashTable
+    pub fn iter(&self) -> impl Iterator<Item = (&K, &V)> {
+        self.slots.iter().flatten().map(|t| (&t.0, &t.1))
+    }
+
+    // TODO: Return actual type + IntoIterator for &mut HashTable
+    pub fn iter_mut(&mut self) -> impl Iterator<Item = (&K, &mut V)> {
+        self.slots.iter_mut().flatten().map(|t| {
+            let ptr: *mut Box<(K, V)> = t;
+            unsafe { (&(*ptr).0, &mut (*ptr).1) }
+        })
+    }
 }
 
 impl<K, V> FromIterator<(K, V)> for HashTable<K, V>

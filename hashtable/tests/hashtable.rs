@@ -115,3 +115,40 @@ fn indexing() {
     assert_eq!(table[&2], "B");
     assert_eq!(table[&3], "C");
 }
+
+#[test]
+fn iter() {
+    let table: HashTable<_, _> = [(2, 'b'), (3, 'c'), (1, 'a')].into();
+
+    let mut items = vec![];
+    for item in table.iter() {
+        items.push(item);
+    }
+    assert_eq!(items, [(&1, &'a'), (&2, &'b'), (&3, &'c')]);
+}
+
+#[test]
+fn iter_mut() {
+    let mut table: HashTable<_, _> = [(2, 'b'), (3, 'c'), (1, 'a')].into();
+
+    let mut items = vec![];
+    for item in table.iter_mut() {
+        *item.1 = '0';
+        items.push(item);
+    }
+    assert_eq!(items, [(&1, &mut '0'), (&2, &mut '0'), (&3, &mut '0')]);
+    assert_eq!(table.get(&1), Some(&'0'));
+    assert_eq!(table.get(&2), Some(&'0'));
+    assert_eq!(table.get(&3), Some(&'0'));
+}
+
+#[test]
+fn drain() {
+    let mut table: HashTable<_, _> = [(2, 'b'), (3, 'c'), (1, 'a')].into();
+
+    let items: Vec<_> = table.drain().collect();
+
+    assert_eq!(table.len(), 0);
+    assert!(table.is_empty());
+    assert_eq!(items, [(1, 'a'), (2, 'b'), (3, 'c')]);
+}
