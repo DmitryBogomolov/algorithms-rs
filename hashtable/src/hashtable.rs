@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, hash::{DefaultHasher, Hash, Hasher}};
+use std::{borrow::Borrow, hash::{DefaultHasher, Hash, Hasher}, iter::{Flatten, Map}, vec::IntoIter, slice::{Iter, IterMut}};
 use super::batch::Batch;
 
 // Implements *Hash Map* container.
@@ -213,5 +213,35 @@ where
 {
     fn index_mut(&mut self, index: &Q) -> &mut Self::Output {
         self.get_mut(index).unwrap_or_else(|| panic!("bad index"))
+    }
+}
+
+impl<K, V> IntoIterator for HashTable<K, V> {
+    type Item = (K, V);
+    type IntoIter = Map<Flatten<IntoIter<Batch<Box<(K, V)>>>>, fn(Box<(K, V)>) -> (K, V)>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.slots.into_iter().flatten().map(|t| *t)
+    }
+}
+
+impl<'a, K, V> IntoIterator for &'a HashTable<K, V> {
+    type Item = (&'a K, &'a V);
+    type IntoIter = Map<Flatten<Iter<'a, Batch<Box<(K, V)>>>>, fn(&'a Box<(K, V)>) -> (&'a K, &'a V)>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.slots.iter().flatten().map(|t| (&t.0, &t.1))
+    }
+}
+
+impl<'a, K, V> IntoIterator for &'a mut HashTable<K, V> {
+    type Item = (&'a K, &'a mut V);
+    type IntoIter = Map<Flatten<IterMut<'a, Batch<Box<(K, V)>>>>, fn(&'a mut Box<(K, V)>) -> (&'a K, &'a mut V)>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.slots.iter_mut().flatten().map(|t| {
+            let ptr: *mut Box<(K, V)> = t;
+            unsafe { (&(*ptr).0, &mut (*ptr).1) }
+        })
     }
 }
