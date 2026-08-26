@@ -75,43 +75,43 @@ fn test_many() {
 
 #[test]
 fn from_iterator() {
-    let tree: HashTable<i32, char> = [(1, 'a'), (2, 'b'), (3, 'c')].into_iter().collect();
+    let table: HashTable<i32, char> = [(1, 'a'), (2, 'b'), (3, 'c')].into_iter().collect();
 
-    assert_eq!(tree.len(), 3);
-    assert_eq!(tree.get(&1), Some(&'a'));
-    assert_eq!(tree.get(&2), Some(&'b'));
-    assert_eq!(tree.get(&3), Some(&'c'));
+    assert_eq!(table.len(), 3);
+    assert_eq!(table.get(&1), Some(&'a'));
+    assert_eq!(table.get(&2), Some(&'b'));
+    assert_eq!(table.get(&3), Some(&'c'));
 }
 
 #[test]
 fn from_array() {
-    let tree: HashTable<_, _> = [(1, 'a'), (2, 'b'), (3, 'c')].into();
+    let table: HashTable<_, _> = [(1, 'a'), (2, 'b'), (3, 'c')].into();
 
-    assert_eq!(tree.len(), 3);
-    assert_eq!(tree.get(&1), Some(&'a'));
-    assert_eq!(tree.get(&2), Some(&'b'));
-    assert_eq!(tree.get(&3), Some(&'c'));
+    assert_eq!(table.len(), 3);
+    assert_eq!(table.get(&1), Some(&'a'));
+    assert_eq!(table.get(&2), Some(&'b'));
+    assert_eq!(table.get(&3), Some(&'c'));
 }
 
 
 #[test]
 fn indexing() {
-    let mut tree: HashTable<_, _> = [
+    let mut table: HashTable<_, _> = [
         (2, "b".to_owned()),
         (3, "c".to_owned()),
         (1, "a".to_owned()),
     ]
     .into();
 
-    assert_eq!(tree[&1], "a");
-    assert_eq!(tree[&2], "b");
-    assert_eq!(tree[&3], "c");
+    assert_eq!(table[&1], "a");
+    assert_eq!(table[&2], "b");
+    assert_eq!(table[&3], "c");
 
-    tree[&1] = "A".to_owned();
-    tree[&2] = "B".to_owned();
-    tree[&3] = "C".to_owned();
+    table[&1] = "A".to_owned();
+    table[&2] = "B".to_owned();
+    table[&3] = "C".to_owned();
 
-    assert_eq!(tree[&1], "A");
-    assert_eq!(tree[&2], "B");
-    assert_eq!(tree[&3], "C");
+    assert_eq!(table[&1], "A");
+    assert_eq!(table[&2], "B");
+    assert_eq!(table[&3], "C");
 }
