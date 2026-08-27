@@ -93,7 +93,6 @@ fn from_array() {
     assert_eq!(table.get(&3), Some(&'c'));
 }
 
-
 #[test]
 fn indexing() {
     let mut table: HashTable<_, _> = [

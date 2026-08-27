@@ -1,4 +1,4 @@
-pub struct Batch<T> (Option<Vec<T>>);
+pub struct Batch<T>(Option<Vec<T>>);
 
 impl<T> Batch<T> {
     pub fn new() -> Self {
@@ -16,7 +16,7 @@ impl<T> Batch<T> {
 
     pub fn get_mut<F, K>(&mut self, key_func: F, key: &K) -> Option<&mut T>
     where
-        F:FnMut(&T) -> &K,
+        F: FnMut(&T) -> &K,
         K: Eq + ?Sized,
     {
         let idx = self.find_index(key_func, key)?;
@@ -36,11 +36,11 @@ impl<T> Batch<T> {
                 }
                 self.0.as_mut().unwrap().push(data);
                 None
-            },
+            }
             Some(idx) => {
                 let item = self.0.as_mut().unwrap().get_mut(idx).unwrap();
                 Some(std::mem::replace(item, data))
-            },
+            }
         }
     }
 

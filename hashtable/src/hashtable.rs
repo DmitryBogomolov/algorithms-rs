@@ -1,5 +1,8 @@
-use std::{borrow::Borrow, hash::{DefaultHasher, Hash, Hasher}};
 use super::batch::Batch;
+use std::{
+    borrow::Borrow,
+    hash::{DefaultHasher, Hash, Hasher},
+};
 
 type Entry<K, V> = Batch<Box<(K, V)>>;
 type Slots<K, V> = Vec<Entry<K, V>>;
@@ -236,26 +239,38 @@ impl<I: Iterator> Iterator for HashTableIter<I> {
 
 impl<I: Iterator> ExactSizeIterator for HashTableIter<I> {}
 
-pub type HashTableIterOut<K, V> = HashTableIter<std::iter::Map<std::iter::Flatten<std::vec::IntoIter<Entry<K, V>>>, fn(Box<(K, V)>) -> (K, V)>>;
-pub type HashTableIterRef<'a, K, V> = HashTableIter<std::iter::Map<std::iter::Flatten<std::slice::Iter<'a, Entry<K, V>>>, fn(&'a Box<(K, V)>) -> (&'a K, &'a V)>>;
-pub type HashTableIterMut<'a, K, V> = HashTableIter<std::iter::Map<std::iter::Flatten<std::slice::IterMut<'a, Entry<K, V>>>, fn(&'a mut Box<(K, V)>) -> (&'a K, &'a mut V)>>;
+pub type HashTableIterOut<K, V> = HashTableIter<
+    std::iter::Map<std::iter::Flatten<std::vec::IntoIter<Entry<K, V>>>, fn(Box<(K, V)>) -> (K, V)>,
+>;
+pub type HashTableIterRef<'a, K, V> = HashTableIter<
+    std::iter::Map<
+        std::iter::Flatten<std::slice::Iter<'a, Entry<K, V>>>,
+        fn(&'a Box<(K, V)>) -> (&'a K, &'a V),
+    >,
+>;
+pub type HashTableIterMut<'a, K, V> = HashTableIter<
+    std::iter::Map<
+        std::iter::Flatten<std::slice::IterMut<'a, Entry<K, V>>>,
+        fn(&'a mut Box<(K, V)>) -> (&'a K, &'a mut V),
+    >,
+>;
 
 fn iter_out<K, V>(slots: Slots<K, V>, len: usize) -> HashTableIterOut<K, V> {
-    HashTableIterOut{
+    HashTableIterOut {
         iter: slots.into_iter().flatten().map(|t| *t),
         len,
     }
 }
 
 fn iter_ref<K, V>(slots: &Slots<K, V>, len: usize) -> HashTableIterRef<'_, K, V> {
-    HashTableIterRef{
+    HashTableIterRef {
         iter: slots.into_iter().flatten().map(|t| (&t.0, &t.1)),
         len,
     }
 }
 
 fn iter_mut<K, V>(slots: &mut Slots<K, V>, len: usize) -> HashTableIterMut<'_, K, V> {
-    HashTableIterMut{
+    HashTableIterMut {
         iter: slots.into_iter().flatten().map(|t| {
             let ptr: *mut Box<(K, V)> = t;
             unsafe { (&(*ptr).0, &mut (*ptr).1) }
