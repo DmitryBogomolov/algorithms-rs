@@ -150,16 +150,16 @@ impl<K, V> HashTable<K, V> {
     }
 
     pub fn drain(&mut self) -> HashTableIterOut<K, V> {
-        self.len = 0;
-        iter_out(self.slots.drain(..).collect())
+        let len = std::mem::replace(&mut self.len, 0);
+        iter_out(self.slots.drain(..).collect(), len)
     }
 
     pub fn iter(&self) -> HashTableIterRef<'_, K, V> {
-        iter_ref(&self.slots)
+        iter_ref(&self.slots, self.len)
     }
 
     pub fn iter_mut(&mut self) -> HashTableIterMut<'_, K, V> {
-        iter_mut(&mut self.slots)
+        iter_mut(&mut self.slots, self.len)
     }
 }
 
@@ -213,23 +213,55 @@ where
     }
 }
 
-type HashTableIterOut<K, V> = std::iter::Map<std::iter::Flatten<std::vec::IntoIter<Entry<K, V>>>, fn(Box<(K, V)>) -> (K, V)>;
-type HashTableIterRef<'a, K, V> = std::iter::Map<std::iter::Flatten<std::slice::Iter<'a, Entry<K, V>>>, fn(&'a Box<(K, V)>) -> (&'a K, &'a V)>;
-type HashTableIterMut<'a, K, V> = std::iter::Map<std::iter::Flatten<std::slice::IterMut<'a, Entry<K, V>>>, fn(&'a mut Box<(K, V)>) -> (&'a K, &'a mut V)>;
-
-fn iter_out<K, V>(slots: Slots<K, V>) -> HashTableIterOut<K, V> {
-    slots.into_iter().flatten().map(|t| *t)
+pub struct HashTableIter<I: Iterator> {
+    len: usize,
+    iter: I,
 }
 
-fn iter_ref<K, V>(slots: &Slots<K, V>) -> HashTableIterRef<'_, K, V> {
-    slots.into_iter().flatten().map(|t| (&t.0, &t.1))
+impl<I: Iterator> Iterator for HashTableIter<I> {
+    type Item = I::Item;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let ret = self.iter.next();
+        if ret.is_some() {
+            self.len -= 1;
+        }
+        ret
+    }
+
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (self.len, Some(self.len))
+    }
 }
 
-fn iter_mut<K, V>(slots: &mut Slots<K, V>) -> HashTableIterMut<'_, K, V> {
-    slots.into_iter().flatten().map(|t| {
-        let ptr: *mut Box<(K, V)> = t;
-        unsafe { (&(*ptr).0, &mut (*ptr).1) }
-    })
+impl<I: Iterator> ExactSizeIterator for HashTableIter<I> {}
+
+pub type HashTableIterOut<K, V> = HashTableIter<std::iter::Map<std::iter::Flatten<std::vec::IntoIter<Entry<K, V>>>, fn(Box<(K, V)>) -> (K, V)>>;
+pub type HashTableIterRef<'a, K, V> = HashTableIter<std::iter::Map<std::iter::Flatten<std::slice::Iter<'a, Entry<K, V>>>, fn(&'a Box<(K, V)>) -> (&'a K, &'a V)>>;
+pub type HashTableIterMut<'a, K, V> = HashTableIter<std::iter::Map<std::iter::Flatten<std::slice::IterMut<'a, Entry<K, V>>>, fn(&'a mut Box<(K, V)>) -> (&'a K, &'a mut V)>>;
+
+fn iter_out<K, V>(slots: Slots<K, V>, len: usize) -> HashTableIterOut<K, V> {
+    HashTableIterOut{
+        iter: slots.into_iter().flatten().map(|t| *t),
+        len,
+    }
+}
+
+fn iter_ref<K, V>(slots: &Slots<K, V>, len: usize) -> HashTableIterRef<'_, K, V> {
+    HashTableIterRef{
+        iter: slots.into_iter().flatten().map(|t| (&t.0, &t.1)),
+        len,
+    }
+}
+
+fn iter_mut<K, V>(slots: &mut Slots<K, V>, len: usize) -> HashTableIterMut<'_, K, V> {
+    HashTableIterMut{
+        iter: slots.into_iter().flatten().map(|t| {
+            let ptr: *mut Box<(K, V)> = t;
+            unsafe { (&(*ptr).0, &mut (*ptr).1) }
+        }),
+        len,
+    }
 }
 
 impl<K, V> IntoIterator for HashTable<K, V> {
@@ -237,7 +269,7 @@ impl<K, V> IntoIterator for HashTable<K, V> {
     type IntoIter = HashTableIterOut<K, V>;
 
     fn into_iter(self) -> Self::IntoIter {
-        iter_out(self.slots)
+        iter_out(self.slots, self.len)
     }
 }
 
@@ -246,7 +278,7 @@ impl<'a, K, V> IntoIterator for &'a HashTable<K, V> {
     type IntoIter = HashTableIterRef<'a, K, V>;
 
     fn into_iter(self) -> Self::IntoIter {
-        iter_ref(&self.slots)
+        iter_ref(&self.slots, self.len)
     }
 }
 
@@ -255,6 +287,6 @@ impl<'a, K, V> IntoIterator for &'a mut HashTable<K, V> {
     type IntoIter = HashTableIterMut<'a, K, V>;
 
     fn into_iter(self) -> Self::IntoIter {
-        iter_mut(&mut self.slots)
+        iter_mut(&mut self.slots, self.len)
     }
 }
