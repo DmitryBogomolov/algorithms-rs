@@ -58,10 +58,8 @@ impl<T> Batch<T> {
         F: FnMut(&T) -> &K,
         K: Eq + ?Sized,
     {
-        if self.0.is_none() {
-            return None;
-        }
-        for (i, data) in self.0.as_ref().unwrap().iter().enumerate() {
+        let vec = self.0.as_ref()?;
+        for (i, data) in vec.iter().enumerate() {
             if key_func(data) == key {
                 return Some(i);
             }

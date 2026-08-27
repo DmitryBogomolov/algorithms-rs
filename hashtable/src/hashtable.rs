@@ -39,7 +39,7 @@ impl<K, V> HashTable<K, V> {
     pub fn clear(&mut self) {
         self.len = 0;
         self.slots.clear();
-        self.slots.resize_with(BASE_SLOT_COUNT, || Batch::new());
+        self.slots.resize_with(BASE_SLOT_COUNT, Batch::new);
     }
 
     fn hash<Q>(&self, key: &Q) -> usize
@@ -97,7 +97,7 @@ impl<K, V> HashTable<K, V> {
         K: Hash + Eq,
     {
         let mut new_slots: Slots<K, V> = Vec::new();
-        new_slots.resize_with(new_size, || Batch::new());
+        new_slots.resize_with(new_size, Batch::new);
         let old_slots = std::mem::replace(&mut self.slots, new_slots);
         for slot in old_slots {
             for item in slot.take() {
@@ -264,14 +264,14 @@ fn iter_out<K, V>(slots: Slots<K, V>, len: usize) -> HashTableIterOut<K, V> {
 
 fn iter_ref<K, V>(slots: &Slots<K, V>, len: usize) -> HashTableIterRef<'_, K, V> {
     HashTableIterRef {
-        iter: slots.into_iter().flatten().map(|t| (&t.0, &t.1)),
+        iter: slots.iter().flatten().map(|t| (&t.0, &t.1)),
         len,
     }
 }
 
 fn iter_mut<K, V>(slots: &mut Slots<K, V>, len: usize) -> HashTableIterMut<'_, K, V> {
     HashTableIterMut {
-        iter: slots.into_iter().flatten().map(|t| {
+        iter: slots.iter_mut().flatten().map(|t| {
             let ptr: *mut Box<(K, V)> = t;
             unsafe { (&(*ptr).0, &mut (*ptr).1) }
         }),
