@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, hash::{DefaultHasher, Hash, Hasher}, iter::{Flatten, Map}, vec::IntoIter, slice::{Iter, IterMut}};
+use std::{borrow::Borrow, hash::{DefaultHasher, Hash, Hasher}};
 use super::batch::Batch;
 
 type Entry<K, V> = Batch<Box<(K, V)>>;
@@ -213,9 +213,9 @@ where
     }
 }
 
-type HashTableIterOut<K, V> = Map<Flatten<IntoIter<Entry<K, V>>>, fn(Box<(K, V)>) -> (K, V)>;
-type HashTableIterRef<'a, K, V> = Map<Flatten<Iter<'a, Entry<K, V>>>, fn(&'a Box<(K, V)>) -> (&'a K, &'a V)>;
-type HashTableIterMut<'a, K, V> = Map<Flatten<IterMut<'a, Entry<K, V>>>, fn(&'a mut Box<(K, V)>) -> (&'a K, &'a mut V)>;
+type HashTableIterOut<K, V> = std::iter::Map<std::iter::Flatten<std::vec::IntoIter<Entry<K, V>>>, fn(Box<(K, V)>) -> (K, V)>;
+type HashTableIterRef<'a, K, V> = std::iter::Map<std::iter::Flatten<std::slice::Iter<'a, Entry<K, V>>>, fn(&'a Box<(K, V)>) -> (&'a K, &'a V)>;
+type HashTableIterMut<'a, K, V> = std::iter::Map<std::iter::Flatten<std::slice::IterMut<'a, Entry<K, V>>>, fn(&'a mut Box<(K, V)>) -> (&'a K, &'a mut V)>;
 
 fn iter_out<K, V>(slots: Slots<K, V>) -> HashTableIterOut<K, V> {
     slots.into_iter().flatten().map(|t| *t)
