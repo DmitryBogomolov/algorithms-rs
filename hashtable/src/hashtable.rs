@@ -1,11 +1,14 @@
 use std::{borrow::Borrow, hash::{DefaultHasher, Hash, Hasher}, iter::{Flatten, Map}, vec::IntoIter, slice::{Iter, IterMut}};
 use super::batch::Batch;
 
+type Entry<K, V> = Batch<Box<(K, V)>>;
+type Slots<K, V> = Vec<Entry<K, V>>;
+
 // Implements *Hash Map* container.
 // Partially based on https://algs4.cs.princeton.edu/34hash/.
 pub struct HashTable<K, V> {
     pub(crate) len: usize,
-    pub(crate) slots: Vec<Batch<Box<(K, V)>>>,
+    pub(crate) slots: Slots<K, V>,
 }
 
 const BASE_SLOT_COUNT: usize = 4;
@@ -90,7 +93,7 @@ impl<K, V> HashTable<K, V> {
     where
         K: Hash + Eq,
     {
-        let mut new_slots: Vec<Batch<Box<(K, V)>>> = Vec::new();
+        let mut new_slots: Slots<K, V> = Vec::new();
         new_slots.resize_with(new_size, || Batch::new());
         let old_slots = std::mem::replace(&mut self.slots, new_slots);
         for slot in old_slots {
@@ -146,23 +149,17 @@ impl<K, V> HashTable<K, V> {
         ret.map(|t| *t)
     }
 
-    // TODO: Return actual type + IntoInterator for HashTable
-    pub fn drain(&mut self) -> impl Iterator<Item = (K, V)> {
+    pub fn drain(&mut self) -> HashTableIterOut<K, V> {
         self.len = 0;
-        self.slots.drain(..).flatten().map(|t| *t)
+        iter_out(self.slots.drain(..).collect())
     }
 
-    // TODO: Return actual type + IntoIterator for &HashTable
-    pub fn iter(&self) -> impl Iterator<Item = (&K, &V)> {
-        self.slots.iter().flatten().map(|t| (&t.0, &t.1))
+    pub fn iter(&self) -> HashTableIterRef<'_, K, V> {
+        iter_ref(&self.slots)
     }
 
-    // TODO: Return actual type + IntoIterator for &mut HashTable
-    pub fn iter_mut(&mut self) -> impl Iterator<Item = (&K, &mut V)> {
-        self.slots.iter_mut().flatten().map(|t| {
-            let ptr: *mut Box<(K, V)> = t;
-            unsafe { (&(*ptr).0, &mut (*ptr).1) }
-        })
+    pub fn iter_mut(&mut self) -> HashTableIterMut<'_, K, V> {
+        iter_mut(&mut self.slots)
     }
 }
 
@@ -216,32 +213,48 @@ where
     }
 }
 
+type HashTableIterOut<K, V> = Map<Flatten<IntoIter<Entry<K, V>>>, fn(Box<(K, V)>) -> (K, V)>;
+type HashTableIterRef<'a, K, V> = Map<Flatten<Iter<'a, Entry<K, V>>>, fn(&'a Box<(K, V)>) -> (&'a K, &'a V)>;
+type HashTableIterMut<'a, K, V> = Map<Flatten<IterMut<'a, Entry<K, V>>>, fn(&'a mut Box<(K, V)>) -> (&'a K, &'a mut V)>;
+
+fn iter_out<K, V>(slots: Slots<K, V>) -> HashTableIterOut<K, V> {
+    slots.into_iter().flatten().map(|t| *t)
+}
+
+fn iter_ref<K, V>(slots: &Slots<K, V>) -> HashTableIterRef<'_, K, V> {
+    slots.into_iter().flatten().map(|t| (&t.0, &t.1))
+}
+
+fn iter_mut<K, V>(slots: &mut Slots<K, V>) -> HashTableIterMut<'_, K, V> {
+    slots.into_iter().flatten().map(|t| {
+        let ptr: *mut Box<(K, V)> = t;
+        unsafe { (&(*ptr).0, &mut (*ptr).1) }
+    })
+}
+
 impl<K, V> IntoIterator for HashTable<K, V> {
     type Item = (K, V);
-    type IntoIter = Map<Flatten<IntoIter<Batch<Box<(K, V)>>>>, fn(Box<(K, V)>) -> (K, V)>;
+    type IntoIter = HashTableIterOut<K, V>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.slots.into_iter().flatten().map(|t| *t)
+        iter_out(self.slots)
     }
 }
 
 impl<'a, K, V> IntoIterator for &'a HashTable<K, V> {
     type Item = (&'a K, &'a V);
-    type IntoIter = Map<Flatten<Iter<'a, Batch<Box<(K, V)>>>>, fn(&'a Box<(K, V)>) -> (&'a K, &'a V)>;
+    type IntoIter = HashTableIterRef<'a, K, V>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.slots.iter().flatten().map(|t| (&t.0, &t.1))
+        iter_ref(&self.slots)
     }
 }
 
 impl<'a, K, V> IntoIterator for &'a mut HashTable<K, V> {
     type Item = (&'a K, &'a mut V);
-    type IntoIter = Map<Flatten<IterMut<'a, Batch<Box<(K, V)>>>>, fn(&'a mut Box<(K, V)>) -> (&'a K, &'a mut V)>;
+    type IntoIter = HashTableIterMut<'a, K, V>;
 
     fn into_iter(self) -> Self::IntoIter {
-        self.slots.iter_mut().flatten().map(|t| {
-            let ptr: *mut Box<(K, V)> = t;
-            unsafe { (&(*ptr).0, &mut (*ptr).1) }
-        })
+        iter_mut(&mut self.slots)
     }
 }
