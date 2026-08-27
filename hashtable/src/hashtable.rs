@@ -10,8 +10,8 @@ type Slots<K, V> = Vec<Entry<K, V>>;
 // Implements *Hash Map* container.
 // Partially based on https://algs4.cs.princeton.edu/34hash/.
 pub struct HashTable<K, V> {
-    pub(crate) len: usize,
-    pub(crate) slots: Slots<K, V>,
+    len: usize,
+    slots: Slots<K, V>,
 }
 
 const BASE_SLOT_COUNT: usize = 4;
