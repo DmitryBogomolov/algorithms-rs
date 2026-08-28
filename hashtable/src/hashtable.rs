@@ -20,12 +20,10 @@ const MAX_BATCH_CAPACITY: usize = 8;
 
 impl<K, V> HashTable<K, V> {
     pub fn new() -> Self {
-        let mut ret = Self {
+        Self {
             len: 0,
-            slots: Vec::new(),
-        };
-        ret.clear();
-        ret
+            slots: init_slots(),
+        }
     }
 
     pub fn len(&self) -> usize {
