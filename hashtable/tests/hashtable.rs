@@ -123,7 +123,7 @@ fn iter() {
     for item in table.iter() {
         items.push(item);
     }
-    
+
     items.sort_by_key(|item| item.0);
     assert_eq!(items, [(&1, &'a'), (&2, &'b'), (&3, &'c')]);
 }
@@ -168,7 +168,7 @@ fn into_iter() {
     for item in table {
         items.push(item);
     }
-    
+
     items.sort_by_key(|item| item.0);
     assert_eq!(items, [(1, 'a'), (2, 'b'), (3, 'c')]);
 }
@@ -181,7 +181,7 @@ fn into_iter_ref() {
     for item in &table {
         items.push(item);
     }
-    
+
     items.sort_by_key(|item| item.0);
     assert_eq!(items, [(&1, &'a'), (&2, &'b'), (&3, &'c')]);
 }

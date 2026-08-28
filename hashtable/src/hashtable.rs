@@ -38,17 +38,14 @@ impl<K, V> HashTable<K, V> {
 
     pub fn clear(&mut self) {
         self.len = 0;
-        self.slots.clear();
-        init_slots(&mut self.slots);
+        self.slots = init_slots();
     }
 
     fn hash<Q>(&self, key: &Q) -> usize
     where
         Q: Hash + ?Sized,
     {
-        if self.slots.is_empty() {
-            return usize::MAX;
-        }
+        debug_assert!(!self.slots.is_empty());
         let mut hasher = DefaultHasher::new();
         key.hash(&mut hasher);
         (hasher.finish() as usize) % self.slots.len()
@@ -90,7 +87,11 @@ impl<K, V> HashTable<K, V> {
         K: Borrow<Q>,
     {
         let h = self.hash(key);
-        let data = self.slots.get_mut(h)?.get_mut(|t| t.0.borrow(), key)?.as_mut();
+        let data = self
+            .slots
+            .get_mut(h)?
+            .get_mut(|t| t.0.borrow(), key)?
+            .as_mut();
         Some((&data.0, &mut data.1))
     }
 
@@ -98,13 +99,11 @@ impl<K, V> HashTable<K, V> {
     where
         K: Hash + Eq,
     {
-        let mut new_slots: Slots<K, V> = Vec::new();
-        new_slots.resize_with(new_size, Batch::new);
-        let old_slots = std::mem::replace(&mut self.slots, new_slots);
-        for slot in old_slots {
+        let slots = std::mem::replace(&mut self.slots, make_slots(new_size));
+        for slot in slots {
             for item in slot.take() {
                 let h = self.hash(&item.0);
-                self.slots.get_mut(h).unwrap().insert(item, |t| &t.0);
+                self.slots[h].insert(item, |t| &t.0);
             }
         }
     }
@@ -155,9 +154,8 @@ impl<K, V> HashTable<K, V> {
     }
 
     pub fn drain(&mut self) -> HashTableIterOut<K, V> {
-        let len = std::mem::replace(&mut self.len, 0);
-        let slots = self.slots.drain(..).collect();
-        init_slots(&mut self.slots);
+        let len = std::mem::take(&mut self.len);
+        let slots = std::mem::replace(&mut self.slots, init_slots());
         iter_out(slots, len)
     }
 
@@ -170,8 +168,12 @@ impl<K, V> HashTable<K, V> {
     }
 }
 
-fn init_slots<K, V>(slots: &mut Slots<K, V>) {
-    slots.resize_with(BASE_SLOT_COUNT, Batch::new);
+fn init_slots<K, V>() -> Slots<K, V> {
+    make_slots(BASE_SLOT_COUNT)
+}
+
+fn make_slots<K, V>(len: usize) -> Slots<K, V> {
+    std::iter::repeat_with(Batch::new).take(len).collect()
 }
 
 impl<K, V> FromIterator<(K, V)> for HashTable<K, V>
