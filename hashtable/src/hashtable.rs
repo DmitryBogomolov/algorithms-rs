@@ -39,13 +39,16 @@ impl<K, V> HashTable<K, V> {
     pub fn clear(&mut self) {
         self.len = 0;
         self.slots.clear();
-        self.slots.resize_with(BASE_SLOT_COUNT, Batch::new);
+        init_slots(&mut self.slots);
     }
 
     fn hash<Q>(&self, key: &Q) -> usize
     where
         Q: Hash + ?Sized,
     {
+        if self.slots.is_empty() {
+            return usize::MAX;
+        }
         let mut hasher = DefaultHasher::new();
         key.hash(&mut hasher);
         (hasher.finish() as usize) % self.slots.len()
@@ -154,7 +157,9 @@ impl<K, V> HashTable<K, V> {
 
     pub fn drain(&mut self) -> HashTableIterOut<K, V> {
         let len = std::mem::replace(&mut self.len, 0);
-        iter_out(self.slots.drain(..).collect(), len)
+        let slots = self.slots.drain(..).collect();
+        init_slots(&mut self.slots);
+        iter_out(slots, len)
     }
 
     pub fn iter(&self) -> HashTableIterRef<'_, K, V> {
@@ -164,6 +169,10 @@ impl<K, V> HashTable<K, V> {
     pub fn iter_mut(&mut self) -> HashTableIterMut<'_, K, V> {
         iter_mut(&mut self.slots, self.len)
     }
+}
+
+fn init_slots<K, V>(slots: &mut Slots<K, V>) {
+    slots.resize_with(BASE_SLOT_COUNT, Batch::new);
 }
 
 impl<K, V> FromIterator<(K, V)> for HashTable<K, V>

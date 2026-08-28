@@ -150,6 +150,9 @@ fn drain() {
     assert_eq!(table.len(), 0);
     assert!(table.is_empty());
     assert_eq!(items, [(1, 'a'), (2, 'b'), (3, 'c')]);
+
+    assert_eq!(table.insert(2, '0'), None);
+    assert_eq!(table.get(&2), Some(&'0'));
 }
 
 #[test]
