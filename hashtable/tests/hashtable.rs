@@ -123,6 +123,8 @@ fn iter() {
     for item in table.iter() {
         items.push(item);
     }
+    
+    items.sort_by_key(|item| item.0);
     assert_eq!(items, [(&1, &'a'), (&2, &'b'), (&3, &'c')]);
 }
 
@@ -135,6 +137,8 @@ fn iter_mut() {
         *item.1 = '0';
         items.push(item);
     }
+
+    items.sort_by_key(|item| item.0);
     assert_eq!(items, [(&1, &mut '0'), (&2, &mut '0'), (&3, &mut '0')]);
     assert_eq!(table.get(&1), Some(&'0'));
     assert_eq!(table.get(&2), Some(&'0'));
@@ -145,10 +149,11 @@ fn iter_mut() {
 fn drain() {
     let mut table: HashTable<_, _> = [(2, 'b'), (3, 'c'), (1, 'a')].into();
 
-    let items: Vec<_> = table.drain().collect();
+    let mut items: Vec<_> = table.drain().collect();
 
     assert_eq!(table.len(), 0);
     assert!(table.is_empty());
+    items.sort_by_key(|item| item.0);
     assert_eq!(items, [(1, 'a'), (2, 'b'), (3, 'c')]);
 
     assert_eq!(table.insert(2, '0'), None);
@@ -163,6 +168,8 @@ fn into_iter() {
     for item in table {
         items.push(item);
     }
+    
+    items.sort_by_key(|item| item.0);
     assert_eq!(items, [(1, 'a'), (2, 'b'), (3, 'c')]);
 }
 
@@ -174,6 +181,8 @@ fn into_iter_ref() {
     for item in &table {
         items.push(item);
     }
+    
+    items.sort_by_key(|item| item.0);
     assert_eq!(items, [(&1, &'a'), (&2, &'b'), (&3, &'c')]);
 }
 
@@ -186,6 +195,8 @@ fn into_iter_mut() {
         *item.1 = '0';
         items.push(item);
     }
+
+    items.sort_by_key(|item| item.0);
     assert_eq!(items, [(&1, &mut '0'), (&2, &mut '0'), (&3, &mut '0')]);
     assert_eq!(table.get(&1), Some(&'0'));
     assert_eq!(table.get(&2), Some(&'0'));
