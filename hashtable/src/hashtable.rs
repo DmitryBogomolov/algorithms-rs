@@ -315,3 +315,12 @@ impl<'a, K, V> IntoIterator for &'a mut HashTable<K, V> {
         iter_mut(&mut self.slots, self.len)
     }
 }
+
+impl<K: Clone, V: Clone> Clone for HashTable<K, V> {
+    fn clone(&self) -> Self {
+        Self {
+            len: self.len,
+            slots: self.slots.clone(),
+        }
+    }
+}

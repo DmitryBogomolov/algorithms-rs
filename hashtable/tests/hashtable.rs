@@ -202,3 +202,15 @@ fn into_iter_mut() {
     assert_eq!(table.get(&2), Some(&'0'));
     assert_eq!(table.get(&3), Some(&'0'));
 }
+
+#[test]
+fn clone() {
+    let mut table: HashTable<_, _> = [(1, 'a'), (2, 'b'), (3, 'c')].into();
+    let clone = table.clone();
+    table.clear();
+
+    assert_eq!(clone.len(), 3);
+    assert_eq!(clone[&1], 'a');
+    assert_eq!(clone[&2], 'b');
+    assert_eq!(clone[&3], 'c');
+}

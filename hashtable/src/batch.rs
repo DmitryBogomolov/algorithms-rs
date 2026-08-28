@@ -131,3 +131,9 @@ impl<'a, T> IntoIterator for &'a mut Batch<T> {
         BatchIterMut(self.0.as_mut().map(|t| t.iter_mut()))
     }
 }
+
+impl<T: Clone> Clone for Batch<T> {
+    fn clone(&self) -> Self {
+        Self(self.0.clone())
+    }
+}
