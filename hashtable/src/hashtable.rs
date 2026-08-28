@@ -179,11 +179,11 @@ where
     K: Hash + Eq,
 {
     fn from_iter<I: IntoIterator<Item = (K, V)>>(iter: I) -> Self {
-        let mut tree = Self::new();
+        let mut table = Self::new();
         for (k, v) in iter {
-            tree.insert(k, v);
+            table.insert(k, v);
         }
-        tree
+        table
     }
 }
 
