@@ -90,9 +90,8 @@ impl<K, V> HashTable<K, V> {
         K: Borrow<Q>,
     {
         let h = self.hash(key);
-        let data = self.slots.get_mut(h)?.get_mut(|t| t.0.borrow(), key)?;
-        let ptr: *mut Box<(K, V)> = data;
-        unsafe { Some((&(*ptr).0, &mut (*ptr).1)) }
+        let data = self.slots.get_mut(h)?.get_mut(|t| t.0.borrow(), key)?.as_mut();
+        Some((&data.0, &mut data.1))
     }
 
     fn resize_slots(&mut self, new_size: usize)
@@ -281,8 +280,8 @@ fn iter_ref<K, V>(slots: &Slots<K, V>, len: usize) -> HashTableIterRef<'_, K, V>
 fn iter_mut<K, V>(slots: &mut Slots<K, V>, len: usize) -> HashTableIterMut<'_, K, V> {
     HashTableIterMut {
         iter: slots.iter_mut().flatten().map(|t| {
-            let ptr: *mut Box<(K, V)> = t;
-            unsafe { (&(*ptr).0, &mut (*ptr).1) }
+            let kv = t.as_mut();
+            (&kv.0, &mut kv.1)
         }),
         len,
     }
