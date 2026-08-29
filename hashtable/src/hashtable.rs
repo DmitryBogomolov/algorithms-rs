@@ -74,7 +74,7 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         K: Borrow<Q>,
     {
         let h = self.hash(key);
-        let data = self.slots.get(h)?.get(|t| t.0.borrow(), key)?;
+        let data = self.slots.get(h)?.get(|t| t.0.borrow(), key)?.as_ref();
         Some(&data.1)
     }
 
@@ -84,7 +84,11 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         K: Borrow<Q>,
     {
         let h = self.hash(key);
-        let data = self.slots.get_mut(h)?.get_mut(|t| t.0.borrow(), key)?;
+        let data = self
+            .slots
+            .get_mut(h)?
+            .get_mut(|t| t.0.borrow(), key)?
+            .as_mut();
         Some(&mut data.1)
     }
 
@@ -94,7 +98,7 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         K: Borrow<Q>,
     {
         let h = self.hash(key);
-        let data = self.slots.get(h)?.get(|t| t.0.borrow(), key)?;
+        let data = self.slots.get(h)?.get(|t| t.0.borrow(), key)?.as_ref();
         Some((&data.0, &data.1))
     }
 
