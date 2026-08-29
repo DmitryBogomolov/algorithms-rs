@@ -9,7 +9,7 @@ type Slots<K, V> = Vec<Entry<K, V>>;
 
 // Implements *Hash Map* container.
 // Partially based on https://algs4.cs.princeton.edu/34hash/.
-pub struct HashTable<K, V, H> {
+pub struct HashTable<K, V, H = RandomState> {
     len: usize,
     slots: Slots<K, V>,
     hasher_factory: H,
@@ -59,6 +59,14 @@ impl<K, V, H> HashTable<K, V, H> {
 }
 
 impl<K, V, H: BuildHasher> HashTable<K, V, H> {
+    pub fn with_hasher(hasher_factory: H) -> Self {
+        Self {
+            len: 0,
+            slots: init_slots(),
+            hasher_factory,
+        }
+    }
+
     fn hash<Q>(&self, key: &Q) -> usize
     where
         Q: Hash + ?Sized,

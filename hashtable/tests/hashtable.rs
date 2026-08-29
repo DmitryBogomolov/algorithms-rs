@@ -1,3 +1,4 @@
+use std::hash::RandomState;
 use hashtable::HashTable;
 
 #[test]
@@ -213,4 +214,15 @@ fn clone() {
     assert_eq!(clone[&1], 'a');
     assert_eq!(clone[&2], 'b');
     assert_eq!(clone[&3], 'c');
+}
+
+#[test]
+fn with_hasher() {
+    let mut table = HashTable::with_hasher(RandomState::new());
+
+    assert!(table.is_empty());
+    assert_eq!(table.len(), 0);
+
+    table.insert("1", 1);
+    assert_eq!(table.len(), 1);
 }
