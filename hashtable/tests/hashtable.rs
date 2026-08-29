@@ -2,7 +2,7 @@ use hashtable::HashTable;
 
 #[test]
 fn empty() {
-    let table: HashTable<(), ()> = HashTable::new();
+    let table: HashTable<(), (), _> = HashTable::new();
     assert!(table.is_empty());
     assert_eq!(table.len(), 0);
 }
@@ -75,7 +75,7 @@ fn test_many() {
 
 #[test]
 fn from_iterator() {
-    let table: HashTable<i32, char> = [(1, 'a'), (2, 'b'), (3, 'c')].into_iter().collect();
+    let table: HashTable<_, _, _> = [(1, 'a'), (2, 'b'), (3, 'c')].into_iter().collect();
 
     assert_eq!(table.len(), 3);
     assert_eq!(table.get(&1), Some(&'a'));
@@ -85,7 +85,7 @@ fn from_iterator() {
 
 #[test]
 fn from_array() {
-    let table: HashTable<_, _> = [(1, 'a'), (2, 'b'), (3, 'c')].into();
+    let table: HashTable<_, _, _> = [(1, 'a'), (2, 'b'), (3, 'c')].into();
 
     assert_eq!(table.len(), 3);
     assert_eq!(table.get(&1), Some(&'a'));
@@ -95,7 +95,7 @@ fn from_array() {
 
 #[test]
 fn indexing() {
-    let mut table: HashTable<_, _> = [
+    let mut table: HashTable<_, _, _> = [
         (2, "b".to_owned()),
         (3, "c".to_owned()),
         (1, "a".to_owned()),
@@ -117,7 +117,7 @@ fn indexing() {
 
 #[test]
 fn iter() {
-    let table: HashTable<_, _> = [(2, 'b'), (3, 'c'), (1, 'a')].into();
+    let table: HashTable<_, _, _> = [(2, 'b'), (3, 'c'), (1, 'a')].into();
 
     let mut items = vec![];
     for item in table.iter() {
@@ -130,7 +130,7 @@ fn iter() {
 
 #[test]
 fn iter_mut() {
-    let mut table: HashTable<_, _> = [(2, 'b'), (3, 'c'), (1, 'a')].into();
+    let mut table: HashTable<_, _, _> = [(2, 'b'), (3, 'c'), (1, 'a')].into();
 
     let mut items = vec![];
     for item in table.iter_mut() {
@@ -147,7 +147,7 @@ fn iter_mut() {
 
 #[test]
 fn drain() {
-    let mut table: HashTable<_, _> = [(2, 'b'), (3, 'c'), (1, 'a')].into();
+    let mut table: HashTable<_, _, _> = [(2, 'b'), (3, 'c'), (1, 'a')].into();
 
     let mut items: Vec<_> = table.drain().collect();
 
@@ -162,7 +162,7 @@ fn drain() {
 
 #[test]
 fn into_iter() {
-    let table: HashTable<_, _> = [(2, 'b'), (3, 'c'), (1, 'a')].into();
+    let table: HashTable<_, _, _> = [(2, 'b'), (3, 'c'), (1, 'a')].into();
 
     let mut items = vec![];
     for item in table {
@@ -175,7 +175,7 @@ fn into_iter() {
 
 #[test]
 fn into_iter_ref() {
-    let table: HashTable<_, _> = [(2, 'b'), (3, 'c'), (1, 'a')].into();
+    let table: HashTable<_, _, _> = [(2, 'b'), (3, 'c'), (1, 'a')].into();
 
     let mut items = vec![];
     for item in &table {
@@ -188,7 +188,7 @@ fn into_iter_ref() {
 
 #[test]
 fn into_iter_mut() {
-    let mut table: HashTable<_, _> = [(2, 'b'), (3, 'c'), (1, 'a')].into();
+    let mut table: HashTable<_, _, _> = [(2, 'b'), (3, 'c'), (1, 'a')].into();
 
     let mut items = vec![];
     for item in &mut table {
@@ -205,7 +205,7 @@ fn into_iter_mut() {
 
 #[test]
 fn clone() {
-    let mut table: HashTable<_, _> = [(1, 'a'), (2, 'b'), (3, 'c')].into();
+    let mut table: HashTable<_, _, _> = [(1, 'a'), (2, 'b'), (3, 'c')].into();
     let clone = table.clone();
     table.clear();
 

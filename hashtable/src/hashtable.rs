@@ -1,7 +1,7 @@
 use super::batch::Batch;
 use std::{
     borrow::Borrow,
-    hash::{DefaultHasher, Hash, Hasher},
+    hash::{BuildHasher, Hash, RandomState},
 };
 
 type Entry<K, V> = Batch<Box<(K, V)>>;
@@ -9,23 +9,27 @@ type Slots<K, V> = Vec<Entry<K, V>>;
 
 // Implements *Hash Map* container.
 // Partially based on https://algs4.cs.princeton.edu/34hash/.
-pub struct HashTable<K, V> {
+pub struct HashTable<K, V, H> {
     len: usize,
     slots: Slots<K, V>,
+    hasher_factory: H,
 }
 
 const BASE_SLOT_COUNT: usize = 4;
 const MIN_BATCH_CAPACITY: usize = 2;
 const MAX_BATCH_CAPACITY: usize = 8;
 
-impl<K, V> HashTable<K, V> {
+impl<K, V> HashTable<K, V, RandomState> {
     pub fn new() -> Self {
         Self {
             len: 0,
             slots: init_slots(),
+            hasher_factory: RandomState::new(),
         }
     }
+}
 
+impl<K, V, H> HashTable<K, V, H> {
     pub fn len(&self) -> usize {
         self.len
     }
@@ -39,14 +43,29 @@ impl<K, V> HashTable<K, V> {
         self.slots = init_slots();
     }
 
+    pub fn drain(&mut self) -> HashTableIterOut<K, V> {
+        let len = std::mem::take(&mut self.len);
+        let slots = std::mem::replace(&mut self.slots, init_slots());
+        iter_out(slots, len)
+    }
+
+    pub fn iter(&self) -> HashTableIterRef<'_, K, V> {
+        iter_ref(&self.slots, self.len)
+    }
+
+    pub fn iter_mut(&mut self) -> HashTableIterMut<'_, K, V> {
+        iter_mut(&mut self.slots, self.len)
+    }
+}
+
+impl<K, V, H: BuildHasher> HashTable<K, V, H> {
     fn hash<Q>(&self, key: &Q) -> usize
     where
         Q: Hash + ?Sized,
     {
         debug_assert!(!self.slots.is_empty());
-        let mut hasher = DefaultHasher::new();
-        key.hash(&mut hasher);
-        (hasher.finish() as usize) % self.slots.len()
+        let hash = self.hasher_factory.hash_one(key);
+        (hash as usize) % self.slots.len()
     }
 
     pub fn get<Q>(&self, key: &Q) -> Option<&V>
@@ -150,20 +169,6 @@ impl<K, V> HashTable<K, V> {
         }
         ret.map(|t| *t)
     }
-
-    pub fn drain(&mut self) -> HashTableIterOut<K, V> {
-        let len = std::mem::take(&mut self.len);
-        let slots = std::mem::replace(&mut self.slots, init_slots());
-        iter_out(slots, len)
-    }
-
-    pub fn iter(&self) -> HashTableIterRef<'_, K, V> {
-        iter_ref(&self.slots, self.len)
-    }
-
-    pub fn iter_mut(&mut self) -> HashTableIterMut<'_, K, V> {
-        iter_mut(&mut self.slots, self.len)
-    }
 }
 
 fn init_slots<K, V>() -> Slots<K, V> {
@@ -174,7 +179,7 @@ fn make_slots<K, V>(len: usize) -> Slots<K, V> {
     std::iter::repeat_with(Batch::new).take(len).collect()
 }
 
-impl<K, V> FromIterator<(K, V)> for HashTable<K, V>
+impl<K, V> FromIterator<(K, V)> for HashTable<K, V, RandomState>
 where
     K: Hash + Eq,
 {
@@ -187,7 +192,7 @@ where
     }
 }
 
-impl<K, V, const N: usize> From<[(K, V); N]> for HashTable<K, V>
+impl<K, V, const N: usize> From<[(K, V); N]> for HashTable<K, V, RandomState>
 where
     K: Hash + Eq,
 {
@@ -196,16 +201,17 @@ where
     }
 }
 
-impl<K, V> Default for HashTable<K, V> {
+impl<K, V> Default for HashTable<K, V, RandomState> {
     fn default() -> Self {
         Self::new()
     }
 }
 
-impl<Q, K, V> std::ops::Index<&Q> for HashTable<K, V>
+impl<Q, K, V, H> std::ops::Index<&Q> for HashTable<K, V, H>
 where
     Q: Hash + Eq + ?Sized,
     K: Borrow<Q>,
+    H: BuildHasher,
 {
     type Output = V;
 
@@ -214,10 +220,11 @@ where
     }
 }
 
-impl<Q, K, V> std::ops::IndexMut<&Q> for HashTable<K, V>
+impl<Q, K, V, H> std::ops::IndexMut<&Q> for HashTable<K, V, H>
 where
     Q: Hash + Eq + ?Sized,
     K: Borrow<Q>,
+    H: BuildHasher,
 {
     fn index_mut(&mut self, index: &Q) -> &mut Self::Output {
         self.get_mut(index).unwrap_or_else(|| panic!("bad index"))
@@ -287,7 +294,7 @@ fn iter_mut<K, V>(slots: &mut Slots<K, V>, len: usize) -> HashTableIterMut<'_, K
     }
 }
 
-impl<K, V> IntoIterator for HashTable<K, V> {
+impl<K, V, H> IntoIterator for HashTable<K, V, H> {
     type Item = (K, V);
     type IntoIter = HashTableIterOut<K, V>;
 
@@ -296,7 +303,7 @@ impl<K, V> IntoIterator for HashTable<K, V> {
     }
 }
 
-impl<'a, K, V> IntoIterator for &'a HashTable<K, V> {
+impl<'a, K, V, H> IntoIterator for &'a HashTable<K, V, H> {
     type Item = (&'a K, &'a V);
     type IntoIter = HashTableIterRef<'a, K, V>;
 
@@ -305,7 +312,7 @@ impl<'a, K, V> IntoIterator for &'a HashTable<K, V> {
     }
 }
 
-impl<'a, K, V> IntoIterator for &'a mut HashTable<K, V> {
+impl<'a, K, V, H> IntoIterator for &'a mut HashTable<K, V, H> {
     type Item = (&'a K, &'a mut V);
     type IntoIter = HashTableIterMut<'a, K, V>;
 
@@ -314,11 +321,12 @@ impl<'a, K, V> IntoIterator for &'a mut HashTable<K, V> {
     }
 }
 
-impl<K: Clone, V: Clone> Clone for HashTable<K, V> {
+impl<K: Clone, V: Clone, H: Clone> Clone for HashTable<K, V, H> {
     fn clone(&self) -> Self {
         Self {
             len: self.len,
             slots: self.slots.clone(),
+            hasher_factory: self.hasher_factory.clone(),
         }
     }
 }
