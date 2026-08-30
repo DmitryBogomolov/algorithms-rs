@@ -10,8 +10,28 @@ impl<T> Batch<T> {
         Self(None)
     }
 
+    fn is_none(&self) -> bool {
+        self.0.is_none()
+    }
+
+    fn content(&self) -> &Content<T> {
+        self.0.as_ref().unwrap()
+    }
+
+    fn content_mut(&mut self) -> &mut Content<T> {
+        self.0.as_mut().unwrap()
+    }
+
+    fn take_content(&mut self) -> Option<Box<Content<T>>> {
+        self.0.take()
+    }
+
+    fn set_content(&mut self, content: Option<Box<Content<T>>>) {
+        self.0 = content;
+    }
+
     pub fn data(&self) -> &T {
-        &self.0.as_ref().expect("not expected on empty").data
+        &self.content().data
     }
 
     pub fn get<F, K>(&self, key_func: F, key: &K) -> Option<&T>
@@ -19,7 +39,7 @@ impl<T> Batch<T> {
         F: FnMut(&T) -> &K,
         K: Eq + ?Sized,
     {
-        let content = self.find(key_func, key)?.0.as_ref().unwrap();
+        let content = self.find(key_func, key)?.content();
         Some(&content.data)
     }
 
@@ -28,7 +48,7 @@ impl<T> Batch<T> {
         F: FnMut(&T) -> &K,
         K: Eq + ?Sized,
     {
-        let content = self.find_mut(key_func, key)?.0.as_mut().unwrap();
+        let content = self.find_mut(key_func, key)?.content_mut();
         Some(&mut content.data)
     }
 
@@ -39,14 +59,11 @@ impl<T> Batch<T> {
     {
         let k = key_func(&data);
         if let Some(item) = self.find_mut(key_func, k) {
-            let content = item.0.as_mut().unwrap();
+            let content = item.content_mut();
             return Some(std::mem::replace(&mut content.data, data));
         }
-        let content = self.0.take();
-        self.0 = Some(Box::new(Content {
-            data,
-            link: Self(content),
-        }));
+        let content = self.take_content();
+        self.set_content(make_content(data, Self(content)));
         None
     }
 
@@ -56,8 +73,8 @@ impl<T> Batch<T> {
         K: Eq + ?Sized,
     {
         let item = self.find_mut(key_func, key)?;
-        let mut content = item.0.take().unwrap();
-        item.0 = content.link.0.take();
+        let mut content = item.take_content().unwrap();
+        item.set_content(content.link.take_content());
         Some(content.data)
     }
 
@@ -67,11 +84,11 @@ impl<T> Batch<T> {
         K: Eq + ?Sized,
     {
         let mut curr = self;
-        while curr.0.is_some() {
-            if key_func(&curr.0.as_ref().unwrap().data) == key {
+        while !curr.is_none() {
+            if key_func(curr.data()) == key {
                 return Some(curr);
             }
-            curr = &curr.0.as_ref().unwrap().link;
+            curr = &curr.content().link;
         }
         None
     }
@@ -82,11 +99,11 @@ impl<T> Batch<T> {
         K: Eq + ?Sized,
     {
         let mut curr = self;
-        while curr.0.is_some() {
-            if key_func(&curr.0.as_ref().unwrap().data) == key {
+        while !curr.is_none() {
+            if key_func(curr.data()) == key {
                 return Some(curr);
             }
-            curr = &mut curr.0.as_mut().unwrap().link;
+            curr = &mut curr.content_mut().link;
         }
         None
     }
@@ -97,13 +114,17 @@ impl<T> Batch<T> {
 
     pub fn link(&mut self, mut other: Self) {
         debug_assert!(
-            other.0.as_ref().is_some() && other.0.as_ref().unwrap().link.0.is_none(),
-            "non single item"
+            !other.is_none() && other.content().link.is_none(),
+            "must be single item"
         );
-        let content = self.0.take();
-        self.0 = other.0.take();
-        self.0.as_mut().unwrap().link = Self(content);
+        let content = self.take_content();
+        self.set_content(other.take_content());
+        self.content_mut().link = Self(content);
     }
+}
+
+fn make_content<T>(data: T, link: Batch<T>) -> Option<Box<Content<T>>> {
+    Some(Box::new(Content { data, link }))
 }
 
 pub struct BatchIter<T>(Batch<T>);
@@ -112,7 +133,7 @@ impl<T> Iterator for BatchIter<T> {
     type Item = Batch<T>;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let mut content = self.0.0.take()?;
+        let mut content = self.0.take_content()?;
         self.0 = std::mem::replace(&mut content.link, Batch::none());
         Some(Batch(Some(content)))
     }
@@ -198,10 +219,7 @@ impl<T: Clone> Clone for Batch<T> {
     fn clone(&self) -> Self {
         match self.0.as_ref() {
             None => Self(None),
-            Some(content) => Self(Some(Box::new(Content {
-                data: content.data.clone(),
-                link: content.link.clone(),
-            }))),
+            Some(content) => Self(make_content(content.data.clone(), content.link.clone())),
         }
     }
 }
@@ -216,7 +234,7 @@ mod tests {
         assert_eq!(b.get(|_| &(), &()), None);
     }
 
-    fn key_f(t: &(i32, char)) -> &i32 {
+    fn key_f<K, V>(t: &(K, V)) -> &K {
         &t.0
     }
 

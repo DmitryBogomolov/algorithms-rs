@@ -71,7 +71,7 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
     where
         Q: Hash + ?Sized,
     {
-        debug_assert!(!self.slots.is_empty(), "slots are never empty");
+        debug_assert!(!self.slots.is_empty(), "slots cannot be empty");
         let hash = self.hasher_factory.hash_one(key);
         (hash as usize) % self.slots.len()
     }
@@ -220,7 +220,7 @@ where
     type Output = V;
 
     fn index(&self, index: &Q) -> &Self::Output {
-        self.get(index).unwrap_or_else(|| panic!("bad index"))
+        self.get(index).expect("bad index")
     }
 }
 
@@ -231,7 +231,7 @@ where
     H: BuildHasher,
 {
     fn index_mut(&mut self, index: &Q) -> &mut Self::Output {
-        self.get_mut(index).unwrap_or_else(|| panic!("bad index"))
+        self.get_mut(index).expect("bad index")
     }
 }
 
@@ -258,9 +258,7 @@ impl<I: Iterator> Iterator for HashTableIter<I> {
 
 impl<I: Iterator> ExactSizeIterator for HashTableIter<I> {}
 
-pub type HashTableIterOut<K, V> = HashTableIter<
-    std::iter::Flatten<std::vec::IntoIter<Slot<K, V>>>,
->;
+pub type HashTableIterOut<K, V> = HashTableIter<std::iter::Flatten<std::vec::IntoIter<Slot<K, V>>>>;
 pub type HashTableIterRef<'a, K, V> = HashTableIter<
     std::iter::Map<
         std::iter::Flatten<std::slice::Iter<'a, Slot<K, V>>>,
