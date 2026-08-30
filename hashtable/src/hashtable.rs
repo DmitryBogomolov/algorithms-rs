@@ -1,7 +1,6 @@
 use super::batch::Batch;
 use std::{
-    borrow::Borrow,
-    hash::{BuildHasher, Hash, RandomState},
+    borrow::Borrow, hash::{BuildHasher, Hash, RandomState},
 };
 
 type Slot<K, V> = Batch<(K, V)>;
@@ -335,5 +334,11 @@ impl<K: Clone, V: Clone, H: Clone> Clone for HashTable<K, V, H> {
             slots: self.slots.clone(),
             hasher_factory: self.hasher_factory.clone(),
         }
+    }
+}
+
+impl<K: std::fmt::Debug, V: std::fmt::Debug, H> std::fmt::Debug for HashTable<K, V, H> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_map().entries(self.iter()).finish()
     }
 }
