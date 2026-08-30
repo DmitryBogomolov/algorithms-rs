@@ -4,8 +4,8 @@ use std::{
     hash::{BuildHasher, Hash, RandomState},
 };
 
-type Entry<K, V> = Batch<Box<(K, V)>>;
-type Slots<K, V> = Vec<Entry<K, V>>;
+type Slot<K, V> = Batch<(K, V)>;
+type Slots<K, V> = Vec<Slot<K, V>>;
 
 // Implements *Hash Map* container.
 // Partially based on https://algs4.cs.princeton.edu/34hash/.
@@ -82,7 +82,7 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         K: Borrow<Q>,
     {
         let h = self.hash(key);
-        let data = self.slots.get(h)?.get(|t| t.0.borrow(), key)?.as_ref();
+        let data = self.slots.get(h)?.get(|t| t.0.borrow(), key)?;
         Some(&data.1)
     }
 
@@ -95,8 +95,7 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         let data = self
             .slots
             .get_mut(h)?
-            .get_mut(|t| t.0.borrow(), key)?
-            .as_mut();
+            .get_mut(|t| t.0.borrow(), key)?;
         Some(&mut data.1)
     }
 
@@ -106,7 +105,7 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         K: Borrow<Q>,
     {
         let h = self.hash(key);
-        let data = self.slots.get(h)?.get(|t| t.0.borrow(), key)?.as_ref();
+        let data = self.slots.get(h)?.get(|t| t.0.borrow(), key)?;
         Some((&data.0, &data.1))
     }
 
@@ -119,8 +118,7 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         let data = self
             .slots
             .get_mut(h)?
-            .get_mut(|t| t.0.borrow(), key)?
-            .as_mut();
+            .get_mut(|t| t.0.borrow(), key)?;
         Some((&data.0, &mut data.1))
     }
 
@@ -159,12 +157,12 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
     {
         let h = self.hash(&key);
         let slot = self.slots.get_mut(h)?;
-        let ret = slot.insert(Box::new((key, val)), |t| &t.0);
+        let ret = slot.insert((key, val), |t| &t.0);
         if ret.is_none() {
             self.len += 1;
             self.check_size();
         }
-        ret.map(|t| *t)
+        ret
     }
 
     pub fn remove<Q>(&mut self, key: &Q) -> Option<(K, V)>
@@ -179,7 +177,7 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
             self.len -= 1;
             self.check_size();
         }
-        ret.map(|t| *t)
+        ret
     }
 }
 
@@ -267,24 +265,24 @@ impl<I: Iterator> Iterator for HashTableIter<I> {
 impl<I: Iterator> ExactSizeIterator for HashTableIter<I> {}
 
 pub type HashTableIterOut<K, V> = HashTableIter<
-    std::iter::Map<std::iter::Flatten<std::vec::IntoIter<Entry<K, V>>>, fn(Box<(K, V)>) -> (K, V)>,
+    std::iter::Map<std::iter::Flatten<std::vec::IntoIter<Slot<K, V>>>, fn((K, V)) -> (K, V)>,
 >;
 pub type HashTableIterRef<'a, K, V> = HashTableIter<
     std::iter::Map<
-        std::iter::Flatten<std::slice::Iter<'a, Entry<K, V>>>,
-        fn(&'a Box<(K, V)>) -> (&'a K, &'a V),
+        std::iter::Flatten<std::slice::Iter<'a, Slot<K, V>>>,
+        fn(&'a (K, V)) -> (&'a K, &'a V),
     >,
 >;
 pub type HashTableIterMut<'a, K, V> = HashTableIter<
     std::iter::Map<
-        std::iter::Flatten<std::slice::IterMut<'a, Entry<K, V>>>,
-        fn(&'a mut Box<(K, V)>) -> (&'a K, &'a mut V),
+        std::iter::Flatten<std::slice::IterMut<'a, Slot<K, V>>>,
+        fn(&'a mut (K, V)) -> (&'a K, &'a mut V),
     >,
 >;
 
 fn iter_out<K, V>(slots: Slots<K, V>, len: usize) -> HashTableIterOut<K, V> {
     HashTableIterOut {
-        iter: slots.into_iter().flatten().map(|t| *t),
+        iter: slots.into_iter().flatten().map(|t| t),
         len,
     }
 }
@@ -298,10 +296,7 @@ fn iter_ref<K, V>(slots: &Slots<K, V>, len: usize) -> HashTableIterRef<'_, K, V>
 
 fn iter_mut<K, V>(slots: &mut Slots<K, V>, len: usize) -> HashTableIterMut<'_, K, V> {
     HashTableIterMut {
-        iter: slots.iter_mut().flatten().map(|t| {
-            let kv = t.as_mut();
-            (&kv.0, &mut kv.1)
-        }),
+        iter: slots.iter_mut().flatten().map(|t| (&t.0, &mut t.1)),
         len,
     }
 }
