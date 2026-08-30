@@ -130,9 +130,9 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
     {
         let slots = std::mem::replace(&mut self.slots, make_slots(new_size));
         for slot in slots {
-            for item in slot.take() {
-                let h = self.hash(&item.0);
-                self.slots[h].insert(item, |t| &t.0);
+            for item in slot.split() {
+                let h = self.hash(&item.data().0);
+                self.slots[h].link(item);
             }
         }
     }
@@ -188,7 +188,7 @@ fn init_slots<K, V>() -> Slots<K, V> {
 }
 
 fn make_slots<K, V>(len: usize) -> Slots<K, V> {
-    std::iter::repeat_with(Batch::new).take(len).collect()
+    std::iter::repeat_with(Batch::none).take(len).collect()
 }
 
 impl<K, V> FromIterator<(K, V)> for HashTable<K, V, RandomState>

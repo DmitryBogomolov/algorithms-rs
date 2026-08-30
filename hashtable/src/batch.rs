@@ -1,8 +1,17 @@
-pub struct Batch<T>(Option<Vec<T>>);
+pub struct Batch<T>(Option<Box<Content<T>>>);
+
+struct Content<T> {
+    data: T,
+    link: Batch<T>,
+}
 
 impl<T> Batch<T> {
-    pub fn new() -> Self {
+    pub fn none() -> Self {
         Self(None)
+    }
+
+    pub fn data(&self) -> &T {
+        &self.0.as_ref().expect("must not be empty").data
     }
 
     pub fn get<F, K>(&self, key_func: F, key: &K) -> Option<&T>
@@ -10,8 +19,8 @@ impl<T> Batch<T> {
         F: FnMut(&T) -> &K,
         K: Eq + ?Sized,
     {
-        let idx = self.find_index(key_func, key)?;
-        self.0.as_ref().unwrap().get(idx)
+        let content = self.find(key_func, key)?.0.as_ref().unwrap();
+        Some(&content.data)
     }
 
     pub fn get_mut<F, K>(&mut self, key_func: F, key: &K) -> Option<&mut T>
@@ -19,8 +28,8 @@ impl<T> Batch<T> {
         F: FnMut(&T) -> &K,
         K: Eq + ?Sized,
     {
-        let idx = self.find_index(key_func, key)?;
-        self.0.as_mut().unwrap().get_mut(idx)
+        let content = self.find_mut(key_func, key)?.0.as_mut().unwrap();
+        Some(&mut content.data)
     }
 
     pub fn insert<F, K>(&mut self, data: T, mut key_func: F) -> Option<T>
@@ -29,19 +38,13 @@ impl<T> Batch<T> {
         K: Eq + ?Sized,
     {
         let k = key_func(&data);
-        match self.find_index(key_func, k) {
-            None => {
-                if self.0.is_none() {
-                    self.0 = Some(Vec::new());
-                }
-                self.0.as_mut().unwrap().push(data);
-                None
-            }
-            Some(idx) => {
-                let item = self.0.as_mut().unwrap().get_mut(idx).unwrap();
-                Some(std::mem::replace(item, data))
-            }
+        if let Some(item) = self.find_mut(key_func, k) {
+            let content = item.0.as_mut().unwrap();
+            return  Some(std::mem::replace(&mut content.data, data));
         }
+        let content = self.0.take();
+        self.0 = Some(Box::new(Content { data, link: Self(content) }));
+        None
     }
 
     pub fn remove<F, K>(&mut self, key_func: F, key: &K) -> Option<T>
@@ -49,59 +52,111 @@ impl<T> Batch<T> {
         F: FnMut(&T) -> &K,
         K: Eq + ?Sized,
     {
-        let idx = self.find_index(key_func, key)?;
-        Some(self.0.as_mut().unwrap().swap_remove(idx))
+        let item = self.find_mut(key_func, key)?;
+        let mut content = item.0.take().unwrap();
+        item.0 = content.link.0.take();
+        Some(content.data)
     }
 
-    fn find_index<F, K>(&self, mut key_func: F, key: &K) -> Option<usize>
+    fn find<F, K>(&self, mut key_func: F, key: &K) -> Option<&Self>
     where
         F: FnMut(&T) -> &K,
         K: Eq + ?Sized,
     {
-        let vec = self.0.as_ref()?;
-        for (i, data) in vec.iter().enumerate() {
-            if key_func(data) == key {
-                return Some(i);
+        let mut curr = self;
+        while curr.0.is_some() {
+            if key_func(&curr.0.as_ref().unwrap().data) == key {
+                return Some(curr);
             }
+            curr = &curr.0.as_ref().unwrap().link;
         }
         None
     }
 
-    pub fn take(self) -> impl Iterator<Item = T> {
-        match self.0 {
-            None => Vec::new().into_iter(),
-            Some(arr) => arr.into_iter(),
+    fn find_mut<F, K>(&mut self, mut key_func: F, key: &K) -> Option<&mut Self>
+    where
+        F: FnMut(&T) -> &K,
+        K: Eq + ?Sized,
+    {
+        let mut curr = self;
+        while curr.0.is_some() {
+            if key_func(&curr.0.as_ref().unwrap().data) == key {
+                return Some(curr);
+            }
+            curr = &mut curr.0.as_mut().unwrap().link;
         }
+        None
+    }
+
+    pub fn split(self) -> BatchIter<T> {
+        BatchIter(self)
+    }
+
+    pub fn link(&mut self, mut other: Self) {
+        debug_assert!(other.0.as_ref().is_some() && other.0.as_ref().unwrap().link.0.is_none(), "non single item");
+        let content = self.0.take();
+        self.0 = other.0.take();
+        self.0.as_mut().unwrap().link = Self(content);
     }
 }
 
-pub struct BatchIterOut<T>(Option<std::vec::IntoIter<T>>);
+pub struct BatchIter<T>(Batch<T>);
+
+impl<T> Iterator for BatchIter<T> {
+    type Item = Batch<T>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let mut content = self.0.0.take()?;
+        self.0 = std::mem::replace(&mut content.link, Batch::none());
+        Some(Batch(Some(content)))
+    }
+}
+
+pub struct BatchIterOut<T>(Option<Box<Content<T>>>);
 
 impl<T> Iterator for BatchIterOut<T> {
     type Item = T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.0.as_mut()?.next()
+        match self.0.take() {
+            None => None,
+            Some(content) => {
+                self.0 = content.link.0;
+                Some(content.data)
+            },
+        }
     }
 }
 
-pub struct BatchIterRef<'a, T>(Option<std::slice::Iter<'a, T>>);
+pub struct BatchIterRef<'a, T>(Option<&'a Box<Content<T>>>);
 
 impl<'a, T> Iterator for BatchIterRef<'a, T> {
     type Item = &'a T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.0.as_mut()?.next()
+        match self.0.take() {
+            None => None,
+            Some(content) => {
+                self.0 = content.link.0.as_ref();
+                Some(&content.data)
+            },
+        }
     }
 }
 
-pub struct BatchIterMut<'a, T>(Option<std::slice::IterMut<'a, T>>);
+pub struct BatchIterMut<'a, T>(Option<&'a mut Box<Content<T>>>);
 
 impl<'a, T> Iterator for BatchIterMut<'a, T> {
     type Item = &'a mut T;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.0.as_mut()?.next()
+        match self.0.take() {
+            None => None,
+            Some(content) => {
+                self.0 = content.link.0.as_mut();
+                Some(&mut content.data)
+            },
+        }
     }
 }
 
@@ -110,7 +165,7 @@ impl<T> IntoIterator for Batch<T> {
     type IntoIter = BatchIterOut<T>;
 
     fn into_iter(self) -> Self::IntoIter {
-        BatchIterOut(self.0.map(|t| t.into_iter()))
+        BatchIterOut(self.0)
     }
 }
 
@@ -119,7 +174,7 @@ impl<'a, T> IntoIterator for &'a Batch<T> {
     type IntoIter = BatchIterRef<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
-        BatchIterRef(self.0.as_ref().map(|t| t.iter()))
+        BatchIterRef(self.0.as_ref())
     }
 }
 
@@ -128,12 +183,15 @@ impl<'a, T> IntoIterator for &'a mut Batch<T> {
     type IntoIter = BatchIterMut<'a, T>;
 
     fn into_iter(self) -> Self::IntoIter {
-        BatchIterMut(self.0.as_mut().map(|t| t.iter_mut()))
+        BatchIterMut(self.0.as_mut())
     }
 }
 
 impl<T: Clone> Clone for Batch<T> {
     fn clone(&self) -> Self {
-        Self(self.0.clone())
+        match self.0.as_ref() {
+            None => Self(None),
+            Some(content) => Self(Some(Box::new(Content { data: content.data.clone(), link: content.link.clone() }))),
+        }
     }
 }

@@ -60,17 +60,34 @@ fn mutate() {
 #[test]
 fn test_many() {
     let mut table = HashTable::new();
-    for i in 0..400 {
+    let r1 = 0..400;
+    let r2 = r1.clone().rev().filter(|i| i % 4 != 0);
+    let r3 = 400..1200;
+    let r4 = r3.clone().rev().filter(|i| i % 12 != 0);
+
+    for i in r1.clone() {
         assert_eq!(table.insert(1000 + i, i), None);
     }
-    for i in (0..400).step_by(2) {
+    for i in r1.clone() {
+        assert_eq!(table.get(&(1000 + i)), Some(&i));
+    }
+    for i in r2.clone() {
         assert_eq!(table.remove(&(1000 + i)), Some((1000 + i, i)));
     }
-    for i in 400..800 {
+    for i in r2.clone() {
+        assert_eq!(table.get(&(1000 + i)), None);
+    }
+    for i in r3.clone() {
         assert_eq!(table.insert(1000 + i, i), None);
     }
-    for i in (400..800).step_by(2) {
+    for i in r3.clone() {
+        assert_eq!(table.get(&(1000 + i)), Some(&i));
+    }
+    for i in r4.clone() {
         assert_eq!(table.remove(&(1000 + i)), Some((1000 + i, i)));
+    }
+    for i in r4.clone() {
+        assert_eq!(table.get(&(1000 + i)), None);
     }
 }
 
