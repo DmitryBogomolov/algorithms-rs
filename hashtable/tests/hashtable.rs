@@ -1,5 +1,5 @@
-use std::hash::RandomState;
 use hashtable::HashTable;
+use std::hash::RandomState;
 
 #[test]
 fn empty() {

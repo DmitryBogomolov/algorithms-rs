@@ -1,6 +1,7 @@
 use super::batch::Batch;
 use std::{
-    borrow::Borrow, hash::{BuildHasher, Hash, RandomState},
+    borrow::Borrow,
+    hash::{BuildHasher, Hash, RandomState},
 };
 
 type Slot<K, V> = Batch<(K, V)>;
@@ -70,7 +71,7 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
     where
         Q: Hash + ?Sized,
     {
-        debug_assert!(!self.slots.is_empty());
+        debug_assert!(!self.slots.is_empty(), "slots are never empty");
         let hash = self.hasher_factory.hash_one(key);
         (hash as usize) % self.slots.len()
     }
@@ -91,10 +92,7 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         K: Borrow<Q>,
     {
         let h = self.hash(key);
-        let data = self
-            .slots
-            .get_mut(h)?
-            .get_mut(|t| t.0.borrow(), key)?;
+        let data = self.slots.get_mut(h)?.get_mut(|t| t.0.borrow(), key)?;
         Some(&mut data.1)
     }
 
@@ -114,10 +112,7 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         K: Borrow<Q>,
     {
         let h = self.hash(key);
-        let data = self
-            .slots
-            .get_mut(h)?
-            .get_mut(|t| t.0.borrow(), key)?;
+        let data = self.slots.get_mut(h)?.get_mut(|t| t.0.borrow(), key)?;
         Some((&data.0, &mut data.1))
     }
 
@@ -264,7 +259,7 @@ impl<I: Iterator> Iterator for HashTableIter<I> {
 impl<I: Iterator> ExactSizeIterator for HashTableIter<I> {}
 
 pub type HashTableIterOut<K, V> = HashTableIter<
-    std::iter::Map<std::iter::Flatten<std::vec::IntoIter<Slot<K, V>>>, fn((K, V)) -> (K, V)>,
+    std::iter::Flatten<std::vec::IntoIter<Slot<K, V>>>,
 >;
 pub type HashTableIterRef<'a, K, V> = HashTableIter<
     std::iter::Map<
@@ -281,7 +276,7 @@ pub type HashTableIterMut<'a, K, V> = HashTableIter<
 
 fn iter_out<K, V>(slots: Slots<K, V>, len: usize) -> HashTableIterOut<K, V> {
     HashTableIterOut {
-        iter: slots.into_iter().flatten().map(|t| t),
+        iter: slots.into_iter().flatten(),
         len,
     }
 }

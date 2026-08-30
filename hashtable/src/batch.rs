@@ -43,7 +43,10 @@ impl<T> Batch<T> {
             return Some(std::mem::replace(&mut content.data, data));
         }
         let content = self.0.take();
-        self.0 = Some(Box::new(Content { data, link: Self(content) }));
+        self.0 = Some(Box::new(Content {
+            data,
+            link: Self(content),
+        }));
         None
     }
 
@@ -93,7 +96,10 @@ impl<T> Batch<T> {
     }
 
     pub fn link(&mut self, mut other: Self) {
-        debug_assert!(other.0.as_ref().is_some() && other.0.as_ref().unwrap().link.0.is_none(), "non single item");
+        debug_assert!(
+            other.0.as_ref().is_some() && other.0.as_ref().unwrap().link.0.is_none(),
+            "non single item"
+        );
         let content = self.0.take();
         self.0 = other.0.take();
         self.0.as_mut().unwrap().link = Self(content);
@@ -123,11 +129,12 @@ impl<T> Iterator for BatchIterOut<T> {
             Some(content) => {
                 self.0 = content.link.0;
                 Some(content.data)
-            },
+            }
         }
     }
 }
 
+#[allow(clippy::borrowed_box)]
 pub struct BatchIterRef<'a, T>(Option<&'a Box<Content<T>>>);
 
 impl<'a, T> Iterator for BatchIterRef<'a, T> {
@@ -139,7 +146,7 @@ impl<'a, T> Iterator for BatchIterRef<'a, T> {
             Some(content) => {
                 self.0 = content.link.0.as_ref();
                 Some(&content.data)
-            },
+            }
         }
     }
 }
@@ -155,7 +162,7 @@ impl<'a, T> Iterator for BatchIterMut<'a, T> {
             Some(content) => {
                 self.0 = content.link.0.as_mut();
                 Some(&mut content.data)
-            },
+            }
         }
     }
 }
@@ -191,7 +198,10 @@ impl<T: Clone> Clone for Batch<T> {
     fn clone(&self) -> Self {
         match self.0.as_ref() {
             None => Self(None),
-            Some(content) => Self(Some(Box::new(Content { data: content.data.clone(), link: content.link.clone() }))),
+            Some(content) => Self(Some(Box::new(Content {
+                data: content.data.clone(),
+                link: content.link.clone(),
+            }))),
         }
     }
 }
