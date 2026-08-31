@@ -1,10 +1,9 @@
-use super::batch::Batch;
 use std::{
     borrow::Borrow,
     hash::{BuildHasher, Hash, RandomState},
 };
 
-type Bucket<K, V> = Batch<(K, V)>;
+type Bucket<K, V> = Vec<Box<(K, V)>>;
 type Buckets<K, V> = Vec<Bucket<K, V>>;
 
 // Implements *Hash Map* container.
@@ -87,7 +86,10 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         K: Borrow<Q>,
     {
         let idx = self.bucket_idx(key);
-        self.buckets[idx].get(|t| t.0.borrow(), key)
+        self.buckets[idx]
+            .iter()
+            .find(|t| t.0.borrow() == key)
+            .map(|t| t.as_ref())
     }
 
     fn find_mut<Q>(&mut self, key: &Q) -> Option<&mut (K, V)>
@@ -96,7 +98,10 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         K: Borrow<Q>,
     {
         let idx = self.bucket_idx(key);
-        self.buckets[idx].get_mut(|t| t.0.borrow(), key)
+        self.buckets[idx]
+            .iter_mut()
+            .find(|t| t.0.borrow() == key)
+            .map(|t| t.as_mut())
     }
 
     pub fn get<Q>(&self, key: &Q) -> Option<&V>
@@ -136,11 +141,9 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         K: Hash + Eq,
     {
         let buckets = std::mem::replace(&mut self.buckets, make_buckets(new_size));
-        for slot in buckets {
-            for item in slot.split() {
-                let idx = self.bucket_idx(&item.data().0);
-                self.buckets[idx].link(item);
-            }
+        for item in buckets.into_iter().flatten() {
+            let idx = self.bucket_idx(&item.0);
+            add_item(&mut self.buckets[idx], item);
         }
     }
 
@@ -166,12 +169,16 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         K: Hash + Eq,
     {
         let idx = self.bucket_idx(&key);
-        let ret = self.buckets[idx].insert((key, val), |t| &t.0);
-        if ret.is_none() {
+        if let Some(item) = self.find_mut(&key) {
+            let prev_key = std::mem::replace(&mut item.0, key);
+            let prev_val = std::mem::replace(&mut item.1, val);
+            Some((prev_key, prev_val))
+        } else {
+            add_item(&mut self.buckets[idx], Box::new((key, val)));
             self.len += 1;
             self.adjust_buckets_size();
+            None
         }
-        ret
     }
 
     pub fn remove<Q>(&mut self, key: &Q) -> Option<(K, V)>
@@ -180,12 +187,14 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         K: Hash + Eq + Borrow<Q>,
     {
         let idx = self.bucket_idx(key);
-        let ret = self.buckets[idx].remove(|t| t.0.borrow(), key);
-        if ret.is_some() {
+        if let Some(k) = self.buckets[idx].iter().position(|t| t.0.borrow() == key) {
+            let item = rem_item(&mut self.buckets[idx], k);
             self.len -= 1;
             self.adjust_buckets_size();
+            Some(*item)
+        } else {
+            None
         }
-        ret
     }
 }
 
@@ -194,7 +203,17 @@ fn init_buckets<K, V>() -> Buckets<K, V> {
 }
 
 fn make_buckets<K, V>(len: usize) -> Buckets<K, V> {
-    std::iter::repeat_with(Batch::none).take(len).collect()
+    std::iter::repeat_with(Vec::default).take(len).collect()
+}
+
+fn add_item<T>(bucket: &mut Vec<T>, item: T) {
+    let last = bucket.len();
+    bucket.push(item);
+    bucket.swap(0, last);
+}
+
+fn rem_item<T>(bucket: &mut Vec<T>, idx: usize) -> T {
+    bucket.swap_remove(idx)
 }
 
 impl<K, V> FromIterator<(K, V)> for HashTable<K, V, RandomState>
@@ -266,24 +285,25 @@ impl<I: Iterator> Iterator for HashTableIter<I> {
 
 impl<I: Iterator> ExactSizeIterator for HashTableIter<I> {}
 
-pub type HashTableIterOut<K, V> =
-    HashTableIter<std::iter::Flatten<std::vec::IntoIter<Bucket<K, V>>>>;
+pub type HashTableIterOut<K, V> = HashTableIter<
+    std::iter::Map<std::iter::Flatten<std::vec::IntoIter<Bucket<K, V>>>, fn(Box<(K, V)>) -> (K, V)>,
+>;
 pub type HashTableIterRef<'a, K, V> = HashTableIter<
     std::iter::Map<
         std::iter::Flatten<std::slice::Iter<'a, Bucket<K, V>>>,
-        fn(&'a (K, V)) -> (&'a K, &'a V),
+        fn(&'a Box<(K, V)>) -> (&'a K, &'a V),
     >,
 >;
 pub type HashTableIterMut<'a, K, V> = HashTableIter<
     std::iter::Map<
         std::iter::Flatten<std::slice::IterMut<'a, Bucket<K, V>>>,
-        fn(&'a mut (K, V)) -> (&'a K, &'a mut V),
+        fn(&'a mut Box<(K, V)>) -> (&'a K, &'a mut V),
     >,
 >;
 
 fn iter_out<K, V>(buckets: Buckets<K, V>, len: usize) -> HashTableIterOut<K, V> {
     HashTableIterOut {
-        iter: buckets.into_iter().flatten(),
+        iter: buckets.into_iter().flatten().map(|t| *t),
         len,
     }
 }
