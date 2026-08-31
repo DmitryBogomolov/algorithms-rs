@@ -133,3 +133,9 @@ where
         }
     }
 }
+
+impl<K: std::fmt::Debug, V: std::fmt::Debug> std::fmt::Debug for RBTree<K, V> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_map().entries(self.iter()).finish()
+    }
+}
