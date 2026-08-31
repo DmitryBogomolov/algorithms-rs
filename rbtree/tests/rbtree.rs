@@ -231,3 +231,15 @@ fn indexing() {
     assert_eq!(tree[&2], "B");
     assert_eq!(tree[&3], "C");
 }
+
+#[test]
+fn clone() {
+    let mut tree: RBTree<_, _> = [(1, 'a'), (2, 'b'), (3, 'c')].into();
+    let clone = tree.clone();
+    tree.clear();
+
+    assert_eq!(clone.len(), 3);
+    assert_eq!(clone[&1], 'a');
+    assert_eq!(clone[&2], 'b');
+    assert_eq!(clone[&3], 'c');
+}

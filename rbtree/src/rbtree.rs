@@ -121,3 +121,15 @@ where
         self.get_mut(index).expect("bad index")
     }
 }
+
+impl<K, V> Clone for RBTree<K, V>
+where
+    K: Clone,
+    V: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            root: self.root.clone(),
+        }
+    }
+}

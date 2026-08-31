@@ -387,6 +387,28 @@ impl<K, V> Node<K, V> {
     }
 }
 
+impl<K, V> Clone for Node<K, V>
+where
+    K: Clone,
+    V: Clone,
+{
+    fn clone(&self) -> Self {
+        match self.0.as_ref() {
+            None => Self::none(),
+            Some(content) => {
+                let clone = Some(Box::new(Content {
+                    l_node: content.l_node.clone(),
+                    r_node: content.r_node.clone(),
+                    red: content.red,
+                    size: content.size,
+                    data: content.data.clone(),
+                }));
+                Self(clone)
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
