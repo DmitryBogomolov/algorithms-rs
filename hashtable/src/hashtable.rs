@@ -67,7 +67,7 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         }
     }
 
-    fn hash<Q>(&self, key: &Q) -> usize
+    fn bucket_idx<Q>(&self, key: &Q) -> usize
     where
         Q: Hash + ?Sized,
     {
@@ -81,8 +81,8 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         Q: Hash + Eq + ?Sized,
         K: Borrow<Q>,
     {
-        let h = self.hash(key);
-        let data = self.buckets.get(h)?.get(|t| t.0.borrow(), key)?;
+        let idx = self.bucket_idx(key);
+        let data = self.buckets[idx].get(|t| t.0.borrow(), key)?;
         Some(&data.1)
     }
 
@@ -91,8 +91,8 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         Q: Hash + Eq + ?Sized,
         K: Borrow<Q>,
     {
-        let h = self.hash(key);
-        let data = self.buckets.get_mut(h)?.get_mut(|t| t.0.borrow(), key)?;
+        let idx = self.bucket_idx(key);
+        let data = self.buckets[idx].get_mut(|t| t.0.borrow(), key)?;
         Some(&mut data.1)
     }
 
@@ -101,8 +101,8 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         Q: Hash + Eq + ?Sized,
         K: Borrow<Q>,
     {
-        let h = self.hash(key);
-        let data = self.buckets.get(h)?.get(|t| t.0.borrow(), key)?;
+        let idx = self.bucket_idx(key);
+        let data = self.buckets[idx].get(|t| t.0.borrow(), key)?;
         Some((&data.0, &data.1))
     }
 
@@ -111,8 +111,8 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         Q: Hash + Eq + ?Sized,
         K: Borrow<Q>,
     {
-        let h = self.hash(key);
-        let data = self.buckets.get_mut(h)?.get_mut(|t| t.0.borrow(), key)?;
+        let idx = self.bucket_idx(key);
+        let data = self.buckets[idx].get_mut(|t| t.0.borrow(), key)?;
         Some((&data.0, &mut data.1))
     }
 
@@ -123,13 +123,13 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         let buckets = std::mem::replace(&mut self.buckets, make_buckets(new_size));
         for slot in buckets {
             for item in slot.split() {
-                let h = self.hash(&item.data().0);
-                self.buckets[h].link(item);
+                let idx = self.bucket_idx(&item.data().0);
+                self.buckets[idx].link(item);
             }
         }
     }
 
-    fn check_size(&mut self)
+    fn adjust_buckets_size(&mut self)
     where
         K: Hash + Eq,
     {
@@ -149,12 +149,11 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
     where
         K: Hash + Eq,
     {
-        let h = self.hash(&key);
-        let bucket = self.buckets.get_mut(h)?;
-        let ret = bucket.insert((key, val), |t| &t.0);
+        let idx = self.bucket_idx(&key);
+        let ret = self.buckets[idx].insert((key, val), |t| &t.0);
         if ret.is_none() {
             self.len += 1;
-            self.check_size();
+            self.adjust_buckets_size();
         }
         ret
     }
@@ -164,12 +163,11 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         Q: Hash + Eq + ?Sized,
         K: Hash + Eq + Borrow<Q>,
     {
-        let h = self.hash(key);
-        let bucket = self.buckets.get_mut(h)?;
-        let ret = bucket.remove(|t| t.0.borrow(), key);
+        let idx = self.bucket_idx(key);
+        let ret = self.buckets[idx].remove(|t| t.0.borrow(), key);
         if ret.is_some() {
             self.len -= 1;
-            self.check_size();
+            self.adjust_buckets_size();
         }
         ret
     }
