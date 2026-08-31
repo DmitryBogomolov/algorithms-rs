@@ -21,11 +21,23 @@ const MAX_BUCKET_CAPACITY: usize = 8;
 
 impl<K, V> HashTable<K, V, RandomState> {
     pub fn new() -> Self {
+        Self::with_hasher(RandomState::new())
+    }
+}
+
+impl<K, V, H> HashTable<K, V, H> {
+    pub fn with_hasher(hasher_factory: H) -> Self {
         Self {
             len: 0,
             buckets: init_buckets(),
-            hasher_factory: RandomState::new(),
+            hasher_factory,
         }
+    }
+}
+
+impl<K, V, H: Default> Default for HashTable<K, V, H> {
+    fn default() -> Self {
+        Self::with_hasher(H::default())
     }
 }
 
@@ -61,14 +73,6 @@ impl<K, V, H> HashTable<K, V, H> {
 }
 
 impl<K, V, H: BuildHasher> HashTable<K, V, H> {
-    pub fn with_hasher(hasher_factory: H) -> Self {
-        Self {
-            len: 0,
-            buckets: init_buckets(),
-            hasher_factory,
-        }
-    }
-
     fn bucket_idx<Q>(&self, key: &Q) -> usize
     where
         Q: Hash + ?Sized,
@@ -212,12 +216,6 @@ where
 {
     fn from(arr: [(K, V); N]) -> Self {
         arr.into_iter().collect()
-    }
-}
-
-impl<K, V> Default for HashTable<K, V, RandomState> {
-    fn default() -> Self {
-        Self::new()
     }
 }
 

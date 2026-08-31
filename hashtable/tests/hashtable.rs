@@ -1,5 +1,4 @@
 use hashtable::HashTable;
-use std::hash::RandomState;
 
 #[test]
 fn empty() {
@@ -21,13 +20,19 @@ fn insert() {
     assert_eq!(table.get_kv("11"), Some((&"11".to_owned(), &11)));
     assert_eq!(table.get_kv("11_"), None);
 
-    assert_eq!(table.insert("11".to_owned(), 12), Some(("11".to_owned(), 11)));
+    assert_eq!(
+        table.insert("11".to_owned(), 12),
+        Some(("11".to_owned(), 11))
+    );
     assert_eq!(table.len(), 1);
 
     assert_eq!(table.insert("12".to_owned(), 12), None);
     assert_eq!(table.len(), 2);
 
-    assert_eq!(table.insert("12".to_owned(), 11), Some(("12".to_owned(), 12)));
+    assert_eq!(
+        table.insert("12".to_owned(), 11),
+        Some(("12".to_owned(), 12))
+    );
     assert_eq!(table.len(), 2);
 }
 
@@ -256,11 +261,45 @@ fn clone() {
 
 #[test]
 fn with_hasher() {
-    let mut table = HashTable::with_hasher(RandomState::new());
+    let mut table = HashTable::with_hasher(std::hash::RandomState::new());
 
     assert!(table.is_empty());
     assert_eq!(table.len(), 0);
 
     table.insert("1", 1);
     assert_eq!(table.len(), 1);
+}
+
+#[derive(Default)]
+struct DumbHasher;
+
+impl std::hash::Hasher for DumbHasher {
+    fn write(&mut self, _bytes: &[u8]) {}
+
+    fn finish(&self) -> u64 {
+        101
+    }
+}
+
+type DumbBuildHasher = std::hash::BuildHasherDefault<DumbHasher>;
+
+#[test]
+fn dumb_hasher() {
+    let mut table = HashTable::with_hasher(DumbBuildHasher::new());
+    let r = 0..400;
+
+    for i in r.clone() {
+        assert_eq!(table.insert(i.to_string(), i + 1000), None);
+    }
+    assert_eq!(table.len(), 400);
+    for i in r.clone().rev() {
+        assert_eq!(table.get(&i.to_string()), Some(&(1000 + i)));
+    }
+    for i in r.clone() {
+        assert_eq!(
+            table.remove(&i.to_string()),
+            Some((i.to_string(), i + 1000))
+        );
+    }
+    assert_eq!(table.len(), 0);
 }
