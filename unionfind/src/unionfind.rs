@@ -2,7 +2,6 @@
 // https://algs4.cs.princeton.edu/15uf/
 #[derive(Clone)]
 pub struct UnionFind {
-    size: usize,
     count: usize,
     roots: Vec<usize>,
     sizes: Vec<usize>,
@@ -11,7 +10,6 @@ pub struct UnionFind {
 impl UnionFind {
     pub fn new(size: usize) -> UnionFind {
         UnionFind {
-            size,
             count: size,
             roots: (0..size).collect(),
             sizes: vec![1; size],
@@ -19,7 +17,7 @@ impl UnionFind {
     }
 
     pub fn size(&self) -> usize {
-        self.size
+        self.roots.len()
     }
 
     pub fn count(&self) -> usize {
@@ -69,5 +67,20 @@ impl UnionFind {
                 self.roots[i] = self.get_root(i);
             }
         }
+    }
+}
+
+impl std::fmt::Debug for UnionFind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut obj = f.debug_struct("UnionFind");
+        obj.field("size", &self.size());
+        obj.field("count", &self.count());
+        obj.field(
+            "sites",
+            &(0..self.size())
+                .map(|t| self.get_root(t))
+                .collect::<Vec<_>>(),
+        );
+        obj.finish()
     }
 }
