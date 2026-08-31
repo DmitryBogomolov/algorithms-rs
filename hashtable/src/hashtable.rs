@@ -52,13 +52,11 @@ impl<K, V, H> HashTable<K, V, H> {
     pub fn clear(&mut self) {
         self.len = 0;
         self.buckets = init_buckets();
-        debug_assert!(!self.buckets.is_empty(), "buckets cannot be empty");
     }
 
     pub fn drain(&mut self) -> HashTableIterOut<K, V> {
         let len = std::mem::take(&mut self.len);
         let buckets = std::mem::replace(&mut self.buckets, init_buckets());
-        debug_assert!(!self.buckets.is_empty(), "buckets cannot be empty");
         iter_out(buckets, len)
     }
 
@@ -161,7 +159,6 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
             let new_buckets_len = buckets_len * 2;
             self.resize_buckets(new_buckets_len);
         }
-        debug_assert!(!self.buckets.is_empty(), "buckets cannot be empty");
     }
 
     pub fn insert(&mut self, key: K, val: V) -> Option<(K, V)>
