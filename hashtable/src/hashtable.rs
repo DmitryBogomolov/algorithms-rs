@@ -41,11 +41,13 @@ impl<K, V, H> HashTable<K, V, H> {
     pub fn clear(&mut self) {
         self.len = 0;
         self.buckets = init_buckets();
+        debug_assert!(!self.buckets.is_empty(), "buckets cannot be empty");
     }
 
     pub fn drain(&mut self) -> HashTableIterOut<K, V> {
         let len = std::mem::take(&mut self.len);
         let buckets = std::mem::replace(&mut self.buckets, init_buckets());
+        debug_assert!(!self.buckets.is_empty(), "buckets cannot be empty");
         iter_out(buckets, len)
     }
 
@@ -71,9 +73,26 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
     where
         Q: Hash + ?Sized,
     {
-        debug_assert!(!self.buckets.is_empty(), "buckets cannot be empty");
         let hash = self.hasher_factory.hash_one(key);
         (hash as usize) % self.buckets.len()
+    }
+
+    fn find<Q>(&self, key: &Q) -> Option<&(K, V)>
+    where
+        Q: Hash + Eq + ?Sized,
+        K: Borrow<Q>,
+    {
+        let idx = self.bucket_idx(key);
+        self.buckets[idx].get(|t| t.0.borrow(), key)
+    }
+
+    fn find_mut<Q>(&mut self, key: &Q) -> Option<&mut (K, V)>
+    where
+        Q: Hash + Eq + ?Sized,
+        K: Borrow<Q>,
+    {
+        let idx = self.bucket_idx(key);
+        self.buckets[idx].get_mut(|t| t.0.borrow(), key)
     }
 
     pub fn get<Q>(&self, key: &Q) -> Option<&V>
@@ -81,9 +100,7 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         Q: Hash + Eq + ?Sized,
         K: Borrow<Q>,
     {
-        let idx = self.bucket_idx(key);
-        let data = self.buckets[idx].get(|t| t.0.borrow(), key)?;
-        Some(&data.1)
+        self.find(key).map(|t| &t.1)
     }
 
     pub fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut V>
@@ -91,9 +108,7 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         Q: Hash + Eq + ?Sized,
         K: Borrow<Q>,
     {
-        let idx = self.bucket_idx(key);
-        let data = self.buckets[idx].get_mut(|t| t.0.borrow(), key)?;
-        Some(&mut data.1)
+        self.find_mut(key).map(|t| &mut t.1)
     }
 
     pub fn get_kv<Q>(&self, key: &Q) -> Option<(&K, &V)>
@@ -101,9 +116,7 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         Q: Hash + Eq + ?Sized,
         K: Borrow<Q>,
     {
-        let idx = self.bucket_idx(key);
-        let data = self.buckets[idx].get(|t| t.0.borrow(), key)?;
-        Some((&data.0, &data.1))
+        self.find(key).map(|t| (&t.0, &t.1))
     }
 
     pub fn get_kv_mut<Q>(&mut self, key: &Q) -> Option<(&K, &mut V)>
@@ -111,9 +124,7 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         Q: Hash + Eq + ?Sized,
         K: Borrow<Q>,
     {
-        let idx = self.bucket_idx(key);
-        let data = self.buckets[idx].get_mut(|t| t.0.borrow(), key)?;
-        Some((&data.0, &mut data.1))
+        self.find_mut(key).map(|t| (&t.0, &mut t.1))
     }
 
     fn resize_buckets(&mut self, new_size: usize)
@@ -143,6 +154,7 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
             let new_buckets_len = buckets_len * 2;
             self.resize_buckets(new_buckets_len);
         }
+        debug_assert!(!self.buckets.is_empty(), "buckets cannot be empty");
     }
 
     pub fn insert(&mut self, key: K, val: V) -> Option<(K, V)>
@@ -256,7 +268,8 @@ impl<I: Iterator> Iterator for HashTableIter<I> {
 
 impl<I: Iterator> ExactSizeIterator for HashTableIter<I> {}
 
-pub type HashTableIterOut<K, V> = HashTableIter<std::iter::Flatten<std::vec::IntoIter<Bucket<K, V>>>>;
+pub type HashTableIterOut<K, V> =
+    HashTableIter<std::iter::Flatten<std::vec::IntoIter<Bucket<K, V>>>>;
 pub type HashTableIterRef<'a, K, V> = HashTableIter<
     std::iter::Map<
         std::iter::Flatten<std::slice::Iter<'a, Bucket<K, V>>>,
