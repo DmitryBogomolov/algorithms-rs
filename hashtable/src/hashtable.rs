@@ -168,12 +168,12 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
     where
         K: Hash + Eq,
     {
-        let idx = self.bucket_idx(&key);
         if let Some(item) = self.find_mut(&key) {
             let prev_key = std::mem::replace(&mut item.0, key);
             let prev_val = std::mem::replace(&mut item.1, val);
             Some((prev_key, prev_val))
         } else {
+            let idx = self.bucket_idx(&key);
             add_item(&mut self.buckets[idx], Box::new((key, val)));
             self.len += 1;
             self.adjust_buckets_size();
