@@ -25,7 +25,7 @@ impl<K, V> RBTree<K, V> {
         Q: Ord + ?Sized,
         K: Borrow<Q>,
     {
-        Some(self.root.find(key)?.val())
+        self.root.find(key).map(|t| t.val())
     }
 
     pub fn get_mut<Q>(&mut self, key: &Q) -> Option<&mut V>
@@ -33,25 +33,23 @@ impl<K, V> RBTree<K, V> {
         Q: Ord + ?Sized,
         K: Borrow<Q>,
     {
-        Some(self.root.find_mut(key)?.val_mut())
+        self.root.find_mut(key).map(|t| t.val_mut())
     }
 
-    pub fn get_kv<Q>(&self, key: &Q) -> Option<(&K, &V)>
+    pub fn get_key_val<Q>(&self, key: &Q) -> Option<(&K, &V)>
     where
         Q: Ord + ?Sized,
         K: Borrow<Q>,
     {
-        let node = self.root.find(key)?;
-        Some((node.key(), node.val()))
+        self.root.find(key).map(|t| t.key_val())
     }
 
-    pub fn get_kv_mut<Q>(&mut self, key: &Q) -> Option<(&K, &mut V)>
+    pub fn get_key_val_mut<Q>(&mut self, key: &Q) -> Option<(&K, &mut V)>
     where
         Q: Ord + ?Sized,
         K: Borrow<Q>,
     {
-        let ptr: *mut Node<K, V> = self.root.find_mut(key)?;
-        unsafe { Some(((*ptr).key(), (*ptr).val_mut())) }
+        self.root.find_mut(key).map(|t| t.key_val_mut())
     }
 
     pub fn insert(&mut self, key: K, val: V) -> Option<(K, V)>
@@ -110,7 +108,7 @@ where
     type Output = V;
 
     fn index(&self, index: &Q) -> &Self::Output {
-        self.get(index).unwrap_or_else(|| panic!("bad index"))
+        self.get(index).expect("bad index")
     }
 }
 
@@ -120,6 +118,24 @@ where
     K: Borrow<Q>,
 {
     fn index_mut(&mut self, index: &Q) -> &mut Self::Output {
-        self.get_mut(index).unwrap_or_else(|| panic!("bad index"))
+        self.get_mut(index).expect("bad index")
+    }
+}
+
+impl<K, V> Clone for RBTree<K, V>
+where
+    K: Clone,
+    V: Clone,
+{
+    fn clone(&self) -> Self {
+        Self {
+            root: self.root.clone(),
+        }
+    }
+}
+
+impl<K: std::fmt::Debug, V: std::fmt::Debug> std::fmt::Debug for RBTree<K, V> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_map().entries(self.iter()).finish()
     }
 }

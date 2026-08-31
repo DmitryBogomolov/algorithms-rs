@@ -118,7 +118,7 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         self.find_mut(key).map(|t| &mut t.1)
     }
 
-    pub fn get_kv<Q>(&self, key: &Q) -> Option<(&K, &V)>
+    pub fn get_key_val<Q>(&self, key: &Q) -> Option<(&K, &V)>
     where
         Q: Hash + Eq + ?Sized,
         K: Borrow<Q>,
@@ -126,7 +126,7 @@ impl<K, V, H: BuildHasher> HashTable<K, V, H> {
         self.find(key).map(|t| (&t.0, &t.1))
     }
 
-    pub fn get_kv_mut<Q>(&mut self, key: &Q) -> Option<(&K, &mut V)>
+    pub fn get_key_val_mut<Q>(&mut self, key: &Q) -> Option<(&K, &mut V)>
     where
         Q: Hash + Eq + ?Sized,
         K: Borrow<Q>,

@@ -62,12 +62,12 @@ impl<K, V> Node<K, V> {
         self.content_mut().size = 1 + self.node(Side::L).len() + self.node(Side::R).len();
     }
 
-    fn key_cmp<Q>(&self, k: &Q) -> Ordering
+    fn key_cmp<Q>(&self, key: &Q) -> Ordering
     where
         Q: Ord + ?Sized,
         K: Borrow<Q>,
     {
-        k.cmp(self.key().borrow())
+        key.cmp(self.key().borrow())
     }
 
     fn content(&self) -> &Content<K, V> {
@@ -90,6 +90,16 @@ impl<K, V> Node<K, V> {
         &mut self.content_mut().data.1
     }
 
+    pub fn key_val(&self) -> (&K, &V) {
+        let data = &self.content().data;
+        (&data.0, &data.1)
+    }
+
+    pub fn key_val_mut(&mut self) -> (&K, &mut V) {
+        let data = &mut self.content_mut().data;
+        (&data.0, &mut data.1)
+    }
+
     pub fn node(&self, side: Side) -> &Self {
         match side {
             Side::L => &self.content().l_node,
@@ -107,6 +117,24 @@ impl<K, V> Node<K, V> {
     pub fn into_parts(mut self) -> ((K, V), Self, Self) {
         let content = self.take_content().unwrap();
         (content.data, content.l_node, content.r_node)
+    }
+
+    pub fn parts(&self) -> ((&K, &V), &Self, &Self) {
+        let content = self.content();
+        (
+            (&content.data.0, &content.data.1),
+            &content.l_node,
+            &content.r_node,
+        )
+    }
+
+    pub fn parts_mut(&mut self) -> ((&K, &mut V), &mut Self, &mut Self) {
+        let content = self.content_mut();
+        (
+            (&content.data.0, &mut content.data.1),
+            &mut content.l_node,
+            &mut content.r_node,
+        )
     }
 
     pub fn find<Q>(&self, k: &Q) -> Option<&Self>
@@ -374,6 +402,28 @@ impl<K, V> Node<K, V> {
         let (ret, _deficit) = self.remove_recursive(k);
         self.force_black_root();
         ret
+    }
+}
+
+impl<K, V> Clone for Node<K, V>
+where
+    K: Clone,
+    V: Clone,
+{
+    fn clone(&self) -> Self {
+        match self.0.as_ref() {
+            None => Self::none(),
+            Some(content) => {
+                let clone = Some(Box::new(Content {
+                    l_node: content.l_node.clone(),
+                    r_node: content.r_node.clone(),
+                    red: content.red,
+                    size: content.size,
+                    data: content.data.clone(),
+                }));
+                Self(clone)
+            }
+        }
     }
 }
 
