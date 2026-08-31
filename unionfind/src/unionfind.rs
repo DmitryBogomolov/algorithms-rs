@@ -1,5 +1,6 @@
 // Union-Find implementation.
 // https://algs4.cs.princeton.edu/15uf/
+#[derive(Clone)]
 pub struct UnionFind {
     size: usize,
     count: usize,
