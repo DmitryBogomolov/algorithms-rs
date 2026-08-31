@@ -12,32 +12,53 @@ fn empty() {
 fn insert() {
     let mut table = HashTable::new();
 
-    assert_eq!(table.insert("11".to_string(), 11), None);
+    assert_eq!(table.insert("11".to_owned(), 11), None);
     assert!(!table.is_empty());
     assert_eq!(table.len(), 1);
+
     assert_eq!(table.get("11"), Some(&11));
     assert_eq!(table.get("11_"), None);
-    assert_eq!(table.get_kv("11"), Some((&"11".to_string(), &11)));
+    assert_eq!(table.get_kv("11"), Some((&"11".to_owned(), &11)));
     assert_eq!(table.get_kv("11_"), None);
+
+    assert_eq!(table.insert("11".to_owned(), 12), Some(("11".to_owned(), 11)));
+    assert_eq!(table.len(), 1);
+
+    assert_eq!(table.insert("12".to_owned(), 12), None);
+    assert_eq!(table.len(), 2);
+
+    assert_eq!(table.insert("12".to_owned(), 11), Some(("12".to_owned(), 12)));
+    assert_eq!(table.len(), 2);
 }
 
 #[test]
 fn remove() {
     let mut table = HashTable::new();
-    table.insert("11".to_string(), 11);
+    table.insert("11".to_owned(), 11);
+    table.insert("12".to_owned(), 12);
 
-    assert_eq!(table.remove("11"), Some(("11".to_string(), 11)));
-    assert!(table.is_empty());
-    assert_eq!(table.len(), 0);
+    assert_eq!(table.remove("11"), Some(("11".to_owned(), 11)));
+    assert_eq!(table.len(), 1);
+
     assert_eq!(table.remove("11"), None);
     assert_eq!(table.get("11"), None);
+    assert_eq!(table.len(), 1);
+
+    assert_eq!(table.remove("12"), Some(("12".to_owned(), 12)));
+    assert_eq!(table.len(), 0);
+
+    assert_eq!(table.remove("12"), None);
+    assert_eq!(table.get("12"), None);
+    assert_eq!(table.len(), 0);
+    assert!(table.is_empty());
 }
 
 #[test]
 fn clear() {
     let mut table = HashTable::new();
-    table.insert(1, 'a');
-    table.insert(2, 'b');
+    table.insert("1".to_owned(), 1);
+    table.insert("2".to_owned(), 2);
+    table.insert("3".to_owned(), 3);
 
     table.clear();
 
@@ -48,13 +69,13 @@ fn clear() {
 #[test]
 fn mutate() {
     let mut table = HashTable::new();
-    table.insert("11".to_string(), 11);
+    table.insert("11".to_owned(), 11);
 
     *table.get_mut("11").unwrap() += 1;
     assert_eq!(table.get("11"), Some(&12));
 
     *table.get_kv_mut("11").unwrap().1 += 2;
-    assert_eq!(table.get_kv("11"), Some((&"11".to_string(), &14)));
+    assert_eq!(table.get_kv("11"), Some((&"11".to_owned(), &14)));
 }
 
 #[test]
