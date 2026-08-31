@@ -110,7 +110,7 @@ where
     type Output = V;
 
     fn index(&self, index: &Q) -> &Self::Output {
-        self.get(index).unwrap_or_else(|| panic!("bad index"))
+        self.get(index).expect("bad index")
     }
 }
 
@@ -120,6 +120,6 @@ where
     K: Borrow<Q>,
 {
     fn index_mut(&mut self, index: &Q) -> &mut Self::Output {
-        self.get_mut(index).unwrap_or_else(|| panic!("bad index"))
+        self.get_mut(index).expect("bad index")
     }
 }
