@@ -37,11 +37,7 @@ impl<'a, K, V> IterItem for &'a Node<K, V> {
     }
 
     fn split(self) -> (Self::Data, Self, Self) {
-        (
-            (self.key(), self.val()),
-            self.node(Side::L),
-            self.node(Side::R),
-        )
+        (self.key_val(), self.node(Side::L), self.node(Side::R))
     }
 }
 
@@ -60,7 +56,7 @@ impl<'a, K, V> IterItem for &'a mut Node<K, V> {
         let ptr: *mut Node<K, V> = self;
         unsafe {
             (
-                ((*ptr).key(), (*ptr).val_mut()),
+                (*ptr).key_val_mut(),
                 (*ptr).node_mut(Side::L),
                 (*ptr).node_mut(Side::R),
             )

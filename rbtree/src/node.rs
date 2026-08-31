@@ -62,12 +62,12 @@ impl<K, V> Node<K, V> {
         self.content_mut().size = 1 + self.node(Side::L).len() + self.node(Side::R).len();
     }
 
-    fn key_cmp<Q>(&self, k: &Q) -> Ordering
+    fn key_cmp<Q>(&self, key: &Q) -> Ordering
     where
         Q: Ord + ?Sized,
         K: Borrow<Q>,
     {
-        k.cmp(self.key().borrow())
+        key.cmp(self.key().borrow())
     }
 
     fn content(&self) -> &Content<K, V> {
@@ -88,6 +88,16 @@ impl<K, V> Node<K, V> {
 
     pub fn val_mut(&mut self) -> &mut V {
         &mut self.content_mut().data.1
+    }
+
+    pub fn key_val(&self) -> (&K, &V) {
+        let data = &self.content().data;
+        (&data.0, &data.1)
+    }
+
+    pub fn key_val_mut(&mut self) -> (&K, &mut V) {
+        let data = &mut self.content_mut().data;
+        (&data.0, &mut data.1)
     }
 
     pub fn node(&self, side: Side) -> &Self {
