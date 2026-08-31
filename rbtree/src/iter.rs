@@ -1,4 +1,4 @@
-use super::node::{Node, Side};
+use super::node::Node;
 use super::rbtree::RBTree;
 
 pub trait IterItem: Sized {
@@ -37,7 +37,7 @@ impl<'a, K, V> IterItem for &'a Node<K, V> {
     }
 
     fn split(self) -> (Self::Data, Self, Self) {
-        (self.key_val(), self.node(Side::L), self.node(Side::R))
+        self.parts()
     }
 }
 
@@ -53,14 +53,7 @@ impl<'a, K, V> IterItem for &'a mut Node<K, V> {
     }
 
     fn split(self) -> (Self::Data, Self, Self) {
-        let ptr: *mut Node<K, V> = self;
-        unsafe {
-            (
-                (*ptr).key_val_mut(),
-                (*ptr).node_mut(Side::L),
-                (*ptr).node_mut(Side::R),
-            )
-        }
+        self.parts_mut()
     }
 }
 

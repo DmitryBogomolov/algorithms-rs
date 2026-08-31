@@ -119,6 +119,24 @@ impl<K, V> Node<K, V> {
         (content.data, content.l_node, content.r_node)
     }
 
+    pub fn parts(&self) -> ((&K, &V), &Self, &Self) {
+        let content = self.content();
+        (
+            (&content.data.0, &content.data.1),
+            &content.l_node,
+            &content.r_node,
+        )
+    }
+
+    pub fn parts_mut(&mut self) -> ((&K, &mut V), &mut Self, &mut Self) {
+        let content = self.content_mut();
+        (
+            (&content.data.0, &mut content.data.1),
+            &mut content.l_node,
+            &mut content.r_node,
+        )
+    }
+
     pub fn find<Q>(&self, k: &Q) -> Option<&Self>
     where
         Q: Ord + ?Sized,
