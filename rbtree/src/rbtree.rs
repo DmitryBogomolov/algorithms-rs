@@ -36,7 +36,7 @@ impl<K, V> RBTree<K, V> {
         self.root.find_mut(key).map(|t| t.val_mut())
     }
 
-    pub fn get_kv<Q>(&self, key: &Q) -> Option<(&K, &V)>
+    pub fn get_key_val<Q>(&self, key: &Q) -> Option<(&K, &V)>
     where
         Q: Ord + ?Sized,
         K: Borrow<Q>,
@@ -44,7 +44,7 @@ impl<K, V> RBTree<K, V> {
         self.root.find(key).map(|t| t.key_val())
     }
 
-    pub fn get_kv_mut<Q>(&mut self, key: &Q) -> Option<(&K, &mut V)>
+    pub fn get_key_val_mut<Q>(&mut self, key: &Q) -> Option<(&K, &mut V)>
     where
         Q: Ord + ?Sized,
         K: Borrow<Q>,

@@ -17,8 +17,8 @@ fn insert() {
 
     assert_eq!(tree.get("11"), Some(&11));
     assert_eq!(tree.get("11_"), None);
-    assert_eq!(tree.get_kv("11"), Some((&"11".to_owned(), &11)));
-    assert_eq!(tree.get_kv("11_"), None);
+    assert_eq!(tree.get_key_val("11"), Some((&"11".to_owned(), &11)));
+    assert_eq!(tree.get_key_val("11_"), None);
 
     assert_eq!(
         tree.insert("11".to_owned(), 12),
@@ -78,8 +78,8 @@ fn mutate() {
     *tree.get_mut("11").unwrap() += 1;
     assert_eq!(tree.get("11"), Some(&12));
 
-    *tree.get_kv_mut("11").unwrap().1 += 2;
-    assert_eq!(tree.get_kv("11"), Some((&"11".to_string(), &14)));
+    *tree.get_key_val_mut("11").unwrap().1 += 2;
+    assert_eq!(tree.get_key_val("11"), Some((&"11".to_string(), &14)));
 }
 
 #[test]
