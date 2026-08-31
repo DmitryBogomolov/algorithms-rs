@@ -26,9 +26,7 @@ impl UnionFind {
     }
 
     fn validate(&self, i: usize) {
-        if i >= self.roots.len() {
-            panic!("out of range: {}", i)
-        }
+        assert!(i < self.roots.len(), "out of range: {}", i);
     }
 
     fn is_root(&self, i: usize) -> bool {
