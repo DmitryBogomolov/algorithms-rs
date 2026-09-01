@@ -129,7 +129,10 @@ where
     }
 }
 
-fn swap<K: Hash + Eq, T>(list: &mut [(K, T)], idx: &mut HashMap<K, usize>, i: usize, j: usize) {
+fn swap<K, T>(list: &mut [(K, T)], idx: &mut HashMap<K, usize>, i: usize, j: usize)
+where 
+    K: Hash + Eq,
+{
     if i == j {
         return;
     }
@@ -140,7 +143,11 @@ fn swap<K: Hash + Eq, T>(list: &mut [(K, T)], idx: &mut HashMap<K, usize>, i: us
     idx.insert(key_j, pos_i);
 }
 
-impl<K: Hash + Eq + Clone, T: Ord> IndexPriorityQueue<K, T, fn(&T, &T) -> bool> {
+impl<K, T> IndexPriorityQueue<K, T, fn(&T, &T) -> bool>
+where
+    K: Hash + Eq + Clone,
+    T: Ord,
+{
     pub fn new_max() -> Self {
         Self::new(|lhs, rhs| lhs < rhs)
     }

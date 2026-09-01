@@ -86,7 +86,10 @@ where
     }
 }
 
-impl<T: Ord> PriorityQueue<T, fn(&T, &T) -> bool> {
+impl<T> PriorityQueue<T, fn(&T, &T) -> bool>
+where
+    T: Ord,
+{
     pub fn new_max() -> Self {
         Self::new(|lhs, rhs| lhs < rhs)
     }
