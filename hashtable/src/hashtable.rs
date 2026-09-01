@@ -235,6 +235,12 @@ where
     }
 }
 
+impl<K, V> From<HashTable<K, V>> for Vec<(K, V)> {
+    fn from(table: HashTable<K, V>) -> Self {
+        table.into_iter().collect()
+    }
+}
+
 impl<Q, K, V, H> std::ops::Index<&Q> for HashTable<K, V, H>
 where
     Q: Hash + Eq + ?Sized,

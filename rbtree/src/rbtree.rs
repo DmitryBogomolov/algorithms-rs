@@ -94,6 +94,12 @@ where
     }
 }
 
+impl<K, V> From<RBTree<K, V>> for Vec<(K, V)> {
+    fn from(tree: RBTree<K, V>) -> Self {
+        tree.into_iter().collect()
+    }
+}
+
 impl<K, V> Default for RBTree<K, V> {
     fn default() -> Self {
         Self::new()

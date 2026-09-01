@@ -137,6 +137,14 @@ fn from_array() {
 }
 
 #[test]
+fn into_vec() {
+    let tree: RBTree<_, _> = [(1, 'a'), (2, 'b'), (3, 'c')].into();
+
+    let vec: Vec<_> = tree.into();
+    assert_eq!(vec, [(1, 'a'), (2, 'b'), (3, 'c')]);
+}
+
+#[test]
 fn into_iter() {
     let tree: RBTree<_, _> = [(2, 'b'), (3, 'c'), (1, 'a')].into();
 

@@ -138,6 +138,15 @@ fn from_array() {
 }
 
 #[test]
+fn into_vec() {
+    let table: HashTable<_, _> = [(1, 'a'), (2, 'b'), (3, 'c')].into();
+
+    let mut vec: Vec<_> = table.into();
+    vec.sort_by_key(|t| t.0);
+    assert_eq!(vec, [(1, 'a'), (2, 'b'), (3, 'c')]);
+}
+
+#[test]
 fn indexing() {
     let table: HashTable<_, _, _> = [
         (2, "b".to_owned()),
