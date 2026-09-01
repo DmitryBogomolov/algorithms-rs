@@ -107,3 +107,17 @@ fn many_items() {
     assert_eq!(uf.find(500), 999);
     assert_eq!(uf.find(400), 999);
 }
+
+#[test]
+fn clone() {
+    let uf = {
+        let mut uf = UnionFind::new(5);
+        uf.union(0, 3);
+        uf.union(1, 4);
+        uf.clone()
+    };
+
+    assert_eq!(uf.size(), 5);
+    assert_eq!(uf.count(), 3);
+    assert_eq!(groups(&uf), vec![0, 1, 2, 0, 1]);
+}
