@@ -271,21 +271,19 @@ fn with_hasher() {
     assert_eq!(table.len(), 1);
 }
 
-#[derive(Default)]
-struct DumbHasher;
-
-impl std::hash::Hasher for DumbHasher {
-    fn write(&mut self, _bytes: &[u8]) {}
-
-    fn finish(&self) -> u64 {
-        101
-    }
-}
-
-type DumbBuildHasher = std::hash::BuildHasherDefault<DumbHasher>;
-
 #[test]
 fn dumb_hasher() {
+    #[derive(Default)]
+    struct DumbHasher;
+    impl std::hash::Hasher for DumbHasher {
+        fn write(&mut self, _bytes: &[u8]) {}
+
+        fn finish(&self) -> u64 {
+            101
+        }
+    }
+    type DumbBuildHasher = std::hash::BuildHasherDefault<DumbHasher>;
+
     let mut table = HashTable::with_hasher(DumbBuildHasher::new());
     let r = 0..400;
 
