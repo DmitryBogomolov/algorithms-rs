@@ -16,13 +16,11 @@ impl<T: Drainable> Drainable for &mut T {
     }
 }
 
-pub struct DrainableIter<T> {
-    pq: T,
-}
+pub struct DrainableIter<T>(T);
 
 impl<T> DrainableIter<T> {
-    pub fn new(pq: T) -> Self {
-        Self { pq }
+    pub fn new(t: T) -> Self {
+        Self(t)
     }
 }
 
@@ -30,11 +28,11 @@ impl<T: Drainable> Iterator for DrainableIter<T> {
     type Item = T::Item;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.pq.remove()
+        self.0.remove()
     }
 
     fn size_hint(&self) -> (usize, Option<usize>) {
-        let n = self.pq.len();
+        let n = self.0.len();
         (n, Some(n))
     }
 }
