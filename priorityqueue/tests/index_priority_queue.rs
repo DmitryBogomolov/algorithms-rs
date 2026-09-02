@@ -11,7 +11,7 @@ fn empty() {
 
 #[test]
 fn insert() {
-    let mut pq = IndexPriorityQueue::new(|a: &i32, b: &i32| a < b);
+    let mut pq = IndexPriorityQueue::new(|a, b| a < b);
 
     pq.insert(('a', 4));
     assert!(!pq.is_empty());
@@ -46,7 +46,7 @@ fn insert() {
 
 #[test]
 fn insert_update() {
-    let mut pq = IndexPriorityQueue::new(|a: &i32, b: &i32| a < b);
+    let mut pq = IndexPriorityQueue::new(|a, b| a < b);
 
     pq.insert(('a', 4));
     pq.insert(('b', 7));
@@ -66,20 +66,21 @@ fn insert_update() {
     assert_eq!(pq.peek(), Some(&('a', 9)));
 }
 
-fn seed<K, T, F, I>(mut pq: IndexPriorityQueue<K, T, F>, items: I) -> IndexPriorityQueue<K, T, F>
+fn make<K, T, F, I>(is_ord: F, items: I) -> IndexPriorityQueue<K, T, F>
 where
     K: Hash + Eq + Clone,
     F: FnMut(&T, &T) -> bool,
     I: IntoIterator<Item = (K, T)>,
 {
+    let mut pq = IndexPriorityQueue::new(is_ord);
     items.into_iter().for_each(|i| pq.insert(i));
     pq
 }
 
 #[test]
 fn remove() {
-    let mut pq = seed(
-        IndexPriorityQueue::new(|a, b| a > b),
+    let mut pq = make(
+        |a, b| a > b,
         [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
     );
 
@@ -112,8 +113,8 @@ fn remove() {
 
 #[test]
 fn clear() {
-    let mut pq = seed(
-        IndexPriorityQueue::new(|a, b| a > b),
+    let mut pq = make(
+        |a, b| a > b,
         [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
     );
 
@@ -125,42 +126,47 @@ fn clear() {
 }
 
 #[test]
-fn into_iter() {
-    let pq = seed(
-        IndexPriorityQueue::new(|a, b| a > b),
+fn into_vec() {
+    let pq = make(
+        |a, b| a > b,
         [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
     );
 
-    let collected: Vec<(char, i32)> = pq.into_iter().collect();
-    assert_eq!(
-        collected,
-        [('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]
+    let vec: Vec<_> = pq.into();
+    assert_eq!(vec, [('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]);
+}
+
+#[test]
+fn into_iter() {
+    let pq = make(
+        |a, b| a > b,
+        [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
     );
+
+    let vec: Vec<_> = pq.into_iter().collect();
+    assert_eq!(vec, [('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]);
 }
 
 #[test]
 fn drain_full() {
-    let mut pq = seed(
-        IndexPriorityQueue::new(|a, b| a > b),
+    let mut pq = make(
+        |a, b| a > b,
         [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
     );
 
-    let collected: Vec<(char, i32)> = pq.drain().collect();
-    assert_eq!(
-        collected,
-        [('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]
-    );
+    let vec: Vec<(char, i32)> = pq.drain().collect();
+    assert_eq!(vec, [('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]);
     assert!(pq.is_empty());
 }
 
 #[test]
 fn drain_partial() {
-    let mut pq = seed(
-        IndexPriorityQueue::new(|a, b| a > b),
+    let mut pq = make(
+        |a, b| a > b,
         [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
     );
 
-    let collected: Vec<(char, i32)> = pq.drain().take(2).collect();
+    let collected: Vec<_> = pq.drain().take(2).collect();
     assert_eq!(collected, [('d', 3), ('a', 4)]);
     assert_eq!(pq.len(), 3);
     assert_eq!(pq.remove(), Some(('c', 4)));
@@ -170,38 +176,32 @@ fn drain_partial() {
 
 #[test]
 fn drain_empty() {
-    let mut pq: IndexPriorityQueue<char, i32, _> = IndexPriorityQueue::new(|a, b| a < b);
+    let mut pq: IndexPriorityQueue<(), (), _> = IndexPriorityQueue::new(|a, b| a < b);
 
-    let collected: Vec<(char, i32)> = pq.drain().collect();
-    assert_eq!(collected, []);
+    let vec: Vec<_> = pq.drain().collect();
+    assert_eq!(vec, []);
 }
 
 #[test]
 fn max_queue() {
-    let pq = seed(
-        IndexPriorityQueue::new_max(),
-        [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
-    );
+    let mut pq = IndexPriorityQueue::new_max();
+    [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)]
+        .into_iter()
+        .for_each(|t| pq.insert(t));
 
-    let collected: Vec<(char, i32)> = pq.into();
-    assert_eq!(
-        collected,
-        [('e', 8), ('b', 6), ('a', 4), ('c', 4), ('d', 3)]
-    );
+    let vec: Vec<_> = pq.into();
+    assert_eq!(vec, [('e', 8), ('b', 6), ('a', 4), ('c', 4), ('d', 3)]);
 }
 
 #[test]
 fn min_queue() {
-    let pq = seed(
-        IndexPriorityQueue::new_min(),
-        [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
-    );
+    let mut pq = IndexPriorityQueue::new_min();
+    [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)]
+        .into_iter()
+        .for_each(|t| pq.insert(t));
 
-    let collected: Vec<(char, i32)> = pq.into();
-    assert_eq!(
-        collected,
-        [('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]
-    );
+    let vec: Vec<_> = pq.into();
+    assert_eq!(vec, [('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]);
 }
 
 #[test]
@@ -224,8 +224,8 @@ fn custom_struct() {
 
 #[test]
 fn remove_idx() {
-    let mut pq = seed(
-        IndexPriorityQueue::new(|a, b| a > b),
+    let mut pq = make(
+        |a, b| a > b,
         [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
     );
 
@@ -240,7 +240,7 @@ fn remove_idx() {
 
 #[test]
 fn string_key() {
-    let mut pq = IndexPriorityQueue::new(|a: &i32, b: &i32| a > b);
+    let mut pq = IndexPriorityQueue::new(|a, b| a > b);
 
     pq.insert(("a1".to_string(), 4));
     pq.insert(("b2".to_string(), 7));

@@ -1,4 +1,4 @@
-use super::common::{Drainable, DrainableIter};
+use super::drainable::{Drainable, DrainableIter};
 
 // Implements *Priority Queue* container.
 // https://algs4.cs.princeton.edu/24pq/
@@ -11,6 +11,7 @@ impl<T, F> PriorityQueue<T, F>
 where
     F: FnMut(&T, &T) -> bool,
 {
+    // No FromIterator, From<array>. Because addditional `is_ord` argument is required.
     pub fn new(is_ord: F) -> Self {
         Self {
             heap: Vec::new(),
@@ -84,6 +85,10 @@ where
     pub fn clear(&mut self) {
         self.heap.clear();
     }
+
+    pub fn drain(&mut self) -> DrainableIter<&mut Self> {
+        DrainableIter::new(self)
+    }
 }
 
 impl<T> PriorityQueue<T, fn(&T, &T) -> bool>
@@ -114,8 +119,24 @@ where
     }
 }
 
-impl_into_iter!(
-    PriorityQueue<T, F>,
-    T,
-    [T, F] COND [where F: FnMut(&T, &T) -> bool]
-);
+// No IntoInterator for &Self, &mut Self and no `iter`, `iter_mut` methods. Because iteration modifies container.
+impl<T, F> IntoIterator for PriorityQueue<T, F>
+where
+    F: FnMut(&T, &T) -> bool,
+{
+    type Item = T;
+    type IntoIter = DrainableIter<Self>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        DrainableIter::new(self)
+    }
+}
+
+impl<T, F> From<PriorityQueue<T, F>> for Vec<T>
+where
+    F: FnMut(&T, &T) -> bool,
+{
+    fn from(pq: PriorityQueue<T, F>) -> Self {
+        pq.into_iter().collect()
+    }
+}

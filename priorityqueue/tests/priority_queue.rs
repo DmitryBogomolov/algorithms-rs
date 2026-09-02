@@ -34,18 +34,19 @@ fn insert() {
     assert_eq!(pq.peek(), Some(&9));
 }
 
-fn seed<T, F, I>(mut pq: PriorityQueue<T, F>, items: I) -> PriorityQueue<T, F>
+fn make<T, F, I>(is_ord: F, items: I) -> PriorityQueue<T, F>
 where
     F: FnMut(&T, &T) -> bool,
     I: IntoIterator<Item = T>,
 {
+    let mut pq = PriorityQueue::new(is_ord);
     items.into_iter().for_each(|i| pq.insert(i));
     pq
 }
 
 #[test]
 fn remove() {
-    let mut pq = seed(PriorityQueue::new(|a, b| a > b), [4, 6, 4, 3, 8]);
+    let mut pq = make(|a, b| a > b, [4, 6, 4, 3, 8]);
 
     assert_eq!(pq.len(), 5);
     assert_eq!(pq.peek(), Some(&3));
@@ -71,7 +72,7 @@ fn remove() {
 
 #[test]
 fn clear() {
-    let mut pq = seed(PriorityQueue::new(|a, b| a > b), [4, 6, 4, 3, 8]);
+    let mut pq = make(|a, b| a > b, [4, 6, 4, 3, 8]);
 
     pq.clear();
 
@@ -81,28 +82,36 @@ fn clear() {
 }
 
 #[test]
-fn into_iter() {
-    let pq = seed(PriorityQueue::new(|a, b| a > b), [4, 6, 4, 3, 8]);
+fn into_vec() {
+    let pq = make(|a, b| a > b, [4, 6, 4, 3, 8]);
 
-    let collected: Vec<i32> = pq.into_iter().collect();
-    assert_eq!(collected, vec![3, 4, 4, 6, 8]);
+    let vec: Vec<_> = pq.into();
+    assert_eq!(vec, [3, 4, 4, 6, 8]);
+}
+
+#[test]
+fn into_iter() {
+    let pq = make(|a, b| a > b, [4, 6, 4, 3, 8]);
+
+    let vec: Vec<_> = pq.into_iter().collect();
+    assert_eq!(vec, [3, 4, 4, 6, 8]);
 }
 
 #[test]
 fn drain_full() {
-    let mut pq = seed(PriorityQueue::new(|a, b| a > b), [4, 6, 4, 3, 8]);
+    let mut pq = make(|a, b| a > b, [4, 6, 4, 3, 8]);
 
-    let collected: Vec<i32> = pq.drain().collect();
-    assert_eq!(collected, [3, 4, 4, 6, 8]);
+    let vec: Vec<i32> = pq.drain().collect();
+    assert_eq!(vec, [3, 4, 4, 6, 8]);
     assert!(pq.is_empty());
 }
 
 #[test]
 fn drain_partial() {
-    let mut pq = seed(PriorityQueue::new(|a, b| a > b), [4, 6, 4, 3, 8]);
+    let mut pq = make(|a, b| a > b, [4, 6, 4, 3, 8]);
 
-    let collected: Vec<i32> = pq.drain().take(2).collect();
-    assert_eq!(collected, vec![3, 4]);
+    let vec: Vec<i32> = pq.drain().take(2).collect();
+    assert_eq!(vec, vec![3, 4]);
     assert_eq!(pq.len(), 3);
     assert_eq!(pq.remove(), Some(4));
     assert_eq!(pq.remove(), Some(6));
@@ -111,26 +120,28 @@ fn drain_partial() {
 
 #[test]
 fn drain_empty() {
-    let mut pq: PriorityQueue<i32, _> = PriorityQueue::new(|a, b| a < b);
+    let mut pq: PriorityQueue<(), _> = PriorityQueue::new(|a, b| a < b);
 
-    let collected: Vec<i32> = pq.drain().collect();
-    assert_eq!(collected, []);
+    let vec: Vec<_> = pq.drain().collect();
+    assert_eq!(vec, []);
 }
 
 #[test]
 fn max_queue() {
-    let pq = seed(PriorityQueue::new_max(), [4, 6, 4, 3, 8]);
+    let mut pq = PriorityQueue::new_max();
+    [4, 6, 4, 3, 8].into_iter().for_each(|t| pq.insert(t));
 
-    let collected: Vec<i32> = pq.into();
-    assert_eq!(collected, [8, 6, 4, 4, 3]);
+    let vec: Vec<_> = pq.into();
+    assert_eq!(vec, [8, 6, 4, 4, 3]);
 }
 
 #[test]
 fn min_queue() {
-    let pq = seed(PriorityQueue::new_min(), [4, 6, 4, 3, 8]);
+    let mut pq = PriorityQueue::new_min();
+    [4, 6, 4, 3, 8].into_iter().for_each(|t| pq.insert(t));
 
-    let collected: Vec<i32> = pq.into();
-    assert_eq!(collected, [3, 4, 4, 6, 8]);
+    let vec: Vec<_> = pq.into();
+    assert_eq!(vec, [3, 4, 4, 6, 8]);
 }
 
 #[test]

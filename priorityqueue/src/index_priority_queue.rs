@@ -1,4 +1,4 @@
-use super::common::{Drainable, DrainableIter};
+use super::drainable::{Drainable, DrainableIter};
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::hash::Hash;
@@ -16,6 +16,7 @@ where
     K: Hash + Eq + Clone,
     F: FnMut(&T, &T) -> bool,
 {
+    // No FromIterator, From<array>. Because addditional `is_ord` argument is required.
     pub fn new(is_ord: F) -> Self {
         Self {
             heap: Vec::new(),
@@ -109,11 +110,6 @@ where
         self.remove_at(k)
     }
 
-    pub fn clear(&mut self) {
-        self.heap.clear();
-        self.idx.clear();
-    }
-
     fn remove_at(&mut self, i: usize) -> Option<(K, T)> {
         if self.heap.is_empty() {
             return None;
@@ -127,10 +123,19 @@ where
         }
         Some(element)
     }
+
+    pub fn clear(&mut self) {
+        self.heap.clear();
+        self.idx.clear();
+    }
+
+    pub fn drain(&mut self) -> DrainableIter<&mut Self> {
+        DrainableIter::new(self)
+    }
 }
 
 fn swap<K, T>(list: &mut [(K, T)], idx: &mut HashMap<K, usize>, i: usize, j: usize)
-where 
+where
     K: Hash + Eq,
 {
     if i == j {
@@ -173,8 +178,26 @@ where
     }
 }
 
-impl_into_iter!(
-    IndexPriorityQueue<K, T, F>,
-    (K, T),
-    [K, T, F] COND [where K: Hash + Eq + Clone, F: FnMut(&T, &T) -> bool]
-);
+// No IntoInterator for &Self, &mut Self and no `iter`, `iter_mut` methods. Because iteration modifies container.
+impl<K, T, F> IntoIterator for IndexPriorityQueue<K, T, F>
+where
+    K: Hash + Eq + Clone,
+    F: FnMut(&T, &T) -> bool,
+{
+    type Item = (K, T);
+    type IntoIter = DrainableIter<Self>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        DrainableIter::new(self)
+    }
+}
+
+impl<K, T, F> From<IndexPriorityQueue<K, T, F>> for Vec<(K, T)>
+where
+    K: Hash + Eq + Clone,
+    F: FnMut(&T, &T) -> bool,
+{
+    fn from(pq: IndexPriorityQueue<K, T, F>) -> Self {
+        pq.into_iter().collect()
+    }
+}

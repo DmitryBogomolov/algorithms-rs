@@ -1,5 +1,5 @@
 #[macro_use]
-mod common;
+mod drainable;
 mod index_priority_queue;
 mod priority_queue;
 
