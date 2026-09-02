@@ -72,32 +72,37 @@ where
         }
     }
 
-    pub fn insert(&mut self, element: (K, T)) {
+    pub fn insert(&mut self, element: (K, T)) -> Option<(K, T)> {
         if let Some(&k) = self.idx.get(&element.0) {
-            self.heap[k] = element;
+            let ret = std::mem::replace(&mut self.heap[k], element);
             self.sink(k);
             self.swim(k);
+            Some(ret)
         } else {
             let k = self.heap.len();
             self.heap.push(element);
             self.idx.insert(self.heap[k].0.clone(), k);
             self.swim(k);
+            None
         }
     }
 
-    pub fn peek(&self) -> Option<&(K, T)> {
-        self.heap.first()
+    pub fn peek(&self) -> Option<(&K, &T)> {
+        self.heap.first().map(|t| (&t.0, &t.1))
     }
 
-    pub fn peek_idx<Q>(&self, idx: &Q) -> Option<&(K, T)>
+    pub fn peek_idx<Q>(&self, idx: &Q) -> Option<(&K, &T)>
     where
         K: Borrow<Q>,
         Q: ?Sized + Hash + Eq,
     {
-        self.idx.get(idx).and_then(|k| self.heap.get(*k))
+        self.idx.get(idx).and_then(|k| self.heap.get(*k)).map(|t| (&t.0, &t.1))
     }
 
     pub fn remove(&mut self) -> Option<(K, T)> {
+        if self.is_empty() {
+            return None;
+        }
         self.remove_at(0)
     }
 
@@ -111,9 +116,6 @@ where
     }
 
     fn remove_at(&mut self, i: usize) -> Option<(K, T)> {
-        if self.heap.is_empty() {
-            return None;
-        }
         self.idx.remove(&self.heap[i].0)?;
         let element = self.heap.swap_remove(i);
         if i < self.heap.len() {
