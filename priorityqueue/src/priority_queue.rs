@@ -141,3 +141,12 @@ where
         pq.into_iter().collect()
     }
 }
+
+impl<T, F> std::fmt::Debug for PriorityQueue<T, F>
+where
+    T: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_list().entries(self.heap.iter()).finish()
+    }
+}

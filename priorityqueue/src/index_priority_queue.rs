@@ -220,3 +220,13 @@ where
         self.peek_idx(index).map(|t| t.1).expect("bad index")
     }
 }
+
+impl<K, T, F> std::fmt::Debug for IndexPriorityQueue<K, T, F>
+where
+    K: std::fmt::Debug,
+    T: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_list().entries(self.heap.iter()).finish()
+    }
+}
