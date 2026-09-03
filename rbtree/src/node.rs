@@ -71,11 +71,11 @@ impl<K, V> Node<K, V> {
     }
 
     fn content(&self) -> &Content<K, V> {
-        self.0.as_ref().unwrap()
+        self.0.as_ref().expect("content on none")
     }
 
     fn content_mut(&mut self) -> &mut Content<K, V> {
-        self.0.as_mut().unwrap()
+        self.0.as_mut().expect("content_mut on none")
     }
 
     pub fn key(&self) -> &K {
@@ -115,7 +115,7 @@ impl<K, V> Node<K, V> {
     }
 
     pub fn into_parts(mut self) -> ((K, V), Self, Self) {
-        let content = self.take_content().unwrap();
+        let content = self.take_content().expect("into_parts on none");
         (content.data, content.l_node, content.r_node)
     }
 
@@ -306,7 +306,7 @@ impl<K, V> Node<K, V> {
             return (data, false);
         }
         let (next_data, deficit) = self.node_mut(Side::R).remove_min_recursive();
-        let prev_data = self.replace_data(next_data.unwrap());
+        let prev_data = self.replace_data(next_data.expect("next min removed - none"));
         // Propagate deficit of removed next min node.
         let deficit = self.propagate_deficit(deficit, Side::R);
         self.update_size();
@@ -489,9 +489,9 @@ mod tests {
         node.insert(20, 'b');
         node.insert(30, 'c');
 
-        *node.find_mut(&10).unwrap().val_mut() = 'A';
-        *node.find_mut(&20).unwrap().val_mut() = 'B';
-        *node.find_mut(&30).unwrap().val_mut() = 'C';
+        *node.find_mut(&10).expect("key - 10").val_mut() = 'A';
+        *node.find_mut(&20).expect("key - 20").val_mut() = 'B';
+        *node.find_mut(&30).expect("key - 30").val_mut() = 'C';
 
         assert_eq!(node.find(&10).map(val), Some(&'A'));
         assert_eq!(node.find(&20).map(val), Some(&'B'));
@@ -554,8 +554,8 @@ mod tests {
         let mut keys: Vec<K> = Vec::new();
         collect(root, 0, &mut depths, &mut keys);
         depths.sort();
-        let min_depth = *depths.first().unwrap();
-        let max_depth = *depths.last().unwrap();
+        let min_depth = *depths.first().expect("depths - first");
+        let max_depth = *depths.last().expect("depths - last");
         assert!(
             max_depth <= 2 * min_depth + 1,
             "not balanced ({}, {})",
