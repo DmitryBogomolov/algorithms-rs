@@ -1,4 +1,3 @@
-#[macro_use]
 mod drainable;
 mod index_priority_queue;
 mod priority_queue;

@@ -17,7 +17,7 @@ where
     K: Hash + Eq + Clone,
     F: FnMut(&T, &T) -> bool,
 {
-    // No FromIterator, From<array>. Because addditional `is_ord` argument is required.
+    // No FromIterator, From<array>. Because additional `is_ord` argument is required.
     pub fn new(is_ord: F) -> Self {
         Self {
             heap: Vec::new(),
@@ -184,7 +184,7 @@ where
     }
 }
 
-// No IntoInterator for &Self, &mut Self and no `iter`, `iter_mut` methods. Because iteration modifies container.
+// No IntoIterator for &Self, &mut Self and no `iter`, `iter_mut` methods. Because iteration modifies container.
 impl<K, T, F> IntoIterator for IndexPriorityQueue<K, T, F>
 where
     K: Hash + Eq + Clone,
