@@ -75,10 +75,10 @@ fn mutate() {
     let mut tree = RBTree::new();
     tree.insert("11".to_string(), 11);
 
-    *tree.get_mut("11").unwrap() += 1;
+    *tree.get_mut("11").expect("key - 11") += 1;
     assert_eq!(tree.get("11"), Some(&12));
 
-    *tree.get_key_val_mut("11").unwrap().1 += 2;
+    *tree.get_key_val_mut("11").expect("key - 11").1 += 2;
     assert_eq!(tree.get_key_val("11"), Some((&"11".to_string(), &14)));
 }
 
