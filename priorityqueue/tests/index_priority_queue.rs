@@ -73,7 +73,9 @@ where
     I: IntoIterator<Item = (K, T)>,
 {
     let mut pq = IndexPriorityQueue::new(is_ord);
-    items.into_iter().for_each(|i| { pq.insert(i); });
+    items.into_iter().for_each(|i| {
+        pq.insert(i);
+    });
     pq
 }
 
@@ -109,6 +111,22 @@ fn remove() {
 
     assert!(pq.is_empty());
     assert_eq!(pq.remove(), None);
+}
+
+#[test]
+fn remove_idx() {
+    let mut pq = make(
+        |a, b| a > b,
+        [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
+    );
+
+    assert_eq!(pq.remove_idx(&'e'), Some(('e', 8)));
+    assert_eq!(pq.remove_idx(&'a'), Some(('a', 4)));
+    assert_eq!(pq.remove_idx(&'f'), None);
+    assert_eq!(pq.remove_idx(&'d'), Some(('d', 3)));
+    assert_eq!(pq.remove_idx(&'b'), Some(('b', 6)));
+    assert_eq!(pq.remove_idx(&'c'), Some(('c', 4)));
+    assert_eq!(pq.remove_idx(&'b'), None);
 }
 
 #[test]
@@ -154,7 +172,7 @@ fn drain_full() {
         [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
     );
 
-    let vec: Vec<(char, i32)> = pq.drain().collect();
+    let vec: Vec<_> = pq.drain().collect();
     assert_eq!(vec, [('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]);
     assert!(pq.is_empty());
 }
@@ -187,7 +205,9 @@ fn max_queue() {
     let mut pq = IndexPriorityQueue::new_max();
     [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)]
         .into_iter()
-        .for_each(|t| { pq.insert(t); });
+        .for_each(|t| {
+            pq.insert(t);
+        });
 
     let vec: Vec<_> = pq.into();
     assert_eq!(vec, [('e', 8), ('b', 6), ('a', 4), ('c', 4), ('d', 3)]);
@@ -198,7 +218,9 @@ fn min_queue() {
     let mut pq = IndexPriorityQueue::new_min();
     [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)]
         .into_iter()
-        .for_each(|t| { pq.insert(t); });
+        .for_each(|t| {
+            pq.insert(t);
+        });
 
     let vec: Vec<_> = pq.into();
     assert_eq!(vec, [('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]);
@@ -210,51 +232,81 @@ fn custom_struct() {
     struct Tester {
         val: i32,
     }
-    let mut pq = IndexPriorityQueue::new(|a: &Tester, b: &Tester| a.val > b.val);
-    [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)]
-        .into_iter()
-        .for_each(|(k, i)| { pq.insert((k, Tester { val: i })); });
 
-    assert_eq!(pq.remove().unwrap(), ('d', Tester { val: 3 }));
-    assert_eq!(pq.remove().unwrap(), ('a', Tester { val: 4 }));
-    assert_eq!(pq.remove().unwrap(), ('c', Tester { val: 4 }));
-    assert_eq!(pq.remove().unwrap(), ('b', Tester { val: 6 }));
-    assert_eq!(pq.remove().unwrap(), ('e', Tester { val: 8 }));
-}
-
-#[test]
-fn remove_idx() {
     let mut pq = make(
-        |a, b| a > b,
-        [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
+        |a, b| a.val > b.val,
+        [("a", 4), ("b", 6), ("c", 4), ("d", 3), ("e", 8)]
+            .map(|(k, v)| (k.to_owned(), Tester { val: v })),
     );
 
-    assert_eq!(pq.remove_idx(&'e'), Some(('e', 8)));
-    assert_eq!(pq.remove_idx(&'a'), Some(('a', 4)));
-    assert_eq!(pq.remove_idx(&'f'), None);
-    assert_eq!(pq.remove_idx(&'d'), Some(('d', 3)));
-    assert_eq!(pq.remove_idx(&'b'), Some(('b', 6)));
-    assert_eq!(pq.remove_idx(&'c'), Some(('c', 4)));
-    assert_eq!(pq.remove_idx(&'b'), None);
+    assert_eq!(
+        pq.peek_idx("a"),
+        Some((&"a".to_owned(), &Tester { val: 4 }))
+    );
+    assert_eq!(
+        pq.peek_idx("b"),
+        Some((&"b".to_owned(), &Tester { val: 6 }))
+    );
+    assert_eq!(
+        pq.peek_idx("c"),
+        Some((&"c".to_owned(), &Tester { val: 4 }))
+    );
+    assert_eq!(
+        pq.peek_idx("d"),
+        Some((&"d".to_owned(), &Tester { val: 3 }))
+    );
+    assert_eq!(
+        pq.peek_idx("e"),
+        Some((&"e".to_owned(), &Tester { val: 8 }))
+    );
+    assert_eq!(pq.remove(), Some(("d".to_owned(), Tester { val: 3 })));
+    assert_eq!(pq.remove(), Some(("a".to_owned(), Tester { val: 4 })));
+    assert_eq!(pq.remove(), Some(("c".to_owned(), Tester { val: 4 })));
+    assert_eq!(pq.remove(), Some(("b".to_owned(), Tester { val: 6 })));
+    assert_eq!(pq.remove(), Some(("e".to_owned(), Tester { val: 8 })));
 }
 
 #[test]
-fn string_key() {
-    let mut pq = IndexPriorityQueue::new(|a, b| a > b);
+fn test_many() {
+    let mut pq = IndexPriorityQueue::new(|a, b| a < b);
 
-    pq.insert(("a1".to_string(), 4));
-    pq.insert(("b2".to_string(), 7));
-    pq.insert(("c3".to_string(), 2));
+    for i in 0..400 {
+        assert_eq!(pq.insert(((i + 1).to_string(), i + 1)), None);
+    }
+    assert_eq!(pq.len(), 400);
+    assert_eq!(pq.peek(), Some((&"400".to_owned(), &400)));
+    for i in 0..400 {
+        let k = (i + 1).to_string();
+        assert_eq!(pq.peek_idx(&k), Some((&k, &(i + 1))));
+    }
 
-    assert_eq!(pq.len(), 3);
-    assert_eq!(pq.peek(), Some((&"c3".to_string(), &2)));
-    assert_eq!(pq.peek_idx("a1"), Some((&"a1".to_string(), &4)));
+    for i in (300..400).rev() {
+        assert_eq!(pq.remove(), Some(((i + 1).to_string(), i + 1)));
+    }
+    assert_eq!(pq.len(), 300);
+    assert_eq!(pq.peek(), Some((&"300".to_owned(), &300)));
 
-    assert_eq!(pq.remove_idx("b2"), Some(("b2".to_string(), 7)));
-    assert_eq!(pq.len(), 2);
-    assert_eq!(pq.peek_idx("b2"), None);
+    for i in 400..1200 {
+        assert_eq!(pq.insert(((i + 1).to_string(), i + 1)), None);
+    }
+    assert_eq!(pq.len(), 1100);
+    assert_eq!(pq.peek(), Some((&"1200".to_owned(), &1200)));
+    for i in 400..1200 {
+        let k = (i + 1).to_string();
+        assert_eq!(pq.peek_idx(&k), Some((&k, &(i + 1))));
+    }
 
-    assert_eq!(pq.remove(), Some(("c3".to_string(), 2)));
-    assert_eq!(pq.remove(), Some(("a1".to_string(), 4)));
-    assert!(pq.is_empty());
+    for i in (800..1200).rev() {
+        assert_eq!(pq.remove(), Some(((i + 1).to_string(), i + 1)));
+    }
+    assert_eq!(pq.len(), 700);
+    assert_eq!(pq.peek(), Some((&"800".to_owned(), &800)));
+
+    let vec: Vec<_> = pq.into();
+    let expected: Vec<_> = (0..300)
+        .chain(400..800)
+        .rev()
+        .map(|t| ((t + 1).to_string(), t + 1))
+        .collect();
+    assert_eq!(vec, expected);
 }

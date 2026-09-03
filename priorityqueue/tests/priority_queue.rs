@@ -150,14 +150,47 @@ fn custom_struct() {
     struct Tester {
         val: i32,
     }
-    let mut pq = PriorityQueue::new(|a: &Tester, b: &Tester| a.val > b.val);
-    [4, 6, 4, 3, 8]
-        .into_iter()
-        .for_each(|i| pq.insert(Tester { val: i }));
+    let mut pq = make(
+        |a, b| a.val > b.val,
+        [4, 6, 4, 3, 8].map(|i| Tester { val: i }),
+    );
 
-    assert_eq!(pq.remove().unwrap(), Tester { val: 3 });
-    assert_eq!(pq.remove().unwrap(), Tester { val: 4 });
-    assert_eq!(pq.remove().unwrap(), Tester { val: 4 });
-    assert_eq!(pq.remove().unwrap(), Tester { val: 6 });
-    assert_eq!(pq.remove().unwrap(), Tester { val: 8 });
+    assert_eq!(pq.remove(), Some(Tester { val: 3 }));
+    assert_eq!(pq.remove(), Some(Tester { val: 4 }));
+    assert_eq!(pq.remove(), Some(Tester { val: 4 }));
+    assert_eq!(pq.remove(), Some(Tester { val: 6 }));
+    assert_eq!(pq.remove(), Some(Tester { val: 8 }));
+}
+
+#[test]
+fn test_many() {
+    let mut pq = PriorityQueue::new(|a, b| a < b);
+
+    for i in 0..400 {
+        pq.insert(i + 1);
+    }
+    assert_eq!(pq.len(), 400);
+    assert_eq!(pq.peek(), Some(&400));
+
+    for i in (300..400).rev() {
+        assert_eq!(pq.remove(), Some(i + 1));
+    }
+    assert_eq!(pq.len(), 300);
+    assert_eq!(pq.peek(), Some(&300));
+
+    for i in 400..1200 {
+        pq.insert(i + 1);
+    }
+    assert_eq!(pq.len(), 1100);
+    assert_eq!(pq.peek(), Some(&1200));
+
+    for i in (800..1200).rev() {
+        assert_eq!(pq.remove(), Some(i + 1));
+    }
+    assert_eq!(pq.len(), 700);
+    assert_eq!(pq.peek(), Some(&800));
+
+    let vec: Vec<_> = pq.into();
+    let expected: Vec<_> = (0..300).chain(400..800).rev().map(|t| t + 1).collect();
+    assert_eq!(vec, expected);
 }
