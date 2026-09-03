@@ -147,11 +147,9 @@ where
     if i == j {
         return;
     }
-    let (key_i, pos_i) = idx.remove_entry(&list[i].0).unwrap();
-    let (key_j, pos_j) = idx.remove_entry(&list[j].0).unwrap();
     list.swap(i, j);
-    idx.insert(key_i, pos_j);
-    idx.insert(key_j, pos_i);
+    *idx.get_mut(&list[i].0).expect("bad index access") = i;
+    *idx.get_mut(&list[j].0).expect("bad index access") = j;
 }
 
 impl<K, T> IndexPriorityQueue<K, T, fn(&T, &T) -> bool>
