@@ -112,16 +112,6 @@ where
     }
 }
 
-impl<Q, K, V> std::ops::IndexMut<&Q> for RBTree<K, V>
-where
-    Q: Ord + ?Sized,
-    K: Borrow<Q>,
-{
-    fn index_mut(&mut self, index: &Q) -> &mut Self::Output {
-        self.get_mut(index).expect("bad index")
-    }
-}
-
 impl<K, V> Clone for RBTree<K, V>
 where
     K: Clone,

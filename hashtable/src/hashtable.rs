@@ -248,17 +248,6 @@ where
     }
 }
 
-impl<Q, K, V, H> std::ops::IndexMut<&Q> for HashTable<K, V, H>
-where
-    Q: Hash + Eq + ?Sized,
-    K: Borrow<Q>,
-    H: BuildHasher,
-{
-    fn index_mut(&mut self, index: &Q) -> &mut Self::Output {
-        self.get_mut(index).expect("bad index")
-    }
-}
-
 pub struct HashTableIter<I: Iterator> {
     len: usize,
     iter: I,

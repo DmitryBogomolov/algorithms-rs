@@ -76,10 +76,10 @@ fn mutate() {
     let mut table = HashTable::new();
     table.insert("11".to_owned(), 11);
 
-    *table.get_mut("11").unwrap() += 1;
+    *table.get_mut("11").expect("key - 11") += 1;
     assert_eq!(table.get("11"), Some(&12));
 
-    *table.get_key_val_mut("11").unwrap().1 += 2;
+    *table.get_key_val_mut("11").expect("key 11").1 += 2;
     assert_eq!(table.get_key_val("11"), Some((&"11".to_owned(), &14)));
 }
 
@@ -139,7 +139,7 @@ fn from_array() {
 
 #[test]
 fn indexing() {
-    let mut table: HashTable<_, _, _> = [
+    let table: HashTable<_, _, _> = [
         (2, "b".to_owned()),
         (3, "c".to_owned()),
         (1, "a".to_owned()),
@@ -149,14 +149,6 @@ fn indexing() {
     assert_eq!(table[&1], "a");
     assert_eq!(table[&2], "b");
     assert_eq!(table[&3], "c");
-
-    table[&1] = "A".to_owned();
-    table[&2] = "B".to_owned();
-    table[&3] = "C".to_owned();
-
-    assert_eq!(table[&1], "A");
-    assert_eq!(table[&2], "B");
-    assert_eq!(table[&3], "C");
 }
 
 #[test]

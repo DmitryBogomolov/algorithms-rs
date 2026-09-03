@@ -75,10 +75,10 @@ fn mutate() {
     let mut tree = RBTree::new();
     tree.insert("11".to_string(), 11);
 
-    *tree.get_mut("11").unwrap() += 1;
+    *tree.get_mut("11").expect("key - 11") += 1;
     assert_eq!(tree.get("11"), Some(&12));
 
-    *tree.get_key_val_mut("11").unwrap().1 += 2;
+    *tree.get_key_val_mut("11").expect("key - 11").1 += 2;
     assert_eq!(tree.get_key_val("11"), Some((&"11".to_string(), &14)));
 }
 
@@ -212,7 +212,7 @@ fn drain() {
 
 #[test]
 fn indexing() {
-    let mut tree: RBTree<_, _> = [
+    let tree: RBTree<_, _> = [
         (2, "b".to_owned()),
         (3, "c".to_owned()),
         (1, "a".to_owned()),
@@ -222,14 +222,6 @@ fn indexing() {
     assert_eq!(tree[&1], "a");
     assert_eq!(tree[&2], "b");
     assert_eq!(tree[&3], "c");
-
-    tree[&1] = "A".to_owned();
-    tree[&2] = "B".to_owned();
-    tree[&3] = "C".to_owned();
-
-    assert_eq!(tree[&1], "A");
-    assert_eq!(tree[&2], "B");
-    assert_eq!(tree[&3], "C");
 }
 
 #[test]
