@@ -194,3 +194,14 @@ fn test_many() {
     let expected: Vec<_> = (0..300).chain(400..800).rev().map(|t| t + 1).collect();
     assert_eq!(vec, expected);
 }
+
+#[test]
+fn clone() {
+    let pq = {
+        let pq = make(|a, b| a > b, [4, 6, 4, 3, 8]);
+        pq.clone()
+    };
+
+    let vec: Vec<_> = pq.into();
+    assert_eq!(vec, [3, 4, 4, 6, 8]);
+}

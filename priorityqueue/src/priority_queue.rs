@@ -2,6 +2,7 @@ use super::drainable::{Drainable, DrainableIter};
 
 // Implements *Priority Queue* container.
 // https://algs4.cs.princeton.edu/24pq/
+#[derive(Clone)]
 pub struct PriorityQueue<T, F> {
     heap: Vec<T>,
     is_ord: F,

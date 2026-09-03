@@ -330,3 +330,17 @@ fn indexing() {
     assert_eq!(pq["d"], 3);
     assert_eq!(pq["e"], 8);
 }
+
+#[test]
+fn clone() {
+    let pq = {
+        let pq = make(
+            |a, b| a > b,
+            [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
+        );
+        pq.clone()
+    };
+
+    let vec: Vec<_> = pq.into();
+    assert_eq!(vec, [('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]);
+}

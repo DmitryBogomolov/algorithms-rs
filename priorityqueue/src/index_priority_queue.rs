@@ -5,6 +5,7 @@ use std::hash::Hash;
 
 // Implements *Index Priority Queue* container.
 // https://algs4.cs.princeton.edu/24pq/
+#[derive(Clone)]
 pub struct IndexPriorityQueue<K, T, F> {
     heap: Vec<(K, T)>,
     idx: HashMap<K, usize>,
