@@ -96,7 +96,7 @@ where
         K: Borrow<Q>,
         Q: ?Sized + Hash + Eq,
     {
-        self.idx.get(idx).and_then(|k| self.heap.get(*k)).map(|t| (&t.0, &t.1))
+        self.idx.get(idx).map(|k| &self.heap[*k]).map(|t| (&t.0, &t.1))
     }
 
     pub fn remove(&mut self) -> Option<(K, T)> {
