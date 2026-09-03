@@ -206,3 +206,16 @@ where
         pq.into_iter().collect()
     }
 }
+
+impl<Q, K, T, F> std::ops::Index<&Q> for IndexPriorityQueue<K, T, F>
+where
+    Q: ?Sized + Hash + Eq,
+    K: Borrow<Q> + Hash + Eq + Clone,
+    F: FnMut(&T, &T) -> bool,
+{
+    type Output = T;
+
+    fn index(&self, index: &Q) -> &Self::Output {
+        self.peek_idx(index).map(|t| t.1).expect("bad index")
+    }
+}

@@ -310,3 +310,23 @@ fn test_many() {
         .collect();
     assert_eq!(vec, expected);
 }
+
+#[test]
+fn indexing() {
+    let pq = make(
+        |a, b| a > b,
+        [
+            ("a".to_owned(), 4),
+            ("b".to_owned(), 6),
+            ("c".to_owned(), 4),
+            ("d".to_owned(), 3),
+            ("e".to_owned(), 8),
+        ],
+    );
+
+    assert_eq!(pq["a"], 4);
+    assert_eq!(pq["b"], 6);
+    assert_eq!(pq["c"], 4);
+    assert_eq!(pq["d"], 3);
+    assert_eq!(pq["e"], 8);
+}
