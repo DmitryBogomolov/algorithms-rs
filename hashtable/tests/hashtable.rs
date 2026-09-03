@@ -76,10 +76,10 @@ fn mutate() {
     let mut table = HashTable::new();
     table.insert("11".to_owned(), 11);
 
-    *table.get_mut("11").unwrap() += 1;
+    *table.get_mut("11").expect("key - 11") += 1;
     assert_eq!(table.get("11"), Some(&12));
 
-    *table.get_key_val_mut("11").unwrap().1 += 2;
+    *table.get_key_val_mut("11").expect("key 11").1 += 2;
     assert_eq!(table.get_key_val("11"), Some((&"11".to_owned(), &14)));
 }
 
