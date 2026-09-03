@@ -83,7 +83,7 @@ where
 fn remove() {
     let mut pq = make(
         |a, b| a > b,
-        [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
+        [('a', 4), ('b', 6), ('c', 5), ('d', 3), ('e', 8)],
     );
 
     assert_eq!(pq.len(), 5);
@@ -97,7 +97,7 @@ fn remove() {
     assert_eq!(pq.len(), 3);
     assert_eq!(pq.peek_idx(&'a'), None);
 
-    assert_eq!(pq.remove(), Some(('c', 4)));
+    assert_eq!(pq.remove(), Some(('c', 5)));
     assert_eq!(pq.len(), 2);
     assert_eq!(pq.peek_idx(&'c'), None);
 
@@ -117,7 +117,7 @@ fn remove() {
 fn remove_idx() {
     let mut pq = make(
         |a, b| a > b,
-        [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
+        [('a', 4), ('b', 6), ('c', 5), ('d', 3), ('e', 8)],
     );
 
     assert_eq!(pq.remove_idx(&'e'), Some(('e', 8)));
@@ -125,7 +125,7 @@ fn remove_idx() {
     assert_eq!(pq.remove_idx(&'f'), None);
     assert_eq!(pq.remove_idx(&'d'), Some(('d', 3)));
     assert_eq!(pq.remove_idx(&'b'), Some(('b', 6)));
-    assert_eq!(pq.remove_idx(&'c'), Some(('c', 4)));
+    assert_eq!(pq.remove_idx(&'c'), Some(('c', 5)));
     assert_eq!(pq.remove_idx(&'b'), None);
 }
 
@@ -133,7 +133,7 @@ fn remove_idx() {
 fn clear() {
     let mut pq = make(
         |a, b| a > b,
-        [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
+        [('a', 4), ('b', 6), ('c', 5), ('d', 3), ('e', 8)],
     );
 
     pq.clear();
@@ -147,33 +147,33 @@ fn clear() {
 fn into_vec() {
     let pq = make(
         |a, b| a > b,
-        [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
+        [('a', 4), ('b', 6), ('c', 5), ('d', 3), ('e', 8)],
     );
 
     let vec: Vec<_> = pq.into();
-    assert_eq!(vec, [('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]);
+    assert_eq!(vec, [('d', 3), ('a', 4), ('c', 5), ('b', 6), ('e', 8)]);
 }
 
 #[test]
 fn into_iter() {
     let pq = make(
         |a, b| a > b,
-        [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
+        [('a', 4), ('b', 6), ('c', 5), ('d', 3), ('e', 8)],
     );
 
     let vec: Vec<_> = pq.into_iter().collect();
-    assert_eq!(vec, [('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]);
+    assert_eq!(vec, [('d', 3), ('a', 4), ('c', 5), ('b', 6), ('e', 8)]);
 }
 
 #[test]
 fn drain_full() {
     let mut pq = make(
         |a, b| a > b,
-        [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
+        [('a', 4), ('b', 6), ('c', 5), ('d', 3), ('e', 8)],
     );
 
     let vec: Vec<_> = pq.drain().collect();
-    assert_eq!(vec, [('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]);
+    assert_eq!(vec, [('d', 3), ('a', 4), ('c', 5), ('b', 6), ('e', 8)]);
     assert!(pq.is_empty());
 }
 
@@ -181,13 +181,13 @@ fn drain_full() {
 fn drain_partial() {
     let mut pq = make(
         |a, b| a > b,
-        [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
+        [('a', 4), ('b', 6), ('c', 5), ('d', 3), ('e', 8)],
     );
 
     let collected: Vec<_> = pq.drain().take(2).collect();
     assert_eq!(collected, [('d', 3), ('a', 4)]);
     assert_eq!(pq.len(), 3);
-    assert_eq!(pq.remove(), Some(('c', 4)));
+    assert_eq!(pq.remove(), Some(('c', 5)));
     assert_eq!(pq.remove(), Some(('b', 6)));
     assert_eq!(pq.remove(), Some(('e', 8)));
 }
@@ -203,27 +203,27 @@ fn drain_empty() {
 #[test]
 fn max_queue() {
     let mut pq = IndexPriorityQueue::new_max();
-    [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)]
+    [('a', 4), ('b', 6), ('c', 5), ('d', 3), ('e', 8)]
         .into_iter()
         .for_each(|t| {
             pq.insert(t);
         });
 
     let vec: Vec<_> = pq.into();
-    assert_eq!(vec, [('e', 8), ('b', 6), ('a', 4), ('c', 4), ('d', 3)]);
+    assert_eq!(vec, [('e', 8), ('b', 6), ('c', 5), ('a', 4), ('d', 3)]);
 }
 
 #[test]
 fn min_queue() {
     let mut pq = IndexPriorityQueue::new_min();
-    [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)]
+    [('a', 4), ('b', 6), ('c', 5), ('d', 3), ('e', 8)]
         .into_iter()
         .for_each(|t| {
             pq.insert(t);
         });
 
     let vec: Vec<_> = pq.into();
-    assert_eq!(vec, [('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]);
+    assert_eq!(vec, [('d', 3), ('a', 4), ('c', 5), ('b', 6), ('e', 8)]);
 }
 
 #[test]
@@ -235,7 +235,7 @@ fn custom_struct() {
 
     let mut pq = make(
         |a, b| a.val > b.val,
-        [("a", 4), ("b", 6), ("c", 4), ("d", 3), ("e", 8)]
+        [("a", 4), ("b", 6), ("c", 5), ("d", 3), ("e", 8)]
             .map(|(k, v)| (k.to_owned(), Tester { val: v })),
     );
 
@@ -249,7 +249,7 @@ fn custom_struct() {
     );
     assert_eq!(
         pq.peek_idx("c"),
-        Some((&"c".to_owned(), &Tester { val: 4 }))
+        Some((&"c".to_owned(), &Tester { val: 5 }))
     );
     assert_eq!(
         pq.peek_idx("d"),
@@ -261,7 +261,7 @@ fn custom_struct() {
     );
     assert_eq!(pq.remove(), Some(("d".to_owned(), Tester { val: 3 })));
     assert_eq!(pq.remove(), Some(("a".to_owned(), Tester { val: 4 })));
-    assert_eq!(pq.remove(), Some(("c".to_owned(), Tester { val: 4 })));
+    assert_eq!(pq.remove(), Some(("c".to_owned(), Tester { val: 5 })));
     assert_eq!(pq.remove(), Some(("b".to_owned(), Tester { val: 6 })));
     assert_eq!(pq.remove(), Some(("e".to_owned(), Tester { val: 8 })));
 }
@@ -318,7 +318,7 @@ fn indexing() {
         [
             ("a".to_owned(), 4),
             ("b".to_owned(), 6),
-            ("c".to_owned(), 4),
+            ("c".to_owned(), 5),
             ("d".to_owned(), 3),
             ("e".to_owned(), 8),
         ],
@@ -326,7 +326,7 @@ fn indexing() {
 
     assert_eq!(pq["a"], 4);
     assert_eq!(pq["b"], 6);
-    assert_eq!(pq["c"], 4);
+    assert_eq!(pq["c"], 5);
     assert_eq!(pq["d"], 3);
     assert_eq!(pq["e"], 8);
 }
@@ -336,11 +336,11 @@ fn clone() {
     let pq = {
         let pq = make(
             |a, b| a > b,
-            [('a', 4), ('b', 6), ('c', 4), ('d', 3), ('e', 8)],
+            [('a', 4), ('b', 6), ('c', 5), ('d', 3), ('e', 8)],
         );
         pq.clone()
     };
 
     let vec: Vec<_> = pq.into();
-    assert_eq!(vec, [('d', 3), ('a', 4), ('c', 4), ('b', 6), ('e', 8)]);
+    assert_eq!(vec, [('d', 3), ('a', 4), ('c', 5), ('b', 6), ('e', 8)]);
 }
