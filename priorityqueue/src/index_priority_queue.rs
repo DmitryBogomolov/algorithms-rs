@@ -40,19 +40,28 @@ where
         self.heap.is_empty()
     }
 
+    pub fn clear(&mut self) {
+        self.heap.clear();
+        self.idx.clear();
+    }
+
     pub fn insert(&mut self, element: (K, T)) -> Option<(K, T)> {
-        if let Some(&k) = self.idx.get(&element.0) {
-            let ret = std::mem::replace(&mut self.heap[k], element);
-            self.sink(k);
-            self.swim(k);
-            Some(ret)
+        let (i, prev) = if let Some(&k) = self.idx.get(&element.0) {
+            let prev = std::mem::replace(&mut self.heap[k], element);
+            (k, Some(prev))
         } else {
             let k = self.heap.len();
             self.heap.push(element);
             self.idx.insert(self.heap[k].0.clone(), k);
-            self.swim(k);
-            None
-        }
+            (k, None)
+        };
+        self.fix_heap_order(i);
+        prev
+    }
+
+    fn fix_heap_order(&mut self, i: usize) {
+        self.swim(i);
+        self.sink(i);
     }
 
     pub fn peek(&self) -> Option<(&K, &T)> {
@@ -87,19 +96,13 @@ where
     }
 
     fn remove_at(&mut self, i: usize) -> Option<(K, T)> {
-        self.idx.remove(&self.heap[i].0)?;
+        self.idx.remove(&self.heap[i].0).expect("bad index access");
         let element = self.heap.swap_remove(i);
         if i < self.heap.len() {
-            self.idx.insert(self.heap[i].0.clone(), i);
-            self.sink(i);
-            self.swim(i);
+            *self.idx.get_mut(&self.heap[i].0).expect("bad index access") = i;
+            self.fix_heap_order(i);
         }
         Some(element)
-    }
-
-    pub fn clear(&mut self) {
-        self.heap.clear();
-        self.idx.clear();
     }
 
     pub fn drain(&mut self) -> DrainableIter<&mut Self> {
@@ -121,20 +124,16 @@ where
     }
 
     fn heap_swap(&mut self, lhs: usize, rhs: usize) {
-        swap(&mut self.heap, &mut self.idx, lhs, rhs);
+        self.heap.swap(lhs, rhs);
+        *self
+            .idx
+            .get_mut(&self.heap[lhs].0)
+            .expect("bad index access") = lhs;
+        *self
+            .idx
+            .get_mut(&self.heap[rhs].0)
+            .expect("bad index access") = rhs;
     }
-}
-
-fn swap<K, T>(list: &mut [(K, T)], idx: &mut HashMap<K, usize>, i: usize, j: usize)
-where
-    K: Hash + Eq,
-{
-    if i == j {
-        return;
-    }
-    list.swap(i, j);
-    *idx.get_mut(&list[i].0).expect("bad index access") = i;
-    *idx.get_mut(&list[j].0).expect("bad index access") = j;
 }
 
 impl<K, T> IndexPriorityQueue<K, T, fn(&T, &T) -> bool>

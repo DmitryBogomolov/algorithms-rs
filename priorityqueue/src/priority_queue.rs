@@ -33,6 +33,10 @@ where
         self.heap.is_empty()
     }
 
+    pub fn clear(&mut self) {
+        self.heap.clear();
+    }
+
     pub fn insert(&mut self, element: T) {
         let last = self.heap.len();
         self.heap.push(element);
@@ -50,10 +54,6 @@ where
         let element = self.heap.swap_remove(0);
         self.sink(0);
         Some(element)
-    }
-
-    pub fn clear(&mut self) {
-        self.heap.clear();
     }
 
     pub fn drain(&mut self) -> DrainableIter<&mut Self> {
