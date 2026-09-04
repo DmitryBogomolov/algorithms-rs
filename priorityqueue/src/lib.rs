@@ -1,4 +1,5 @@
 mod drainable;
+mod heap;
 mod index_priority_queue;
 mod priority_queue;
 

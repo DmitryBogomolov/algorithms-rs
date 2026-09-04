@@ -1,4 +1,5 @@
 use super::drainable::{Drainable, DrainableIter};
+use super::heap::Heap;
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::hash::Hash;
@@ -37,40 +38,6 @@ where
 
     pub fn is_empty(&self) -> bool {
         self.heap.is_empty()
-    }
-
-    fn sink(&mut self, i: usize) {
-        let heap = &mut self.heap;
-        let idx = &mut self.idx;
-        let len = heap.len();
-        let is_ord = &mut self.is_ord;
-        let mut parent = i;
-        loop {
-            let mut child = 2 * parent + 1;
-            if child + 1 < len && is_ord(&heap[child].1, &heap[child + 1].1) {
-                child += 1;
-            }
-            if child >= len || !is_ord(&heap[parent].1, &heap[child].1) {
-                break;
-            }
-            swap(heap, idx, parent, child);
-            parent = child;
-        }
-    }
-
-    fn swim(&mut self, i: usize) {
-        let heap = &mut self.heap;
-        let idx = &mut self.idx;
-        let is_ord = &mut self.is_ord;
-        let mut child = i;
-        while child > 0 {
-            let parent = (child - 1) / 2;
-            if !is_ord(&heap[parent].1, &heap[child].1) {
-                break;
-            }
-            swap(heap, idx, parent, child);
-            child = parent;
-        }
     }
 
     pub fn insert(&mut self, element: (K, T)) -> Option<(K, T)> {
@@ -137,6 +104,24 @@ where
 
     pub fn drain(&mut self) -> DrainableIter<&mut Self> {
         DrainableIter::new(self)
+    }
+}
+
+impl<K, T, F> Heap for IndexPriorityQueue<K, T, F>
+where
+    K: Hash + Eq + Clone,
+    F: FnMut(&T, &T) -> bool,
+{
+    fn heap_len(&self) -> usize {
+        self.len()
+    }
+
+    fn is_heap_ord(&mut self, lhs: usize, rhs: usize) -> bool {
+        (self.is_ord)(&self.heap[lhs].1, &self.heap[rhs].1)
+    }
+
+    fn heap_swap(&mut self, lhs: usize, rhs: usize) {
+        swap(&mut self.heap, &mut self.idx, lhs, rhs);
     }
 }
 

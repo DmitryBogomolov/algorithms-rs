@@ -1,4 +1,5 @@
 use super::drainable::{Drainable, DrainableIter};
+use super::heap::Heap;
 
 // Implements *Priority Queue* container.
 // https://algs4.cs.princeton.edu/24pq/
@@ -32,38 +33,6 @@ where
         self.heap.is_empty()
     }
 
-    fn sink(&mut self, i: usize) {
-        let heap = &mut self.heap;
-        let len = heap.len();
-        let is_ord = &mut self.is_ord;
-        let mut parent = i;
-        loop {
-            let mut child = 2 * parent + 1;
-            if child + 1 < len && is_ord(&heap[child], &heap[child + 1]) {
-                child += 1;
-            }
-            if child >= len || !is_ord(&heap[parent], &heap[child]) {
-                break;
-            }
-            heap.swap(parent, child);
-            parent = child;
-        }
-    }
-
-    fn swim(&mut self, i: usize) {
-        let heap = &mut self.heap;
-        let is_ord = &mut self.is_ord;
-        let mut child = i;
-        while child > 0 {
-            let parent = (child - 1) / 2;
-            if !is_ord(&heap[parent], &heap[child]) {
-                break;
-            }
-            heap.swap(parent, child);
-            child = parent;
-        }
-    }
-
     pub fn insert(&mut self, element: T) {
         let last = self.heap.len();
         self.heap.push(element);
@@ -75,7 +44,7 @@ where
     }
 
     pub fn remove(&mut self) -> Option<T> {
-        if self.heap.is_empty() {
+        if self.is_empty() {
             return None;
         }
         let element = self.heap.swap_remove(0);
@@ -89,6 +58,23 @@ where
 
     pub fn drain(&mut self) -> DrainableIter<&mut Self> {
         DrainableIter::new(self)
+    }
+}
+
+impl<T, F> Heap for PriorityQueue<T, F>
+where
+    F: FnMut(&T, &T) -> bool,
+{
+    fn heap_len(&self) -> usize {
+        self.len()
+    }
+
+    fn is_heap_ord(&mut self, lhs: usize, rhs: usize) -> bool {
+        (self.is_ord)(&self.heap[lhs], &self.heap[rhs])
+    }
+
+    fn heap_swap(&mut self, lhs: usize, rhs: usize) {
+        self.heap.swap(lhs, rhs);
     }
 }
 
