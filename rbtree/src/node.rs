@@ -1,8 +1,10 @@
 use std::borrow::Borrow;
 use std::cmp::Ordering;
 
+#[derive(Clone)]
 pub struct Node<K, V>(Option<Box<Content<K, V>>>);
 
+#[derive(Clone)]
 pub struct Content<K, V> {
     l_node: Node<K, V>,
     r_node: Node<K, V>,
@@ -402,28 +404,6 @@ impl<K, V> Node<K, V> {
         let (ret, _deficit) = self.remove_recursive(k);
         self.force_black_root();
         ret
-    }
-}
-
-impl<K, V> Clone for Node<K, V>
-where
-    K: Clone,
-    V: Clone,
-{
-    fn clone(&self) -> Self {
-        match self.0.as_ref() {
-            None => Self::none(),
-            Some(content) => {
-                let clone = Some(Box::new(Content {
-                    l_node: content.l_node.clone(),
-                    r_node: content.r_node.clone(),
-                    red: content.red,
-                    size: content.size,
-                    data: content.data.clone(),
-                }));
-                Self(clone)
-            }
-        }
     }
 }
 

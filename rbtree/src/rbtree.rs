@@ -3,6 +3,7 @@ use std::borrow::Borrow;
 
 // Implements *Red-Black Binary Search Tree* container.
 // Partially based on https://algs4.cs.princeton.edu/33balanced/.
+#[derive(Clone)]
 pub struct RBTree<K, V> {
     pub(crate) root: Node<K, V>,
 }
@@ -115,18 +116,6 @@ where
 
     fn index(&self, index: &Q) -> &Self::Output {
         self.get(index).expect("bad index")
-    }
-}
-
-impl<K, V> Clone for RBTree<K, V>
-where
-    K: Clone,
-    V: Clone,
-{
-    fn clone(&self) -> Self {
-        Self {
-            root: self.root.clone(),
-        }
     }
 }
 
