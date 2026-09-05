@@ -63,6 +63,18 @@ where
         let heap = self.take();
         HeapIter::new(heap, &mut self.is_ord, |t| t)
     }
+
+    pub fn from_iter<I: IntoIterator<Item = T>>(is_ord: F, iter: I) -> Self {
+        let mut pq = Self::new(is_ord);
+        for t in iter {
+            pq.insert(t);
+        }
+        pq
+    }
+
+    pub fn from_arr<const N: usize>(is_ord: F, arr: [T; N]) -> Self {
+        Self::from_iter(is_ord, arr)
+    }
 }
 
 pub type DrainIter<'a, T, F> = HeapIter<T, &'a mut F, fn(&T) -> &T>;
@@ -94,6 +106,22 @@ where
 
     pub fn new_min() -> Self {
         Self::new(|lhs, rhs| lhs > rhs)
+    }
+
+    pub fn from_iter_max<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        Self::from_iter(|lhs, rhs| lhs < rhs, iter)
+    }
+
+    pub fn from_iter_min<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        Self::from_iter(|lhs, rhs| lhs > rhs, iter)
+    }
+
+    pub fn from_arr_max<const N: usize>(arr: [T; N]) -> Self {
+        Self::from_arr(|lhs, rhs| lhs < rhs, arr)
+    }
+
+    pub fn from_arr_min<const N: usize>(arr: [T; N]) -> Self {
+        Self::from_arr(|lhs, rhs| lhs > rhs, arr)
     }
 }
 

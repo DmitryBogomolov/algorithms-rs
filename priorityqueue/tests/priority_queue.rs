@@ -205,3 +205,51 @@ fn clone() {
     let vec: Vec<_> = pq.into();
     assert_eq!(vec, [3, 4, 4, 6, 8]);
 }
+
+#[test]
+fn from_iterator() {
+    let pq = PriorityQueue::from_iter(|a, b| a < b, [4, 6, 4, 2, 3, 9, 8]);
+
+    let vec: Vec<_> = pq.into();
+    assert_eq!(vec, [9, 8, 6, 4, 4, 3, 2]);
+}
+
+#[test]
+fn from_iterator_max() {
+    let pq = PriorityQueue::from_iter_max([4, 6, 4, 2, 3, 9, 8]);
+
+    let vec: Vec<_> = pq.into();
+    assert_eq!(vec, [9, 8, 6, 4, 4, 3, 2]);
+}
+
+#[test]
+fn from_iterator_min() {
+    let pq = PriorityQueue::from_iter_min([4, 6, 4, 2, 3, 9, 8]);
+
+    let vec: Vec<_> = pq.into();
+    assert_eq!(vec, [2, 3, 4, 4, 6, 8, 9]);
+}
+
+#[test]
+fn from_array() {
+    let pq = PriorityQueue::from_arr(|a, b| a < b, [4, 6, 4, 2, 3, 9, 8]);
+
+    let vec: Vec<_> = pq.into();
+    assert_eq!(vec, [9, 8, 6, 4, 4, 3, 2]);
+}
+
+#[test]
+fn from_array_max() {
+    let pq = PriorityQueue::from_arr_max([4, 6, 4, 2, 3, 9, 8]);
+
+    let vec: Vec<_> = pq.into();
+    assert_eq!(vec, [9, 8, 6, 4, 4, 3, 2]);
+}
+
+#[test]
+fn from_array_min() {
+    let pq = PriorityQueue::from_arr_min([4, 6, 4, 2, 3, 9, 8]);
+
+    let vec: Vec<_> = pq.into();
+    assert_eq!(vec, [2, 3, 4, 4, 6, 8, 9]);
+}

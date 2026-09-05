@@ -344,3 +344,171 @@ fn clone() {
     let vec: Vec<_> = pq.into();
     assert_eq!(vec, [('d', 3), ('a', 4), ('c', 5), ('b', 6), ('e', 8)]);
 }
+
+#[test]
+fn from_iterator() {
+    let pq = IndexPriorityQueue::from_iter(
+        |a, b| a < b,
+        [
+            ('a', 4),
+            ('b', 6),
+            ('c', 5),
+            ('d', 2),
+            ('e', 3),
+            ('f', 9),
+            ('g', 8),
+        ],
+    );
+
+    let vec: Vec<_> = pq.into();
+    assert_eq!(
+        vec,
+        [
+            ('f', 9),
+            ('g', 8),
+            ('b', 6),
+            ('c', 5),
+            ('a', 4),
+            ('e', 3),
+            ('d', 2)
+        ]
+    );
+}
+
+#[test]
+fn from_iterator_max() {
+    let pq = IndexPriorityQueue::from_iter_max([
+        ('a', 4),
+        ('b', 6),
+        ('c', 5),
+        ('d', 2),
+        ('e', 3),
+        ('f', 9),
+        ('g', 8),
+    ]);
+
+    let vec: Vec<_> = pq.into();
+    assert_eq!(
+        vec,
+        [
+            ('f', 9),
+            ('g', 8),
+            ('b', 6),
+            ('c', 5),
+            ('a', 4),
+            ('e', 3),
+            ('d', 2)
+        ]
+    );
+}
+
+#[test]
+fn from_iterator_min() {
+    let pq = IndexPriorityQueue::from_iter_min([
+        ('a', 4),
+        ('b', 6),
+        ('c', 5),
+        ('d', 2),
+        ('e', 3),
+        ('f', 9),
+        ('g', 8),
+    ]);
+
+    let vec: Vec<_> = pq.into();
+    assert_eq!(
+        vec,
+        [
+            ('d', 2),
+            ('e', 3),
+            ('a', 4),
+            ('c', 5),
+            ('b', 6),
+            ('g', 8),
+            ('f', 9)
+        ]
+    );
+}
+
+#[test]
+fn from_array() {
+    let pq = IndexPriorityQueue::from_arr(
+        |a, b| a < b,
+        [
+            ('a', 4),
+            ('b', 6),
+            ('c', 5),
+            ('d', 2),
+            ('e', 3),
+            ('f', 9),
+            ('g', 8),
+        ],
+    );
+
+    let vec: Vec<_> = pq.into();
+    assert_eq!(
+        vec,
+        [
+            ('f', 9),
+            ('g', 8),
+            ('b', 6),
+            ('c', 5),
+            ('a', 4),
+            ('e', 3),
+            ('d', 2)
+        ]
+    );
+}
+
+#[test]
+fn from_array_max() {
+    let pq = IndexPriorityQueue::from_arr_max([
+        ('a', 4),
+        ('b', 6),
+        ('c', 5),
+        ('d', 2),
+        ('e', 3),
+        ('f', 9),
+        ('g', 8),
+    ]);
+
+    let vec: Vec<_> = pq.into();
+    assert_eq!(
+        vec,
+        [
+            ('f', 9),
+            ('g', 8),
+            ('b', 6),
+            ('c', 5),
+            ('a', 4),
+            ('e', 3),
+            ('d', 2)
+        ]
+    );
+}
+
+#[test]
+fn from_array_min() {
+    let pq = IndexPriorityQueue::from_arr_min([
+        ('a', 4),
+        ('b', 6),
+        ('c', 5),
+        ('d', 2),
+        ('e', 3),
+        ('f', 9),
+        ('g', 8),
+    ]);
+
+    let vec: Vec<_> = pq.into();
+    assert_eq!(
+        vec,
+        [
+            ('d', 2),
+            ('e', 3),
+            ('a', 4),
+            ('c', 5),
+            ('b', 6),
+            ('g', 8),
+            ('f', 9)
+        ]
+    );
+}
