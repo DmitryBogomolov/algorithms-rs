@@ -3,7 +3,7 @@ use std::hash::Hash;
 
 #[test]
 fn empty() {
-    let pq = IndexPriorityQueue::<(), (), _>::new(|_, _| false);
+    let pq = IndexPriorityQueue::<(), (), _>::new_ord(|_, _| false);
     assert!(pq.is_empty());
     assert_eq!(pq.len(), 0);
     assert_eq!(pq.peek(), None);
@@ -11,7 +11,7 @@ fn empty() {
 
 #[test]
 fn insert() {
-    let mut pq = IndexPriorityQueue::new(|a, b| a < b);
+    let mut pq = IndexPriorityQueue::new_ord(|a, b| a < b);
 
     assert_eq!(pq.insert(('a', 4)), None);
     assert!(!pq.is_empty());
@@ -46,7 +46,7 @@ fn insert() {
 
 #[test]
 fn insert_update() {
-    let mut pq = IndexPriorityQueue::new(|a, b| a < b);
+    let mut pq = IndexPriorityQueue::new_ord(|a, b| a < b);
 
     pq.insert(('a', 4));
     pq.insert(('b', 7));
@@ -72,7 +72,7 @@ where
     F: FnMut(&T, &T) -> bool,
     I: IntoIterator<Item = (K, T)>,
 {
-    let mut pq = IndexPriorityQueue::new(is_ord);
+    let mut pq = IndexPriorityQueue::new_ord(is_ord);
     items.into_iter().for_each(|i| {
         pq.insert(i);
     });
@@ -192,15 +192,15 @@ fn drain_partial() {
 
 #[test]
 fn drain_empty() {
-    let mut pq: IndexPriorityQueue<(), (), _> = IndexPriorityQueue::new(|a, b| a < b);
+    let mut pq: IndexPriorityQueue<(), (), _> = IndexPriorityQueue::new_ord(|a, b| a < b);
 
     let vec: Vec<_> = pq.drain().collect();
     assert_eq!(vec, []);
 }
 
 #[test]
-fn max_queue() {
-    let mut pq = IndexPriorityQueue::new_max();
+fn queue_of_ordered() {
+    let mut pq = IndexPriorityQueue::new();
     [('a', 4), ('b', 6), ('c', 5), ('d', 3), ('e', 8)]
         .into_iter()
         .for_each(|t| {
@@ -209,19 +209,6 @@ fn max_queue() {
 
     let vec: Vec<_> = pq.into();
     assert_eq!(vec, [('e', 8), ('b', 6), ('c', 5), ('a', 4), ('d', 3)]);
-}
-
-#[test]
-fn min_queue() {
-    let mut pq = IndexPriorityQueue::new_min();
-    [('a', 4), ('b', 6), ('c', 5), ('d', 3), ('e', 8)]
-        .into_iter()
-        .for_each(|t| {
-            pq.insert(t);
-        });
-
-    let vec: Vec<_> = pq.into();
-    assert_eq!(vec, [('d', 3), ('a', 4), ('c', 5), ('b', 6), ('e', 8)]);
 }
 
 #[test]
@@ -266,7 +253,7 @@ fn custom_struct() {
 
 #[test]
 fn test_many() {
-    let mut pq = IndexPriorityQueue::new(|a, b| a < b);
+    let mut pq = IndexPriorityQueue::new_ord(|a, b| a < b);
 
     for i in 0..400 {
         assert_eq!(pq.insert(((i + 1).to_string(), i + 1)), None);
@@ -346,8 +333,8 @@ fn clone() {
 }
 
 #[test]
-fn from_iterator() {
-    let pq = IndexPriorityQueue::from_iter(
+fn from_iterator_with_func() {
+    let pq = IndexPriorityQueue::from_iter_ord(
         |a, b| a < b,
         [
             ('a', 4),
@@ -376,8 +363,8 @@ fn from_iterator() {
 }
 
 #[test]
-fn from_iterator_max() {
-    let pq = IndexPriorityQueue::from_iter_max([
+fn from_iterator() {
+    let pq: IndexPriorityQueue<_, _, _> = [
         ('a', 4),
         ('b', 6),
         ('c', 5),
@@ -385,7 +372,9 @@ fn from_iterator_max() {
         ('e', 3),
         ('f', 9),
         ('g', 8),
-    ]);
+    ]
+    .into_iter()
+    .collect();
 
     let vec: Vec<_> = pq.into();
     assert_eq!(
@@ -403,46 +392,47 @@ fn from_iterator_max() {
 }
 
 #[test]
-fn from_iterator_min() {
-    let pq = IndexPriorityQueue::from_iter_min([
-        ('a', 4),
-        ('b', 6),
-        ('c', 5),
-        ('d', 2),
-        ('e', 3),
-        ('f', 9),
-        ('g', 8),
-    ]);
+fn from_array_with_func() {
+    let pq = IndexPriorityQueue::from_arr_ord(
+        |a, b| a < b,
+        [
+            ('a', 4),
+            ('b', 6),
+            ('c', 5),
+            ('d', 2),
+            ('e', 3),
+            ('f', 9),
+            ('g', 8),
+        ],
+    );
 
     let vec: Vec<_> = pq.into();
     assert_eq!(
         vec,
         [
-            ('d', 2),
-            ('e', 3),
-            ('a', 4),
-            ('c', 5),
-            ('b', 6),
+            ('f', 9),
             ('g', 8),
-            ('f', 9)
+            ('b', 6),
+            ('c', 5),
+            ('a', 4),
+            ('e', 3),
+            ('d', 2)
         ]
     );
 }
 
 #[test]
 fn from_array() {
-    let pq = IndexPriorityQueue::from_arr(
-        |a, b| a < b,
-        [
-            ('a', 4),
-            ('b', 6),
-            ('c', 5),
-            ('d', 2),
-            ('e', 3),
-            ('f', 9),
-            ('g', 8),
-        ],
-    );
+    let pq: IndexPriorityQueue<_, _, _> = [
+        ('a', 4),
+        ('b', 6),
+        ('c', 5),
+        ('d', 2),
+        ('e', 3),
+        ('f', 9),
+        ('g', 8),
+    ]
+    .into();
 
     let vec: Vec<_> = pq.into();
     assert_eq!(
@@ -455,60 +445,6 @@ fn from_array() {
             ('a', 4),
             ('e', 3),
             ('d', 2)
-        ]
-    );
-}
-
-#[test]
-fn from_array_max() {
-    let pq = IndexPriorityQueue::from_arr_max([
-        ('a', 4),
-        ('b', 6),
-        ('c', 5),
-        ('d', 2),
-        ('e', 3),
-        ('f', 9),
-        ('g', 8),
-    ]);
-
-    let vec: Vec<_> = pq.into();
-    assert_eq!(
-        vec,
-        [
-            ('f', 9),
-            ('g', 8),
-            ('b', 6),
-            ('c', 5),
-            ('a', 4),
-            ('e', 3),
-            ('d', 2)
-        ]
-    );
-}
-
-#[test]
-fn from_array_min() {
-    let pq = IndexPriorityQueue::from_arr_min([
-        ('a', 4),
-        ('b', 6),
-        ('c', 5),
-        ('d', 2),
-        ('e', 3),
-        ('f', 9),
-        ('g', 8),
-    ]);
-
-    let vec: Vec<_> = pq.into();
-    assert_eq!(
-        vec,
-        [
-            ('d', 2),
-            ('e', 3),
-            ('a', 4),
-            ('c', 5),
-            ('b', 6),
-            ('g', 8),
-            ('f', 9)
         ]
     );
 }

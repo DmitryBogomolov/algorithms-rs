@@ -17,8 +17,7 @@ where
     K: Hash + Eq + Clone,
     F: FnMut(&T, &T) -> bool,
 {
-    // No FromIterator, From<array>. Because additional `is_ord` argument is required.
-    pub fn new(is_ord: F) -> Self {
+    pub fn new_ord(is_ord: F) -> Self {
         Self {
             heap: Vec::new(),
             idx: HashMap::new(),
@@ -114,16 +113,16 @@ where
         HeapIter::new(heap, &mut self.is_ord, |t| &t.1)
     }
 
-    pub fn from_iter<I: IntoIterator<Item = (K, T)>>(is_ord: F, iter: I) -> Self {
-        let mut pq = Self::new(is_ord);
+    pub fn from_iter_ord<I: IntoIterator<Item = (K, T)>>(is_ord: F, iter: I) -> Self {
+        let mut pq = Self::new_ord(is_ord);
         for t in iter {
             pq.insert(t);
         }
         pq
     }
 
-    pub fn from_arr<const N: usize>(is_ord: F, arr: [(K, T); N]) -> Self {
-        Self::from_iter(is_ord, arr)
+    pub fn from_arr_ord<const N: usize>(is_ord: F, arr: [(K, T); N]) -> Self {
+        Self::from_iter_ord(is_ord, arr)
     }
 }
 
@@ -160,28 +159,8 @@ where
     K: Hash + Eq + Clone,
     T: Ord,
 {
-    pub fn new_max() -> Self {
-        Self::new(|lhs, rhs| lhs < rhs)
-    }
-
-    pub fn new_min() -> Self {
-        Self::new(|lhs, rhs| lhs > rhs)
-    }
-
-    pub fn from_iter_max<I: IntoIterator<Item = (K, T)>>(iter: I) -> Self {
-        Self::from_iter(|lhs, rhs| lhs < rhs, iter)
-    }
-
-    pub fn from_iter_min<I: IntoIterator<Item = (K, T)>>(iter: I) -> Self {
-        Self::from_iter(|lhs, rhs| lhs > rhs, iter)
-    }
-
-    pub fn from_arr_max<const N: usize>(arr: [(K, T); N]) -> Self {
-        Self::from_arr(|lhs, rhs| lhs < rhs, arr)
-    }
-
-    pub fn from_arr_min<const N: usize>(arr: [(K, T); N]) -> Self {
-        Self::from_arr(|lhs, rhs| lhs > rhs, arr)
+    pub fn new() -> Self {
+        Self::new_ord(|lhs, rhs| lhs < rhs)
     }
 }
 
@@ -206,6 +185,36 @@ where
 {
     fn from(pq: IndexPriorityQueue<K, T, F>) -> Self {
         pq.into_iter().collect()
+    }
+}
+
+impl<K, T> Default for IndexPriorityQueue<K, T, fn(&T, &T) -> bool>
+where
+    K: Hash + Eq + Clone,
+    T: Ord,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<K, T> FromIterator<(K, T)> for IndexPriorityQueue<K, T, fn(&T, &T) -> bool>
+where
+    K: Hash + Eq + Clone,
+    T: Ord,
+{
+    fn from_iter<I: IntoIterator<Item = (K, T)>>(iter: I) -> Self {
+        Self::from_iter_ord(|lhs, rhs| lhs < rhs, iter)
+    }
+}
+
+impl<K, T, const N: usize> From<[(K, T); N]> for IndexPriorityQueue<K, T, fn(&T, &T) -> bool>
+where
+    K: Hash + Eq + Clone,
+    T: Ord,
+{
+    fn from(arr: [(K, T); N]) -> Self {
+        arr.into_iter().collect()
     }
 }
 

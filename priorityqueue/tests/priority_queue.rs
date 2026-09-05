@@ -2,7 +2,7 @@ use priorityqueue::PriorityQueue;
 
 #[test]
 fn empty() {
-    let pq = PriorityQueue::<(), _>::new(|_, _| false);
+    let pq = PriorityQueue::<(), _>::new_ord(|_, _| false);
     assert!(pq.is_empty());
     assert_eq!(pq.len(), 0);
     assert_eq!(pq.peek(), None);
@@ -10,7 +10,7 @@ fn empty() {
 
 #[test]
 fn insert() {
-    let mut pq = PriorityQueue::new(|a, b| a < b);
+    let mut pq = PriorityQueue::new_ord(|a, b| a < b);
 
     pq.insert(4);
     assert!(!pq.is_empty());
@@ -39,7 +39,7 @@ where
     F: FnMut(&T, &T) -> bool,
     I: IntoIterator<Item = T>,
 {
-    let mut pq = PriorityQueue::new(is_ord);
+    let mut pq = PriorityQueue::new_ord(is_ord);
     items.into_iter().for_each(|i| pq.insert(i));
     pq
 }
@@ -118,28 +118,19 @@ fn drain_partial() {
 
 #[test]
 fn drain_empty() {
-    let mut pq: PriorityQueue<(), _> = PriorityQueue::new(|a, b| a < b);
+    let mut pq: PriorityQueue<(), _> = PriorityQueue::new_ord(|a, b| a < b);
 
     let vec: Vec<_> = pq.drain().collect();
     assert_eq!(vec, []);
 }
 
 #[test]
-fn max_queue() {
-    let mut pq = PriorityQueue::new_max();
+fn queue_of_ordered() {
+    let mut pq = PriorityQueue::new();
     [4, 6, 4, 3, 8].into_iter().for_each(|t| pq.insert(t));
 
     let vec: Vec<_> = pq.into();
     assert_eq!(vec, [8, 6, 4, 4, 3]);
-}
-
-#[test]
-fn min_queue() {
-    let mut pq = PriorityQueue::new_min();
-    [4, 6, 4, 3, 8].into_iter().for_each(|t| pq.insert(t));
-
-    let vec: Vec<_> = pq.into();
-    assert_eq!(vec, [3, 4, 4, 6, 8]);
 }
 
 #[test]
@@ -162,7 +153,7 @@ fn custom_struct() {
 
 #[test]
 fn test_many() {
-    let mut pq = PriorityQueue::new(|a, b| a < b);
+    let mut pq = PriorityQueue::new_ord(|a, b| a < b);
 
     for i in 0..400 {
         pq.insert(i + 1);
@@ -207,49 +198,33 @@ fn clone() {
 }
 
 #[test]
+fn from_iterator_with_func() {
+    let pq = PriorityQueue::from_iter_ord(|a, b| a < b, [4, 6, 4, 2, 3, 9, 8]);
+
+    let vec: Vec<_> = pq.into();
+    assert_eq!(vec, [9, 8, 6, 4, 4, 3, 2]);
+}
+
+#[test]
 fn from_iterator() {
-    let pq = PriorityQueue::from_iter(|a, b| a < b, [4, 6, 4, 2, 3, 9, 8]);
+    let pq: PriorityQueue<_, _> = [4, 6, 4, 2, 3, 9, 8].into_iter().collect();
 
     let vec: Vec<_> = pq.into();
     assert_eq!(vec, [9, 8, 6, 4, 4, 3, 2]);
 }
 
 #[test]
-fn from_iterator_max() {
-    let pq = PriorityQueue::from_iter_max([4, 6, 4, 2, 3, 9, 8]);
+fn from_array_with_func() {
+    let pq = PriorityQueue::from_arr_ord(|a, b| a < b, [4, 6, 4, 2, 3, 9, 8]);
 
     let vec: Vec<_> = pq.into();
     assert_eq!(vec, [9, 8, 6, 4, 4, 3, 2]);
-}
-
-#[test]
-fn from_iterator_min() {
-    let pq = PriorityQueue::from_iter_min([4, 6, 4, 2, 3, 9, 8]);
-
-    let vec: Vec<_> = pq.into();
-    assert_eq!(vec, [2, 3, 4, 4, 6, 8, 9]);
 }
 
 #[test]
 fn from_array() {
-    let pq = PriorityQueue::from_arr(|a, b| a < b, [4, 6, 4, 2, 3, 9, 8]);
+    let pq: PriorityQueue<_, _> = [4, 6, 4, 2, 3, 9, 8].into();
 
     let vec: Vec<_> = pq.into();
     assert_eq!(vec, [9, 8, 6, 4, 4, 3, 2]);
-}
-
-#[test]
-fn from_array_max() {
-    let pq = PriorityQueue::from_arr_max([4, 6, 4, 2, 3, 9, 8]);
-
-    let vec: Vec<_> = pq.into();
-    assert_eq!(vec, [9, 8, 6, 4, 4, 3, 2]);
-}
-
-#[test]
-fn from_array_min() {
-    let pq = PriorityQueue::from_arr_min([4, 6, 4, 2, 3, 9, 8]);
-
-    let vec: Vec<_> = pq.into();
-    assert_eq!(vec, [2, 3, 4, 4, 6, 8, 9]);
 }

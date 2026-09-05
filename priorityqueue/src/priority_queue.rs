@@ -12,8 +12,7 @@ impl<T, F> PriorityQueue<T, F>
 where
     F: FnMut(&T, &T) -> bool,
 {
-    // No FromIterator, From<array>. Because additional `is_ord` argument is required.
-    pub fn new(is_ord: F) -> Self {
+    pub fn new_ord(is_ord: F) -> Self {
         Self {
             heap: Vec::new(),
             is_ord,
@@ -64,16 +63,16 @@ where
         HeapIter::new(heap, &mut self.is_ord, |t| t)
     }
 
-    pub fn from_iter<I: IntoIterator<Item = T>>(is_ord: F, iter: I) -> Self {
-        let mut pq = Self::new(is_ord);
+    pub fn from_iter_ord<I: IntoIterator<Item = T>>(is_ord: F, iter: I) -> Self {
+        let mut pq = Self::new_ord(is_ord);
         for t in iter {
             pq.insert(t);
         }
         pq
     }
 
-    pub fn from_arr<const N: usize>(is_ord: F, arr: [T; N]) -> Self {
-        Self::from_iter(is_ord, arr)
+    pub fn from_arr_ord<const N: usize>(is_ord: F, arr: [T; N]) -> Self {
+        Self::from_iter_ord(is_ord, arr)
     }
 }
 
@@ -100,28 +99,8 @@ impl<T> PriorityQueue<T, fn(&T, &T) -> bool>
 where
     T: Ord,
 {
-    pub fn new_max() -> Self {
-        Self::new(|lhs, rhs| lhs < rhs)
-    }
-
-    pub fn new_min() -> Self {
-        Self::new(|lhs, rhs| lhs > rhs)
-    }
-
-    pub fn from_iter_max<I: IntoIterator<Item = T>>(iter: I) -> Self {
-        Self::from_iter(|lhs, rhs| lhs < rhs, iter)
-    }
-
-    pub fn from_iter_min<I: IntoIterator<Item = T>>(iter: I) -> Self {
-        Self::from_iter(|lhs, rhs| lhs > rhs, iter)
-    }
-
-    pub fn from_arr_max<const N: usize>(arr: [T; N]) -> Self {
-        Self::from_arr(|lhs, rhs| lhs < rhs, arr)
-    }
-
-    pub fn from_arr_min<const N: usize>(arr: [T; N]) -> Self {
-        Self::from_arr(|lhs, rhs| lhs > rhs, arr)
+    pub fn new() -> Self {
+        Self::new_ord(|lhs, rhs| lhs < rhs)
     }
 }
 
@@ -144,6 +123,33 @@ where
 {
     fn from(pq: PriorityQueue<T, F>) -> Self {
         pq.into_iter().collect()
+    }
+}
+
+impl<T> Default for PriorityQueue<T, fn(&T, &T) -> bool>
+where
+    T: Ord,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<T> FromIterator<T> for PriorityQueue<T, fn(&T, &T) -> bool>
+where
+    T: Ord,
+{
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        Self::from_iter_ord(|lhs, rhs| lhs < rhs, iter)
+    }
+}
+
+impl<T, const N: usize> From<[T; N]> for PriorityQueue<T, fn(&T, &T) -> bool>
+where
+    T: Ord,
+{
+    fn from(arr: [T; N]) -> Self {
+        arr.into_iter().collect()
     }
 }
 
