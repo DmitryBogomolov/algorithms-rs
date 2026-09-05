@@ -48,14 +48,14 @@ where
         (heap, idx)
     }
 
-    pub fn insert(&mut self, element: (K, T)) -> Option<(K, T)> {
-        let (i, prev) = if let Some(&k) = self.idx.get(&element.0) {
-            let prev = std::mem::replace(&mut self.heap[k], element);
+    pub fn insert(&mut self, idx: K, element: T) -> Option<(K, T)> {
+        let (i, prev) = if let Some(&k) = self.idx.get(&idx) {
+            let prev = std::mem::replace(&mut self.heap[k], (idx, element));
             (k, Some(prev))
         } else {
             let k = self.heap.len();
-            self.idx.insert(element.0.clone(), k);
-            self.heap.push(element);
+            self.idx.insert(idx.clone(), k);
+            self.heap.push((idx, element));
             (k, None)
         };
         self.fix_heap_order(i);
@@ -71,6 +71,10 @@ where
         self.heap.first().map(|t| (&t.0, &t.1))
     }
 
+    pub fn peek_element(&self) -> Option<&T> {
+        self.peek().map(|t| t.1)
+    }
+
     pub fn peek_idx<Q>(&self, idx: &Q) -> Option<(&K, &T)>
     where
         K: Borrow<Q>,
@@ -80,6 +84,14 @@ where
             .get(idx)
             .map(|k| &self.heap[*k])
             .map(|t| (&t.0, &t.1))
+    }
+
+    pub fn peek_idx_element<Q>(&self, idx: &Q) -> Option<&T>
+    where
+        K: Borrow<Q>,
+        Q: ?Sized + Hash + Eq,
+    {
+        self.peek_idx(idx).map(|t| t.1)
     }
 
     pub fn remove(&mut self) -> Option<(K, T)> {
@@ -116,7 +128,7 @@ where
     pub fn from_iter_ord<I: IntoIterator<Item = (K, T)>>(is_ord: F, iter: I) -> Self {
         let mut pq = Self::new_ord(is_ord);
         for t in iter {
-            pq.insert(t);
+            pq.insert(t.0, t.1);
         }
         pq
     }
@@ -227,7 +239,7 @@ where
     type Output = T;
 
     fn index(&self, index: &Q) -> &Self::Output {
-        self.peek_idx(index).map(|t| t.1).expect("bad index")
+        self.peek_idx_element(index).expect("bad index")
     }
 }
 

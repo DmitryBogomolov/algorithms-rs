@@ -13,55 +13,69 @@ fn empty() {
 fn insert() {
     let mut pq = IndexPriorityQueue::new_ord(|a, b| a < b);
 
-    assert_eq!(pq.insert(('a', 4)), None);
+    assert_eq!(pq.insert('a', 4), None);
     assert!(!pq.is_empty());
     assert_eq!(pq.len(), 1);
     assert_eq!(pq.peek(), Some((&'a', &4)));
+    assert_eq!(pq.peek_element(), Some(&4));
     assert_eq!(pq.peek_idx(&'a'), Some((&'a', &4)));
+    assert_eq!(pq.peek_idx_element(&'a'), Some(&4));
 
-    assert_eq!(pq.insert(('b', 7)), None);
+    assert_eq!(pq.insert('b', 7), None);
     assert_eq!(pq.len(), 2);
     assert_eq!(pq.peek(), Some((&'b', &7)));
+    assert_eq!(pq.peek_element(), Some(&7));
     assert_eq!(pq.peek_idx(&'b'), Some((&'b', &7)));
+    assert_eq!(pq.peek_idx_element(&'b'), Some(&7));
     assert_eq!(pq.peek_idx(&'a'), Some((&'a', &4)));
+    assert_eq!(pq.peek_idx_element(&'a'), Some(&4));
 
-    assert_eq!(pq.insert(('c', 2)), None);
+    assert_eq!(pq.insert('c', 2), None);
     assert_eq!(pq.len(), 3);
     assert_eq!(pq.peek(), Some((&'b', &7)));
+    assert_eq!(pq.peek_element(), Some(&7));
     assert_eq!(pq.peek_idx(&'c'), Some((&'c', &2)));
+    assert_eq!(pq.peek_idx_element(&'c'), Some(&2));
     assert_eq!(pq.peek_idx(&'b'), Some((&'b', &7)));
+    assert_eq!(pq.peek_idx_element(&'b'), Some(&7));
 
-    assert_eq!(pq.insert(('d', 7)), None);
+    assert_eq!(pq.insert('d', 7), None);
     assert_eq!(pq.len(), 4);
     assert_eq!(pq.peek(), Some((&'b', &7)));
+    assert_eq!(pq.peek_element(), Some(&7));
     assert_eq!(pq.peek_idx(&'b'), Some((&'b', &7)));
+    assert_eq!(pq.peek_idx_element(&'b'), Some(&7));
     assert_eq!(pq.peek_idx(&'c'), Some((&'c', &2)));
+    assert_eq!(pq.peek_idx_element(&'c'), Some(&2));
 
-    assert_eq!(pq.insert(('e', 9)), None);
+    assert_eq!(pq.insert('e', 9), None);
     assert_eq!(pq.len(), 5);
     assert_eq!(pq.peek(), Some((&'e', &9)));
+    assert_eq!(pq.peek_element(), Some(&9));
     assert_eq!(pq.peek_idx(&'e'), Some((&'e', &9)));
+    assert_eq!(pq.peek_idx_element(&'e'), Some(&9));
     assert_eq!(pq.peek_idx(&'a'), Some((&'a', &4)));
+    assert_eq!(pq.peek_idx_element(&'a'), Some(&4));
 }
 
 #[test]
 fn insert_update() {
     let mut pq = IndexPriorityQueue::new_ord(|a, b| a < b);
 
-    pq.insert(('a', 4));
-    pq.insert(('b', 7));
-    pq.insert(('c', 2));
+    pq.insert('a', 4);
+    pq.insert('b', 7);
+    pq.insert('c', 2);
     assert_eq!(pq.len(), 3);
 
-    assert_eq!(pq.insert(('c', 1)), Some(('c', 2)));
+    assert_eq!(pq.insert('c', 1), Some(('c', 2)));
     assert_eq!(pq.len(), 3);
     assert_eq!(pq.peek(), Some((&'b', &7)));
 
-    assert_eq!(pq.insert(('b', 8)), Some(('b', 7)));
+    assert_eq!(pq.insert('b', 8), Some(('b', 7)));
     assert_eq!(pq.len(), 3);
     assert_eq!(pq.peek(), Some((&'b', &8)));
 
-    assert_eq!(pq.insert(('a', 9)), Some(('a', 4)));
+    assert_eq!(pq.insert('a', 9), Some(('a', 4)));
     assert_eq!(pq.len(), 3);
     assert_eq!(pq.peek(), Some((&'a', &9)));
 }
@@ -74,7 +88,7 @@ where
 {
     let mut pq = IndexPriorityQueue::new_ord(is_ord);
     items.into_iter().for_each(|i| {
-        pq.insert(i);
+        pq.insert(i.0, i.1);
     });
     pq
 }
@@ -204,7 +218,7 @@ fn queue_of_ordered() {
     [('a', 4), ('b', 6), ('c', 5), ('d', 3), ('e', 8)]
         .into_iter()
         .for_each(|t| {
-            pq.insert(t);
+            pq.insert(t.0, t.1);
         });
 
     let vec: Vec<_> = pq.into();
@@ -256,7 +270,7 @@ fn test_many() {
     let mut pq = IndexPriorityQueue::new_ord(|a, b| a < b);
 
     for i in 0..400 {
-        assert_eq!(pq.insert(((i + 1).to_string(), i + 1)), None);
+        assert_eq!(pq.insert((i + 1).to_string(), i + 1), None);
     }
     assert_eq!(pq.len(), 400);
     assert_eq!(pq.peek(), Some((&"400".to_owned(), &400)));
@@ -272,7 +286,7 @@ fn test_many() {
     assert_eq!(pq.peek(), Some((&"300".to_owned(), &300)));
 
     for i in 400..1200 {
-        assert_eq!(pq.insert(((i + 1).to_string(), i + 1)), None);
+        assert_eq!(pq.insert((i + 1).to_string(), i + 1), None);
     }
     assert_eq!(pq.len(), 1100);
     assert_eq!(pq.peek(), Some((&"1200".to_owned(), &1200)));
