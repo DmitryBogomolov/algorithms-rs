@@ -103,6 +103,7 @@ fn drain_full() {
 
     let vec: Vec<i32> = pq.drain().collect();
     assert_eq!(vec, [3, 4, 4, 6, 8]);
+    assert_eq!(pq.peek(), None);
     assert!(pq.is_empty());
 }
 
@@ -112,10 +113,7 @@ fn drain_partial() {
 
     let vec: Vec<i32> = pq.drain().take(2).collect();
     assert_eq!(vec, vec![3, 4]);
-    assert_eq!(pq.len(), 3);
-    assert_eq!(pq.remove(), Some(4));
-    assert_eq!(pq.remove(), Some(6));
-    assert_eq!(pq.remove(), Some(8));
+    assert!(pq.is_empty());
 }
 
 #[test]

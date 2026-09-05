@@ -1,5 +1,4 @@
-use super::drainable::{Drainable, DrainableIter};
-use super::heap::Heap;
+use super::heap::{Heap, HeapIter};
 
 // Implements *Priority Queue* container.
 // https://algs4.cs.princeton.edu/24pq/
@@ -56,8 +55,9 @@ where
         Some(element)
     }
 
-    pub fn drain(&mut self) -> DrainableIter<&mut Self> {
-        DrainableIter::new(self)
+    pub fn drain(&mut self) -> HeapIter<T, &mut F, fn(&T) -> &T> {
+        let heap = std::mem::take(&mut self.heap);
+        HeapIter::new(heap, &mut self.is_ord, |t| t)
     }
 }
 
@@ -69,7 +69,7 @@ where
         self.len()
     }
 
-    fn is_heap_ord(&mut self, lhs: usize, rhs: usize) -> bool {
+    fn heap_is_ord(&mut self, lhs: usize, rhs: usize) -> bool {
         (self.is_ord)(&self.heap[lhs], &self.heap[rhs])
     }
 
@@ -91,31 +91,16 @@ where
     }
 }
 
-impl<T, F> Drainable for PriorityQueue<T, F>
-where
-    F: FnMut(&T, &T) -> bool,
-{
-    type Item = T;
-
-    fn len(&self) -> usize {
-        PriorityQueue::len(self)
-    }
-
-    fn remove(&mut self) -> Option<Self::Item> {
-        PriorityQueue::remove(self)
-    }
-}
-
 // No IntoIterator for &Self, &mut Self and no `iter`, `iter_mut` methods. Because iteration modifies container.
 impl<T, F> IntoIterator for PriorityQueue<T, F>
 where
     F: FnMut(&T, &T) -> bool,
 {
     type Item = T;
-    type IntoIter = DrainableIter<Self>;
+    type IntoIter = HeapIter<T, F, fn(&T) -> &T>;
 
     fn into_iter(self) -> Self::IntoIter {
-        DrainableIter::new(self)
+        HeapIter::new(self.heap, self.is_ord, |t| t)
     }
 }
 

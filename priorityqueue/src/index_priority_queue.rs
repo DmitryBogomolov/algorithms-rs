@@ -1,5 +1,4 @@
-use super::drainable::{Drainable, DrainableIter};
-use super::heap::Heap;
+use super::heap::{Heap, HeapIter};
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::hash::Hash;
@@ -105,8 +104,10 @@ where
         Some(element)
     }
 
-    pub fn drain(&mut self) -> DrainableIter<&mut Self> {
-        DrainableIter::new(self)
+    pub fn drain(&mut self) -> HeapIter<(K, T), &mut F, fn(&(K, T)) -> &T> {
+        let heap = std::mem::take(&mut self.heap);
+        std::mem::take(&mut self.idx);
+        HeapIter::new(heap, &mut self.is_ord, |t| &t.1)
     }
 }
 
@@ -119,7 +120,7 @@ where
         self.len()
     }
 
-    fn is_heap_ord(&mut self, lhs: usize, rhs: usize) -> bool {
+    fn heap_is_ord(&mut self, lhs: usize, rhs: usize) -> bool {
         (self.is_ord)(&self.heap[lhs].1, &self.heap[rhs].1)
     }
 
@@ -150,22 +151,6 @@ where
     }
 }
 
-impl<K, T, F> Drainable for IndexPriorityQueue<K, T, F>
-where
-    K: Hash + Eq + Clone,
-    F: FnMut(&T, &T) -> bool,
-{
-    type Item = (K, T);
-
-    fn len(&self) -> usize {
-        IndexPriorityQueue::len(self)
-    }
-
-    fn remove(&mut self) -> Option<Self::Item> {
-        IndexPriorityQueue::remove(self)
-    }
-}
-
 // No IntoIterator for &Self, &mut Self and no `iter`, `iter_mut` methods. Because iteration modifies container.
 impl<K, T, F> IntoIterator for IndexPriorityQueue<K, T, F>
 where
@@ -173,10 +158,10 @@ where
     F: FnMut(&T, &T) -> bool,
 {
     type Item = (K, T);
-    type IntoIter = DrainableIter<Self>;
+    type IntoIter = HeapIter<(K, T), F, fn(&(K, T)) -> &T>;
 
     fn into_iter(self) -> Self::IntoIter {
-        DrainableIter::new(self)
+        HeapIter::new(self.heap, self.is_ord, |t| &t.1)
     }
 }
 

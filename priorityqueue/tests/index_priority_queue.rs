@@ -174,6 +174,7 @@ fn drain_full() {
 
     let vec: Vec<_> = pq.drain().collect();
     assert_eq!(vec, [('d', 3), ('a', 4), ('c', 5), ('b', 6), ('e', 8)]);
+    assert_eq!(pq.peek(), None);
     assert!(pq.is_empty());
 }
 
@@ -186,10 +187,7 @@ fn drain_partial() {
 
     let collected: Vec<_> = pq.drain().take(2).collect();
     assert_eq!(collected, [('d', 3), ('a', 4)]);
-    assert_eq!(pq.len(), 3);
-    assert_eq!(pq.remove(), Some(('c', 5)));
-    assert_eq!(pq.remove(), Some(('b', 6)));
-    assert_eq!(pq.remove(), Some(('e', 8)));
+    assert!(pq.is_empty());
 }
 
 #[test]
