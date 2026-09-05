@@ -332,11 +332,13 @@ fn indexing() {
 #[test]
 fn clone() {
     let pq = {
-        let pq = make(
+        let mut pq = make(
             |a, b| a > b,
             [('a', 4), ('b', 6), ('c', 5), ('d', 3), ('e', 8)],
         );
-        pq.clone()
+        let ret = pq.clone();
+        pq.clear();
+        ret
     };
 
     let vec: Vec<_> = pq.into();

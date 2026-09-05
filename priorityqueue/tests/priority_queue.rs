@@ -196,8 +196,10 @@ fn test_many() {
 #[test]
 fn clone() {
     let pq = {
-        let pq = make(|a, b| a > b, [4, 6, 4, 3, 8]);
-        pq.clone()
+        let mut pq = make(|a, b| a > b, [4, 6, 4, 3, 8]);
+        let ret = pq.clone();
+        pq.clear();
+        ret
     };
 
     let vec: Vec<_> = pq.into();

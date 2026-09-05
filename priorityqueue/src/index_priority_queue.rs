@@ -40,8 +40,13 @@ where
     }
 
     pub fn clear(&mut self) {
-        self.heap.clear();
-        self.idx.clear();
+        self.take();
+    }
+
+    fn take(&mut self) -> (Vec<(K, T)>, HashMap<K, usize>) {
+        let heap = std::mem::take(&mut self.heap);
+        let idx = std::mem::take(&mut self.idx);
+        (heap, idx)
     }
 
     pub fn insert(&mut self, element: (K, T)) -> Option<(K, T)> {
@@ -50,8 +55,8 @@ where
             (k, Some(prev))
         } else {
             let k = self.heap.len();
+            self.idx.insert(element.0.clone(), k);
             self.heap.push(element);
-            self.idx.insert(self.heap[k].0.clone(), k);
             (k, None)
         };
         self.fix_heap_order(i);
@@ -104,12 +109,13 @@ where
         Some(element)
     }
 
-    pub fn drain(&mut self) -> HeapIter<(K, T), &mut F, fn(&(K, T)) -> &T> {
-        let heap = std::mem::take(&mut self.heap);
-        std::mem::take(&mut self.idx);
+    pub fn drain(&mut self) -> DrainIter<'_, K, T, F> {
+        let (heap, _) = self.take();
         HeapIter::new(heap, &mut self.is_ord, |t| &t.1)
     }
 }
+
+pub type DrainIter<'a, K, T, F> = HeapIter<(K, T), &'a mut F, fn(&(K, T)) -> &T>;
 
 impl<K, T, F> Heap for IndexPriorityQueue<K, T, F>
 where

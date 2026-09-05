@@ -33,7 +33,11 @@ where
     }
 
     pub fn clear(&mut self) {
-        self.heap.clear();
+        self.take();
+    }
+
+    fn take(&mut self) -> Vec<T> {
+        std::mem::take(&mut self.heap)
     }
 
     pub fn insert(&mut self, element: T) {
@@ -55,11 +59,13 @@ where
         Some(element)
     }
 
-    pub fn drain(&mut self) -> HeapIter<T, &mut F, fn(&T) -> &T> {
-        let heap = std::mem::take(&mut self.heap);
+    pub fn drain(&mut self) -> DrainIter<'_, T, F> {
+        let heap = self.take();
         HeapIter::new(heap, &mut self.is_ord, |t| t)
     }
 }
+
+pub type DrainIter<'a, T, F> = HeapIter<T, &'a mut F, fn(&T) -> &T>;
 
 impl<T, F> Heap for PriorityQueue<T, F>
 where
