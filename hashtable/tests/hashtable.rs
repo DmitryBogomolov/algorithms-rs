@@ -138,6 +138,15 @@ fn from_array() {
 }
 
 #[test]
+fn into_vec() {
+    let table: HashTable<_, _> = [(1, 'a'), (2, 'b'), (3, 'c')].into();
+
+    let mut vec: Vec<_> = table.into();
+    vec.sort_by_key(|t| t.0);
+    assert_eq!(vec, [(1, 'a'), (2, 'b'), (3, 'c')]);
+}
+
+#[test]
 fn indexing() {
     let table: HashTable<_, _, _> = [
         (2, "b".to_owned()),
@@ -262,21 +271,19 @@ fn with_hasher() {
     assert_eq!(table.len(), 1);
 }
 
-#[derive(Default)]
-struct DumbHasher;
-
-impl std::hash::Hasher for DumbHasher {
-    fn write(&mut self, _bytes: &[u8]) {}
-
-    fn finish(&self) -> u64 {
-        101
-    }
-}
-
-type DumbBuildHasher = std::hash::BuildHasherDefault<DumbHasher>;
-
 #[test]
 fn dumb_hasher() {
+    #[derive(Default)]
+    struct DumbHasher;
+    impl std::hash::Hasher for DumbHasher {
+        fn write(&mut self, _bytes: &[u8]) {}
+
+        fn finish(&self) -> u64 {
+            101
+        }
+    }
+    type DumbBuildHasher = std::hash::BuildHasherDefault<DumbHasher>;
+
     let mut table = HashTable::with_hasher(DumbBuildHasher::new());
     let r = 0..400;
 
