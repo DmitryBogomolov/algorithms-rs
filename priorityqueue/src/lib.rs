@@ -1,5 +1,4 @@
-#[macro_use]
-mod common;
+mod heap;
 mod index_priority_queue;
 mod priority_queue;
 

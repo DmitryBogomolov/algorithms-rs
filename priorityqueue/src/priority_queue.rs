@@ -1,7 +1,8 @@
-use super::common::{Drainable, DrainableIter};
+use super::heap::{Heap, HeapIter};
 
 // Implements *Priority Queue* container.
 // https://algs4.cs.princeton.edu/24pq/
+#[derive(Clone)]
 pub struct PriorityQueue<T, F> {
     heap: Vec<T>,
     is_ord: F,
@@ -11,7 +12,7 @@ impl<T, F> PriorityQueue<T, F>
 where
     F: FnMut(&T, &T) -> bool,
 {
-    pub fn new(is_ord: F) -> Self {
+    pub fn new_ord(is_ord: F) -> Self {
         Self {
             heap: Vec::new(),
             is_ord,
@@ -30,36 +31,12 @@ where
         self.heap.is_empty()
     }
 
-    fn sink(&mut self, i: usize) {
-        let heap = &mut self.heap;
-        let len = heap.len();
-        let is_ord = &mut self.is_ord;
-        let mut parent = i;
-        loop {
-            let mut child = 2 * parent + 1;
-            if child + 1 < len && is_ord(&heap[child], &heap[child + 1]) {
-                child += 1;
-            }
-            if child >= len || !is_ord(&heap[parent], &heap[child]) {
-                break;
-            }
-            heap.swap(parent, child);
-            parent = child;
-        }
+    pub fn clear(&mut self) {
+        self.take();
     }
 
-    fn swim(&mut self, i: usize) {
-        let heap = &mut self.heap;
-        let is_ord = &mut self.is_ord;
-        let mut child = i;
-        while child > 0 {
-            let parent = (child - 1) / 2;
-            if !is_ord(&heap[parent], &heap[child]) {
-                break;
-            }
-            heap.swap(parent, child);
-            child = parent;
-        }
+    fn take(&mut self) -> Vec<T> {
+        std::mem::take(&mut self.heap)
     }
 
     pub fn insert(&mut self, element: T) {
@@ -73,7 +50,7 @@ where
     }
 
     pub fn remove(&mut self) -> Option<T> {
-        if self.heap.is_empty() {
+        if self.is_empty() {
             return None;
         }
         let element = self.heap.swap_remove(0);
@@ -81,38 +58,106 @@ where
         Some(element)
     }
 
-    pub fn clear(&mut self) {
-        self.heap.clear();
+    pub fn drain(&mut self) -> DrainIter<'_, T, F> {
+        let heap = self.take();
+        HeapIter::new(heap, &mut self.is_ord, |t| t)
+    }
+
+    pub fn from_iter_ord<I: IntoIterator<Item = T>>(is_ord: F, iter: I) -> Self {
+        let mut pq = Self::new_ord(is_ord);
+        for t in iter {
+            pq.insert(t);
+        }
+        pq
+    }
+
+    pub fn from_arr_ord<const N: usize>(is_ord: F, arr: [T; N]) -> Self {
+        Self::from_iter_ord(is_ord, arr)
     }
 }
 
-impl<T: Ord> PriorityQueue<T, fn(&T, &T) -> bool> {
-    pub fn new_max() -> Self {
-        Self::new(|lhs, rhs| lhs < rhs)
+pub type DrainIter<'a, T, F> = HeapIter<T, &'a mut F, fn(&T) -> &T>;
+
+impl<T, F> Heap for PriorityQueue<T, F>
+where
+    F: FnMut(&T, &T) -> bool,
+{
+    fn heap_len(&self) -> usize {
+        self.len()
     }
 
-    pub fn new_min() -> Self {
-        Self::new(|lhs, rhs| lhs > rhs)
+    fn heap_is_ord(&mut self, lhs: usize, rhs: usize) -> bool {
+        (self.is_ord)(&self.heap[lhs], &self.heap[rhs])
+    }
+
+    fn heap_swap(&mut self, lhs: usize, rhs: usize) {
+        self.heap.swap(lhs, rhs);
     }
 }
 
-impl<T, F> Drainable for PriorityQueue<T, F>
+impl<T> PriorityQueue<T, fn(&T, &T) -> bool>
+where
+    T: Ord,
+{
+    pub fn new() -> Self {
+        Self::new_ord(|lhs, rhs| lhs < rhs)
+    }
+}
+
+// No IntoIterator for &Self, &mut Self and no `iter`, `iter_mut` methods. Because iteration modifies container.
+impl<T, F> IntoIterator for PriorityQueue<T, F>
 where
     F: FnMut(&T, &T) -> bool,
 {
     type Item = T;
+    type IntoIter = HeapIter<T, F, fn(&T) -> &T>;
 
-    fn len(&self) -> usize {
-        PriorityQueue::len(self)
-    }
-
-    fn remove(&mut self) -> Option<Self::Item> {
-        PriorityQueue::remove(self)
+    fn into_iter(self) -> Self::IntoIter {
+        HeapIter::new(self.heap, self.is_ord, |t| t)
     }
 }
 
-impl_into_iter!(
-    PriorityQueue<T, F>,
-    T,
-    [T, F] COND [where F: FnMut(&T, &T) -> bool]
-);
+impl<T, F> From<PriorityQueue<T, F>> for Vec<T>
+where
+    F: FnMut(&T, &T) -> bool,
+{
+    fn from(pq: PriorityQueue<T, F>) -> Self {
+        pq.into_iter().collect()
+    }
+}
+
+impl<T> Default for PriorityQueue<T, fn(&T, &T) -> bool>
+where
+    T: Ord,
+{
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<T> FromIterator<T> for PriorityQueue<T, fn(&T, &T) -> bool>
+where
+    T: Ord,
+{
+    fn from_iter<I: IntoIterator<Item = T>>(iter: I) -> Self {
+        Self::from_iter_ord(|lhs, rhs| lhs < rhs, iter)
+    }
+}
+
+impl<T, const N: usize> From<[T; N]> for PriorityQueue<T, fn(&T, &T) -> bool>
+where
+    T: Ord,
+{
+    fn from(arr: [T; N]) -> Self {
+        arr.into_iter().collect()
+    }
+}
+
+impl<T, F> std::fmt::Debug for PriorityQueue<T, F>
+where
+    T: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_list().entries(self.heap.iter()).finish()
+    }
+}

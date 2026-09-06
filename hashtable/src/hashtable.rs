@@ -8,6 +8,7 @@ type Buckets<K, V> = Vec<Bucket<K, V>>;
 
 // Implements *Hash Map* container.
 // Partially based on https://algs4.cs.princeton.edu/34hash/.
+#[derive(Clone)]
 pub struct HashTable<K, V, H = RandomState> {
     len: usize,
     buckets: Buckets<K, V>,
@@ -235,6 +236,12 @@ where
     }
 }
 
+impl<K, V> From<HashTable<K, V>> for Vec<(K, V)> {
+    fn from(table: HashTable<K, V>) -> Self {
+        table.into_iter().collect()
+    }
+}
+
 impl<Q, K, V, H> std::ops::Index<&Q> for HashTable<K, V, H>
 where
     Q: Hash + Eq + ?Sized,
@@ -332,16 +339,6 @@ impl<'a, K, V, H> IntoIterator for &'a mut HashTable<K, V, H> {
 
     fn into_iter(self) -> Self::IntoIter {
         iter_mut(&mut self.buckets, self.len)
-    }
-}
-
-impl<K: Clone, V: Clone, H: Clone> Clone for HashTable<K, V, H> {
-    fn clone(&self) -> Self {
-        Self {
-            len: self.len,
-            buckets: self.buckets.clone(),
-            hasher_factory: self.hasher_factory.clone(),
-        }
     }
 }
 
