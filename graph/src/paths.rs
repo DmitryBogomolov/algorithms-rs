@@ -1,5 +1,6 @@
 use crate::graph::Graph;
 
+#[derive(Clone, PartialEq, Eq)]
 pub struct Paths {
     source_vertex: usize,
     connected_count: usize,
@@ -9,11 +10,11 @@ pub struct Paths {
 const NO_LINK: usize = usize::MAX;
 
 impl Paths {
-    pub fn source_vertex(&self) -> usize {
+    pub const fn source_vertex(&self) -> usize {
         self.source_vertex
     }
 
-    pub fn connected_count(&self) -> usize {
+    pub const fn connected_count(&self) -> usize {
         self.connected_count
     }
 
@@ -36,17 +37,26 @@ impl Paths {
     }
 }
 
-pub fn paths_dfs<G: Graph>(graph: G, source_vertex: usize) -> Paths {
+impl std::fmt::Debug for Paths {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Paths")
+            .field("source_vertex", &self.source_vertex)
+            .field("connected_count", &self.connected_count)
+            .finish()
+    }
+}
+
+fn find_paths<G, F>(graph: &G, source_vertex: usize, visit_func: F) -> Paths
+where
+    G: Graph,
+    F: FnOnce(&G, usize, &mut dyn FnMut(usize, usize)),
+{
     let mut count = 0;
-    let mut links = vec![NO_LINK, graph.num_vertices()];
-    visit_dfs(
-        &graph,
-        source_vertex,
-        &mut |vertex, adj_vertex| {
-            count += 1;
-            links[adj_vertex] = vertex;
-        },
-    );
+    let mut links = vec![NO_LINK; graph.num_vertices()];
+    visit_func(graph, source_vertex, &mut |vertex, adj_vertex| {
+        count += 1;
+        links[adj_vertex] = vertex;
+    });
     Paths {
         source_vertex,
         connected_count: count,
@@ -74,33 +84,29 @@ fn visit_dfs_recursive<G: Graph, F: FnMut(usize, usize)>(
     }
 }
 
-pub fn paths_bfs<G: Graph>(graph: G, source_vertex: usize) -> Paths {
-    let mut count = 0;
-    let mut links = vec![NO_LINK, graph.num_vertices()];
-    visit_bfs(
-        &graph,
-        source_vertex,
-        &mut |vertex, adj_vertex| {
-            count += 1;
-            links[adj_vertex] = vertex;
-        },
-    );
-    Paths {
-        source_vertex,
-        connected_count: count,
-        links,
+fn visit_bfs<G: Graph, F: FnMut(usize, usize)>(graph: &G, source_vertex: usize, mut f: F) {
+    let mut visited = vec![false; graph.num_vertices()];
+    let mut queue = std::collections::VecDeque::new();
+    queue.push_back(source_vertex);
+    while let Some(vertex) = queue.pop_front() {
+        visited[vertex] = true;
+        for adj_vertex in graph.adjacent_vertices(vertex) {
+            if !visited[adj_vertex] {
+                f(vertex, adj_vertex);
+                queue.push_back(adj_vertex);
+            }
+        }
     }
 }
 
-fn visit_bfs<G: Graph, F: FnMut(usize, usize)>(graph: &G, source_vertex: usize, mut f: F) {
-    let mut queue = std::collections::VecDeque::new();
-    queue.push_back(source_vertex);
-    let mut visited = vec![false; graph.num_vertices()];
-    while let Some(vertex) = queue.pop_front() && !visited[vertex] {
-        visited[vertex] = true;
-        for adj_vertex in graph.adjacent_vertices(vertex) {
-            f(vertex, adj_vertex);
-            queue.push_back(adj_vertex);
-        }
-    }
+pub fn find_paths_dfs<G: Graph>(graph: &G, source_vertex: usize) -> Paths {
+    find_paths(graph, source_vertex, |graph, vertex, f| {
+        visit_dfs(graph, vertex, f)
+    })
+}
+
+pub fn find_paths_bfs<G: Graph>(graph: &G, source_vertex: usize) -> Paths {
+    find_paths(graph, source_vertex, |graph, vertex, f| {
+        visit_bfs(graph, vertex, f)
+    })
 }
