@@ -33,20 +33,20 @@ impl std::fmt::Debug for TestGraph {
 }
 
 impl TestGraph {
-    pub fn new(edges: impl Iterator<Item = (usize, usize)>) -> Self {
-        let edges: Vec<_> = edges.collect();
-        assert!(!edges.is_empty(), "no edges");
-        let max_vertex_id = edges.iter().map(|t| t.0).max().expect("not expected");
-        let mut adj: Vec<Vec<usize>> = Vec::new();
-        adj.resize_with(max_vertex_id + 1, Vec::new);
-        for (i, j) in &edges {
-            add_adj(&mut adj[*i], *j);
-            add_adj(&mut adj[*j], *i);
+    pub fn new(num_vertices: usize, edges: impl IntoIterator<Item = (usize, usize)>) -> Self {
+        let edges: Vec<_> = edges.into_iter().collect();
+        let mut adjacency: Vec<Vec<usize>> = Vec::new();
+        adjacency.resize_with(num_vertices, Vec::new);
+        let mut num_edges = 0;
+        for (i, j) in edges {
+            num_edges += 1;
+            add_adj(&mut adjacency[i], j);
+            add_adj(&mut adjacency[j], i);
         }
         Self {
-            num_vertices: adj.len(),
-            num_edges: edges.len(),
-            adjacency: adj,
+            num_vertices,
+            num_edges,
+            adjacency,
         }
     }
 }

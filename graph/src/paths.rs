@@ -51,7 +51,8 @@ where
     G: Graph,
     F: FnOnce(&G, usize, &mut dyn FnMut(usize, usize)),
 {
-    let mut count = 0;
+    assert!(source_vertex < graph.num_vertices(), "vertex out of range");
+    let mut count = 1;
     let mut links = vec![NO_LINK; graph.num_vertices()];
     visit_func(graph, source_vertex, &mut |vertex, adj_vertex| {
         count += 1;
@@ -88,10 +89,11 @@ fn visit_bfs<G: Graph, F: FnMut(usize, usize)>(graph: &G, source_vertex: usize, 
     let mut visited = vec![false; graph.num_vertices()];
     let mut queue = std::collections::VecDeque::new();
     queue.push_back(source_vertex);
+    visited[source_vertex] = true;
     while let Some(vertex) = queue.pop_front() {
-        visited[vertex] = true;
         for adj_vertex in graph.adjacent_vertices(vertex) {
             if !visited[adj_vertex] {
+                visited[adj_vertex] = true;
                 f(vertex, adj_vertex);
                 queue.push_back(adj_vertex);
             }
