@@ -4,10 +4,8 @@ use crate::graph::Graph;
 pub struct Paths {
     source_vertex: usize,
     connected_count: usize,
-    links: Vec<usize>,
+    links: Vec<Option<usize>>,
 }
-
-const NO_LINK: usize = usize::MAX;
 
 impl Paths {
     pub const fn source_vertex(&self) -> usize {
@@ -19,7 +17,13 @@ impl Paths {
     }
 
     pub fn has_path(&self, vertex: usize) -> bool {
-        vertex == self.source_vertex || *self.links.get(vertex).expect("out of range") != NO_LINK
+        assert!(
+            vertex < self.links.len(),
+            "vertex {} out of range {}",
+            vertex,
+            self.links.len(),
+        );
+        vertex == self.source_vertex || self.links[vertex].is_some()
     }
 
     pub fn path_to(&self, vertex: usize) -> Option<Vec<usize>> {
@@ -27,22 +31,25 @@ impl Paths {
             return None;
         }
         let mut path = Vec::new();
-        let mut k = vertex;
-        while k != NO_LINK {
+        let mut link = Some(vertex);
+        while let Some(k) = link {
             path.push(k);
-            k = self.links[k];
+            link = self.links[k];
         }
         path.reverse();
         Some(path)
     }
-}
 
-impl std::fmt::Debug for Paths {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("Paths")
-            .field("source_vertex", &self.source_vertex)
-            .field("connected_count", &self.connected_count)
-            .finish()
+    pub fn new_dfs<G: Graph>(graph: &G, source_vertex: usize) -> Self {
+        find_paths(graph, source_vertex, |graph, vertex, f| {
+            visit_dfs(graph, vertex, f)
+        })
+    }
+
+    pub fn new_bfs<G: Graph>(graph: &G, source_vertex: usize) -> Self {
+        find_paths(graph, source_vertex, |graph, vertex, f| {
+            visit_bfs(graph, vertex, f)
+        })
     }
 }
 
@@ -51,12 +58,17 @@ where
     G: Graph,
     F: FnOnce(&G, usize, &mut dyn FnMut(usize, usize)),
 {
-    assert!(source_vertex < graph.num_vertices(), "vertex out of range");
+    assert!(
+        source_vertex < graph.num_vertices(),
+        "vertex {} out of range {}",
+        source_vertex,
+        graph.num_vertices(),
+    );
     let mut count = 1;
-    let mut links = vec![NO_LINK; graph.num_vertices()];
+    let mut links = vec![None; graph.num_vertices()];
     visit_func(graph, source_vertex, &mut |vertex, adj_vertex| {
         count += 1;
-        links[adj_vertex] = vertex;
+        links[adj_vertex] = Some(vertex);
     });
     Paths {
         source_vertex,
@@ -101,14 +113,11 @@ fn visit_bfs<G: Graph, F: FnMut(usize, usize)>(graph: &G, source_vertex: usize, 
     }
 }
 
-pub fn find_paths_dfs<G: Graph>(graph: &G, source_vertex: usize) -> Paths {
-    find_paths(graph, source_vertex, |graph, vertex, f| {
-        visit_dfs(graph, vertex, f)
-    })
-}
-
-pub fn find_paths_bfs<G: Graph>(graph: &G, source_vertex: usize) -> Paths {
-    find_paths(graph, source_vertex, |graph, vertex, f| {
-        visit_bfs(graph, vertex, f)
-    })
+impl std::fmt::Debug for Paths {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("Paths")
+            .field("source_vertex", &self.source_vertex)
+            .field("connected_count", &self.connected_count)
+            .finish()
+    }
 }

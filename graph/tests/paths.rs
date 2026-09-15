@@ -1,30 +1,28 @@
 mod test_graph;
 
-use graph::{Graph, Paths, find_paths_bfs, find_paths_dfs};
+use graph::Paths;
 use test_graph::TestGraph;
 
 #[test]
-fn validate_vertices() {
-    let g = TestGraph::new(0, std::iter::empty());
+fn empty_graph() {
+    let g = TestGraph::new(0, []);
 
-    assert!(std::panic::catch_unwind(|| find_paths_dfs(&g, 0)).is_err());
-    assert!(std::panic::catch_unwind(|| find_paths_bfs(&g, 0)).is_err());
-
-    let g = TestGraph::new(4, std::iter::empty());
-    assert!(std::panic::catch_unwind(|| find_paths_dfs(&g, 7)).is_err());
-    assert!(std::panic::catch_unwind(|| find_paths_bfs(&g, 7)).is_err());
+    assert!(std::panic::catch_unwind(|| Paths::new_dfs(&g, 0)).is_err());
+    assert!(std::panic::catch_unwind(|| Paths::new_bfs(&g, 0)).is_err());
 }
 
 #[test]
 fn no_edges_graph() {
-    let g = TestGraph::new(4, std::iter::empty());
+    let g = TestGraph::new(4, []);
 
-    for i in 0..g.num_vertices() {
-        let mut routes: Vec<_> = (0..g.num_vertices()).map(|i| (i, None)).collect();
+    for i in 0..4 {
+        let mut routes: Vec<_> = (0..4).map(|i| (i, None)).collect();
         routes[i].1 = Some(vec![i]);
-        check_paths(find_paths_dfs(&g, i), i, 1, routes.clone());
-        check_paths(find_paths_bfs(&g, i), i, 1, routes.clone());
+        check_paths(Paths::new_dfs(&g, i), i, 1, routes.clone());
+        check_paths(Paths::new_bfs(&g, i), i, 1, routes.clone());
     }
+
+    assert!(std::panic::catch_unwind(|| Paths::new_dfs(&g, 4)).is_err());   
 }
 
 #[test]
@@ -44,7 +42,7 @@ fn graph_with_edges() {
     );
 
     check_paths(
-        find_paths_dfs(&g, 0),
+        Paths::new_dfs(&g, 0),
         0,
         6,
         [
@@ -58,7 +56,7 @@ fn graph_with_edges() {
         ],
     );
     check_paths(
-        find_paths_bfs(&g, 0),
+        Paths::new_bfs(&g, 0),
         0,
         6,
         [
@@ -73,7 +71,7 @@ fn graph_with_edges() {
     );
 
     check_paths(
-        find_paths_dfs(&g, 1),
+        Paths::new_dfs(&g, 1),
         1,
         6,
         [
@@ -88,7 +86,7 @@ fn graph_with_edges() {
     );
 
     check_paths(
-        find_paths_bfs(&g, 1),
+        Paths::new_bfs(&g, 1),
         1,
         6,
         [
@@ -103,7 +101,7 @@ fn graph_with_edges() {
     );
 
     check_paths(
-        find_paths_dfs(&g, 2),
+        Paths::new_dfs(&g, 2),
         2,
         6,
         [
@@ -118,7 +116,7 @@ fn graph_with_edges() {
     );
 
     check_paths(
-        find_paths_bfs(&g, 2),
+        Paths::new_bfs(&g, 2),
         2,
         6,
         [
@@ -133,7 +131,7 @@ fn graph_with_edges() {
     );
 
     check_paths(
-        find_paths_dfs(&g, 3),
+        Paths::new_dfs(&g, 3),
         3,
         6,
         [
@@ -148,7 +146,7 @@ fn graph_with_edges() {
     );
 
     check_paths(
-        find_paths_bfs(&g, 3),
+        Paths::new_bfs(&g, 3),
         3,
         6,
         [
@@ -163,7 +161,7 @@ fn graph_with_edges() {
     );
 
     check_paths(
-        find_paths_dfs(&g, 4),
+        Paths::new_dfs(&g, 4),
         4,
         6,
         [
@@ -178,7 +176,7 @@ fn graph_with_edges() {
     );
 
     check_paths(
-        find_paths_bfs(&g, 4),
+        Paths::new_bfs(&g, 4),
         4,
         6,
         [
@@ -193,7 +191,7 @@ fn graph_with_edges() {
     );
 
     check_paths(
-        find_paths_dfs(&g, 5),
+        Paths::new_dfs(&g, 5),
         5,
         6,
         [
@@ -208,7 +206,7 @@ fn graph_with_edges() {
     );
 
     check_paths(
-        find_paths_bfs(&g, 5),
+        Paths::new_bfs(&g, 5),
         5,
         6,
         [
@@ -223,7 +221,7 @@ fn graph_with_edges() {
     );
 
     check_paths(
-        find_paths_dfs(&g, 6),
+        Paths::new_dfs(&g, 6),
         6,
         1,
         [
@@ -238,7 +236,7 @@ fn graph_with_edges() {
     );
 
     check_paths(
-        find_paths_bfs(&g, 6),
+        Paths::new_bfs(&g, 6),
         6,
         1,
         [
