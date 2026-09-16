@@ -22,11 +22,11 @@ fn no_edges_graph() {
         check_paths(Paths::new_bfs(&g, i), i, 1, routes.clone());
     }
 
-    assert!(std::panic::catch_unwind(|| Paths::new_dfs(&g, 4)).is_err());   
+    assert!(std::panic::catch_unwind(|| Paths::new_dfs(&g, 4)).is_err());
 }
 
 #[test]
-fn graph_with_edges() {
+fn common_graph() {
     let g = TestGraph::new(
         7,
         [
