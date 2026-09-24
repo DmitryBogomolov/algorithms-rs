@@ -1,5 +1,5 @@
 pub trait Graph {
-    type VertexIter<'a>: Iterator<Item = usize>
+    type VertexIter<'a>: Iterator<Item = usize> + ExactSizeIterator
     where
         Self: 'a;
 

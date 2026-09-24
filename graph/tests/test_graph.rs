@@ -40,8 +40,10 @@ impl TestGraph {
         let mut num_edges = 0;
         for (i, j) in edges {
             num_edges += 1;
-            add_adj(&mut adjacency[i], j);
-            add_adj(&mut adjacency[j], i);
+            adjacency[i].push(j);
+            if i != j {
+                adjacency[j].push(i);
+            }
         }
         Self {
             num_vertices,
@@ -49,9 +51,4 @@ impl TestGraph {
             adjacency,
         }
     }
-}
-
-fn add_adj(adj: &mut Vec<usize>, k: usize) {
-    assert!(!adj.contains(&k), "duplicate adjacency {}", k);
-    adj.push(k);
 }
