@@ -1,6 +1,6 @@
 mod test_graph;
 
-use graph::{find_parallel_edges, find_self_loops};
+use graph::{find_cycle, find_parallel_edges, find_self_loops};
 use test_graph::TestGraph;
 
 fn check<T: Eq + std::fmt::Debug>(
@@ -17,6 +17,7 @@ fn empty_graph() {
     let graph = TestGraph::new(0, []);
     check(find_self_loops(&graph), []);
     check(find_parallel_edges(&graph), []);
+    assert_eq!(find_cycle(&graph), None);
 }
 
 #[test]
@@ -24,6 +25,7 @@ fn no_edges_graph() {
     let graph = TestGraph::new(4, []);
     check(find_self_loops(&graph), []);
     check(find_parallel_edges(&graph), []);
+    assert_eq!(find_cycle(&graph), None);
 }
 
 #[test]
@@ -31,6 +33,15 @@ fn simple_graph() {
     let graph = TestGraph::new(4, [(0, 1), (1, 2), (2, 0), (3, 2)]);
     check(find_self_loops(&graph), []);
     check(find_parallel_edges(&graph), []);
+    assert_eq!(find_cycle(&graph), Some(vec![0, 1, 2]));
+}
+
+#[test]
+fn simple_graph_no_cycle() {
+    let graph = TestGraph::new(4, [(0, 1), (1, 2), (3, 2)]);
+    check(find_self_loops(&graph), []);
+    check(find_parallel_edges(&graph), []);
+    assert_eq!(find_cycle(&graph), None);
 }
 
 #[test]
