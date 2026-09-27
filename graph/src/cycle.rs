@@ -9,15 +9,22 @@ pub fn find_self_loops<G: Graph>(graph: &G) -> impl Iterator<Item = usize> {
 }
 
 pub fn find_parallel_edges<G: Graph>(graph: &G) -> impl Iterator<Item = (usize, usize)> {
-    let mut checked = vec![None; graph.num_vertices()];
-    (0..graph.num_vertices())
+    let num_vert = graph.num_vertices();
+    let mut checked = vec![None; num_vert];
+    let mut count = vec![num_vert; num_vert];
+    (0..num_vert)
         .flat_map(|vertex| {
             graph
                 .adjacent_vertices(vertex)
                 .map(move |adj_vertex| (vertex, adj_vertex))
         })
         .filter(move |&(vertex, adj_vertex)| {
-            let is_checked = checked[adj_vertex] == Some(vertex);
+            let is_checked = checked[adj_vertex] == Some(vertex) && count[adj_vertex] == 1;
+            if checked[adj_vertex] == Some(vertex) {
+                count[adj_vertex] += 1;
+            } else {
+                count[adj_vertex] = 1;
+            }
             checked[adj_vertex] = Some(vertex);
             is_checked
         })
