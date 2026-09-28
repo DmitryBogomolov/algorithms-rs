@@ -1,5 +1,8 @@
 use crate::graph::Graph;
 
+// Component IDs are always smaller than the number of vertices.
+const UNASSIGNED: usize = usize::MAX;
+
 #[derive(Clone, PartialEq, Eq)]
 pub struct CC {
     components: Vec<usize>,
@@ -31,7 +34,7 @@ impl CC {
         self.sizes[component]
     }
 
-    pub fn component_vertices(&self, component: usize) -> Vec<usize> {
+    pub fn component_vertices(&self, component: usize) -> impl Iterator<Item = usize> {
         assert!(
             component < self.sizes.len(),
             "component {} out of range {}",
@@ -41,67 +44,46 @@ impl CC {
         self.components
             .iter()
             .enumerate()
-            .filter(|(_, c)| **c == component)
+            .filter(move |(_, c)| **c == component)
             .map(|(v, _)| v)
-            .collect()
     }
 
     pub fn connected(&self, vertex1: usize, vertex2: usize) -> bool {
-        assert!(
-            vertex1 < self.components.len(),
-            "vertex {} out of range {}",
-            vertex1,
-            self.components.len(),
-        );
-        assert!(
-            vertex2 < self.components.len(),
-            "vertex {} out of range {}",
-            vertex2,
-            self.components.len(),
-        );
-        self.components[vertex1] == self.components[vertex2]
+        self.vertex_component(vertex1) == self.vertex_component(vertex2)
     }
 
     pub fn new<G: Graph>(graph: &G) -> Self {
-        let mut context = VisitContext {
-            visited: vec![false; graph.num_vertices()],
-            components: vec![0; graph.num_vertices()],
-            sizes: vec![],
-        };
+        let mut components = vec![UNASSIGNED; graph.num_vertices()];
+        let mut sizes = Vec::new();
         for vertex in 0..graph.num_vertices() {
-            if !context.visited[vertex] {
-                context.sizes.push(0);
-                visit_recursive(graph, vertex, &mut context);
+            if components[vertex] == UNASSIGNED {
+                let size = visit_recursive(graph, vertex, sizes.len(), &mut components);
+                sizes.push(size);
             }
         }
-        Self {
-            components: context.components,
-            sizes: context.sizes,
-        }
+        Self { components, sizes }
     }
 }
 
-struct VisitContext {
-    visited: Vec<bool>,
-    components: Vec<usize>,
-    sizes: Vec<usize>,
-}
-
-fn visit_recursive<G: Graph>(graph: &G, vertex: usize, context: &mut VisitContext) {
-    context.visited[vertex] = true;
-    let component_id = context.sizes.len() - 1;
-    context.components[vertex] = component_id;
-    context.sizes[component_id] += 1;
+fn visit_recursive<G: Graph>(
+    graph: &G,
+    vertex: usize,
+    component_id: usize,
+    components: &mut [usize],
+) -> usize {
+    components[vertex] = component_id;
+    let mut size = 1;
     for adj_vertex in graph.adjacent_vertices(vertex) {
-        if !context.visited[adj_vertex] {
-            visit_recursive(graph, adj_vertex, context);
+        if components[adj_vertex] == UNASSIGNED {
+            size += visit_recursive(graph, adj_vertex, component_id, components);
         }
     }
+    size
 }
 
 impl std::fmt::Debug for CC {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("ConnComps")
+        f.debug_struct("ConnectedComponents")
             .field("count", &self.sizes.len())
             .finish()
     }
