@@ -1,7 +1,7 @@
-mod test_graph;
+mod common;
 
+use common::TestGraph;
 use graph::CC;
-use test_graph::TestGraph;
 
 fn check_components(cc: &CC, data: &[&[usize]]) {
     let count = data.len();

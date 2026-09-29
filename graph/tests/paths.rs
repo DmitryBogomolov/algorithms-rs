@@ -1,7 +1,7 @@
-mod test_graph;
+mod common;
 
+use common::TestGraph;
 use graph::Paths;
-use test_graph::TestGraph;
 
 #[test]
 fn empty_graph() {

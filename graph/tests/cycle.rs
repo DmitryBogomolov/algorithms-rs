@@ -1,7 +1,7 @@
-mod test_graph;
+mod common;
 
+use common::TestGraph;
 use graph::{find_cycle, find_parallel_edges, find_self_loops};
-use test_graph::TestGraph;
 
 fn check<T: Eq + std::fmt::Debug>(
     actual: impl Iterator<Item = T>,
