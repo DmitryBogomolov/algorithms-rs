@@ -2,6 +2,7 @@ mod cc;
 mod cycle;
 mod graph;
 mod paths;
+mod util;
 
 pub use cc::CC;
 pub use cycle::{find_cycle, find_parallel_edges, find_self_loops};

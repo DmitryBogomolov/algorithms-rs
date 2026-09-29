@@ -1,4 +1,5 @@
 use crate::graph::Graph;
+use crate::util::assert_in_range;
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct Paths {
@@ -17,12 +18,7 @@ impl Paths {
     }
 
     pub fn has_path(&self, vertex: usize) -> bool {
-        assert!(
-            vertex < self.links.len(),
-            "vertex {} out of range {}",
-            vertex,
-            self.links.len(),
-        );
+        assert_in_range(vertex, self.links.len(), "vertex");
         vertex == self.source_vertex || self.links[vertex].is_some()
     }
 
@@ -58,12 +54,7 @@ where
     G: Graph,
     F: FnOnce(&G, usize, &mut dyn FnMut(usize, usize)),
 {
-    assert!(
-        source_vertex < graph.num_vertices(),
-        "vertex {} out of range {}",
-        source_vertex,
-        graph.num_vertices(),
-    );
+    assert_in_range(source_vertex, graph.num_vertices(), "vertex");
     let mut count = 1;
     let mut links = vec![None; graph.num_vertices()];
     visit_func(graph, source_vertex, &mut |vertex, adj_vertex| {

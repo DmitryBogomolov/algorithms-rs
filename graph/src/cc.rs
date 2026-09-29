@@ -1,4 +1,5 @@
 use crate::graph::Graph;
+use crate::util::assert_in_range;
 
 const UNASSIGNED: usize = usize::MAX;
 
@@ -14,32 +15,17 @@ impl CC {
     }
 
     pub fn vertex_component(&self, vertex: usize) -> usize {
-        assert!(
-            vertex < self.components.len(),
-            "vertex {} out of range {}",
-            vertex,
-            self.components.len(),
-        );
+        assert_in_range(vertex, self.components.len(), "vertex");
         self.components[vertex]
     }
 
     pub fn component_size(&self, component: usize) -> usize {
-        assert!(
-            component < self.sizes.len(),
-            "component {} out of range {}",
-            component,
-            self.sizes.len(),
-        );
+        assert_in_range(component, self.sizes.len(), "component");
         self.sizes[component]
     }
 
     pub fn component_vertices(&self, component: usize) -> impl Iterator<Item = usize> {
-        assert!(
-            component < self.sizes.len(),
-            "component {} out of range {}",
-            component,
-            self.sizes.len(),
-        );
+        assert_in_range(component, self.sizes.len(), "component");
         self.components
             .iter()
             .enumerate()
