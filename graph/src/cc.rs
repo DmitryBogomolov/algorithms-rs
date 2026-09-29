@@ -1,6 +1,5 @@
 use crate::graph::Graph;
 
-// Component IDs are always smaller than the number of vertices.
 const UNASSIGNED: usize = usize::MAX;
 
 #[derive(Clone, PartialEq, Eq)]
@@ -44,8 +43,7 @@ impl CC {
         self.components
             .iter()
             .enumerate()
-            .filter(move |(_, c)| **c == component)
-            .map(|(v, _)| v)
+            .filter_map(move |(v, c)| (*c == component).then_some(v))
     }
 
     pub fn connected(&self, vertex1: usize, vertex2: usize) -> bool {
