@@ -33,44 +33,35 @@ pub fn find_cycle<G: Graph>(graph: &G) -> Option<Vec<usize>> {
     if graph.num_vertices() == 0 || graph.num_edges() == 0 {
         return None;
     }
-    let mut visited = vec![false; graph.num_vertices()];
     let mut links = vec![None; graph.num_vertices()];
+    let mut visited = vec![false; graph.num_vertices()];
+    let mut stack = Vec::new();
     for vertex in 0..graph.num_vertices() {
-        if !visited[vertex] {
-            let cycle = find_cycle_recursive(graph, vertex, None, &mut visited, &mut links);
-            if cycle.is_some() {
-                return cycle;
-            }
+        if visited[vertex] {
+            continue;
         }
-    }
-    None
-}
-
-fn find_cycle_recursive<G: Graph>(
-    graph: &G,
-    vertex: usize,
-    prev_vertex: Option<usize>,
-    visited: &mut [bool],
-    links: &mut [Option<usize>],
-) -> Option<Vec<usize>> {
-    visited[vertex] = true;
-    links[vertex] = prev_vertex;
-    for adj_vertex in graph.adjacent_vertices(vertex) {
-        if !visited[adj_vertex] {
-            let cycle = find_cycle_recursive(graph, adj_vertex, Some(vertex), visited, links);
-            if cycle.is_some() {
-                return cycle;
+        stack.push((vertex, graph.adjacent_vertices(vertex)));
+        visited[vertex] = true;
+        while let Some((vertex, adj_iter)) = stack.last_mut() {
+            if let Some(adj_vertex) = adj_iter.next() {
+                if !visited[adj_vertex] {
+                    visited[adj_vertex] = true;
+                    links[adj_vertex] = Some(*vertex);
+                    stack.push((adj_vertex, graph.adjacent_vertices(adj_vertex)));
+                } else if adj_vertex != links[*vertex].expect("link must exist") {
+                    let mut cycle = Vec::new();
+                    let mut v = *vertex;
+                    while v != adj_vertex {
+                        cycle.push(v);
+                        v = links[v].expect("link must exist");
+                    }
+                    cycle.push(adj_vertex);
+                    cycle.reverse();
+                    return Some(cycle);
+                }
+            } else {
+                stack.pop();
             }
-        } else if Some(adj_vertex) != prev_vertex {
-            let mut cycle = Vec::new();
-            let mut v = vertex;
-            while v != adj_vertex {
-                cycle.push(v);
-                v = links[v].expect("link must exist");
-            }
-            cycle.push(adj_vertex);
-            cycle.reverse();
-            return Some(cycle);
         }
     }
     None

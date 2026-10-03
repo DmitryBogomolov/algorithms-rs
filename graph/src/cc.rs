@@ -1,8 +1,6 @@
 use crate::graph::Graph;
 use crate::util::assert_in_range;
 
-const UNASSIGNED: usize = usize::MAX;
-
 #[derive(Clone, PartialEq, Eq)]
 pub struct CC {
     components: Vec<usize>,
@@ -37,32 +35,35 @@ impl CC {
     }
 
     pub fn new<G: Graph>(graph: &G) -> Self {
-        let mut components = vec![UNASSIGNED; graph.num_vertices()];
+        let mut components = vec![usize::MAX; graph.num_vertices()];
         let mut sizes = Vec::new();
+        let mut size;
+        let mut stack = Vec::new();
+        let mut visited = vec![false; graph.num_vertices()];
         for vertex in 0..graph.num_vertices() {
-            if components[vertex] == UNASSIGNED {
-                let size = visit_recursive(graph, vertex, sizes.len(), &mut components);
-                sizes.push(size);
+            if visited[vertex] {
+                continue;
             }
+            stack.push((vertex, graph.adjacent_vertices(vertex)));
+            visited[vertex] = true;
+            components[vertex] = sizes.len();
+            size = 1;
+            while let Some((_vertex, adj_iter)) = stack.last_mut() {
+                if let Some(adj_vertex) = adj_iter.next() {
+                    if !visited[adj_vertex] {
+                        visited[adj_vertex] = true;
+                        components[adj_vertex] = sizes.len();
+                        size += 1;
+                        stack.push((adj_vertex, graph.adjacent_vertices(adj_vertex)));
+                    }
+                } else {
+                    stack.pop();
+                }
+            }
+            sizes.push(size);
         }
         Self { components, sizes }
     }
-}
-
-fn visit_recursive<G: Graph>(
-    graph: &G,
-    vertex: usize,
-    component_id: usize,
-    components: &mut [usize],
-) -> usize {
-    components[vertex] = component_id;
-    let mut size = 1;
-    for adj_vertex in graph.adjacent_vertices(vertex) {
-        if components[adj_vertex] == UNASSIGNED {
-            size += visit_recursive(graph, adj_vertex, component_id, components);
-        }
-    }
-    size
 }
 
 impl std::fmt::Debug for CC {

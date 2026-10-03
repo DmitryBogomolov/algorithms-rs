@@ -70,20 +70,18 @@ where
 
 fn visit_dfs<G: Graph, F: FnMut(usize, usize)>(graph: &G, source_vertex: usize, mut f: F) {
     let mut visited = vec![false; graph.num_vertices()];
-    visit_dfs_recursive(graph, source_vertex, &mut visited, &mut f);
-}
-
-fn visit_dfs_recursive<G: Graph, F: FnMut(usize, usize)>(
-    graph: &G,
-    vertex: usize,
-    visited: &mut [bool],
-    f: &mut F,
-) {
-    visited[vertex] = true;
-    for adj_vertex in graph.adjacent_vertices(vertex) {
-        if !visited[adj_vertex] {
-            f(vertex, adj_vertex);
-            visit_dfs_recursive(graph, adj_vertex, visited, f);
+    let mut stack = Vec::new();
+    stack.push((source_vertex, graph.adjacent_vertices(source_vertex)));
+    visited[source_vertex] = true;
+    while let Some((vertex, adj_iter)) = stack.last_mut() {
+        if let Some(adj_vertex) = adj_iter.next() {
+            if !visited[adj_vertex] {
+                visited[adj_vertex] = true;
+                f(*vertex, adj_vertex);
+                stack.push((adj_vertex, graph.adjacent_vertices(adj_vertex)));
+            }
+        } else {
+            stack.pop();
         }
     }
 }
