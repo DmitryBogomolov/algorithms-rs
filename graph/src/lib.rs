@@ -1,9 +1,11 @@
+mod bipartite;
 mod cc;
 mod cycle;
 mod graph;
 mod paths;
 mod util;
 
+pub use bipartite::check_bipartite;
 pub use cc::CC;
 pub use cycle::{find_cycle, find_parallel_edges, find_self_loops};
 pub use graph::Graph;
