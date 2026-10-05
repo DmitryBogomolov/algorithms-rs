@@ -70,9 +70,61 @@ fn parallel_self_loops() {
 
 #[test]
 fn cycles() {
-    let graph = TestGraph::new(5, [(0, 1), (1, 2), (2, 3), (3, 1), (3, 4)]);
-    assert_eq!(find_cycle(&graph), Some(vec![1, 2, 3]));
+    assert_eq!(
+        find_cycle(&TestGraph::new(5, [(0, 1), (1, 2), (2, 3), (3, 1), (3, 4)])),
+        Some(vec![1, 2, 3])
+    );
 
-    let graph = TestGraph::new(6, [(0, 1), (2, 3), (3, 4), (4, 5), (5, 3)]);
-    assert_eq!(find_cycle(&graph), Some(vec![3, 4, 5]));
+    assert_eq!(
+        find_cycle(&TestGraph::new(6, [(0, 1), (2, 3), (3, 4), (4, 5), (5, 3)])),
+        Some(vec![3, 4, 5])
+    );
+}
+
+#[test]
+fn cycles_self_loops() {
+    assert_eq!(find_cycle(&TestGraph::new(1, [(0, 0)])), Some(vec![0]));
+
+    assert_eq!(
+        find_cycle(&TestGraph::new(2, [(0, 1), (1, 1)])),
+        Some(vec![1])
+    );
+
+    assert_eq!(
+        find_cycle(&TestGraph::new(3, [(0, 1), (2, 2)])),
+        Some(vec![2])
+    );
+
+    assert_eq!(
+        find_cycle(&TestGraph::new(1, [(0, 0), (0, 0)])),
+        Some(vec![0])
+    );
+}
+
+#[test]
+fn cycles_parallel_edges() {
+    assert_eq!(
+        find_cycle(&TestGraph::new(2, [(0, 1), (0, 1)])),
+        Some(vec![0, 1])
+    );
+
+    assert_eq!(
+        find_cycle(&TestGraph::new(3, [(0, 1), (1, 2), (1, 2)])),
+        Some(vec![1, 2])
+    );
+
+    assert_eq!(
+        find_cycle(&TestGraph::new(4, [(0, 1), (2, 3), (2, 3)])),
+        Some(vec![2, 3])
+    );
+
+    assert_eq!(
+        find_cycle(&TestGraph::new(2, [(0, 1), (0, 1), (0, 1)])),
+        Some(vec![0, 1])
+    );
+
+    assert_eq!(
+        find_cycle(&TestGraph::new(3, [(0, 1), (1, 2), (0, 1)])),
+        Some(vec![0, 1])
+    );
 }

@@ -30,6 +30,16 @@ pub fn find_parallel_edges<G: Graph>(graph: &G) -> impl Iterator<Item = (usize, 
 }
 
 pub fn find_cycle<G: Graph>(graph: &G) -> Option<Vec<usize>> {
+    if let Some(vertex) = find_self_loops(graph).next() {
+        return Some(vec![vertex]);
+    }
+    if let Some((v1, v2)) = find_parallel_edges(graph).next() {
+        return Some(vec![v1, v2]);
+    }
+    find_cycle_raw(graph)
+}
+
+fn find_cycle_raw<G: Graph>(graph: &G) -> Option<Vec<usize>> {
     let mut links = vec![None; graph.num_vertices()];
     let mut visited = vec![false; graph.num_vertices()];
     let mut stack = Vec::new();
